@@ -1,0 +1,24 @@
+{
+  "name": "real-estate-info-wiki",
+  "version": "1.0.0",
+  "private": true,
+  "description": "주소 입력 -> 건축물대장(공공데이터포털) + 네이버 검색 연동 부동산/주택 정보 조회 위키",
+  "main": "server/index.js",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}

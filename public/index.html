@@ -1,0 +1,3484 @@
+<!DOCTYPE html><script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Cx Support Refund Wiki",
+  "schemaVersion": 1,
+  "description": "유닛블랙 CX운영지원팀 고객지원파트 위키/매뉴얼 — 업무 매뉴얼, 용어사전, AI 채팅 3개 탭. SAVETAX 환급 서비스와 통일된 블루 톤 컬러 적용."
+}
+</script>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>유닛블랙 CX운영지원팀 고객지원파트 WIKI</title>
+<style>
+  :root {
+    color-scheme: light;
+    --teal-900:#0f2454;
+    --teal-800:#16337f;
+    --teal-700:#2563eb;
+    --teal-600:#3b82f6;
+    --teal-500:#60a5fa;
+    --teal-100:#dbeafe;
+    --teal-50:#f3f7ff;
+    --ink:#1a1d29;
+    --ink-soft:#5b6472;
+    --line:#e6e9f2;
+    --bg:#ffffff;
+    --warn:#b45309;
+    --warn-bg:#fff7ed;
+    --danger:#b42318;
+    --danger-bg:#fef3f2;
+    --shadow-sm: 0 1px 2px rgba(15,23,42,0.05), 0 1px 1px rgba(15,23,42,0.04);
+    --shadow-md: 0 8px 24px rgba(15,23,42,0.08), 0 2px 6px rgba(15,23,42,0.04);
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard Variable",Pretendard,Roboto,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+    background:#fafbfd; color:var(--ink); font-size:14px; line-height:1.62; letter-spacing:-0.1px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app { max-width: 1080px; margin: 0 auto; padding: 32px 24px 48px; background:var(--bg); }
+  .header { margin-bottom: 26px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
+  .header h1 { font-size: 23px; margin: 0 0 5px; color: var(--teal-900); font-weight:800; letter-spacing:-0.4px; }
+  .header p { margin:0; color: var(--ink-soft); font-size: 13px; }
+  .header .search-note { margin-top:4px; color:var(--teal-700); font-size:12.5px; }
+  .admin-toggle-btn {
+    flex-shrink:0; padding:8px 15px; border-radius:9px; border:1px solid var(--line);
+    background:#fff; color:var(--ink-soft); font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap;
+    box-shadow:var(--shadow-sm); transition:border-color .15s, color .15s, transform .1s;
+  }
+  .admin-toggle-btn:hover { border-color:var(--teal-500); color:var(--teal-700); transform:translateY(-1px); }
+  .admin-toggle-btn.on { background:var(--teal-700); border-color:var(--teal-700); color:#fff; }
+
+  .tabs {
+    display:flex; gap:2px; background:var(--teal-50); border:1px solid var(--line);
+    border-radius:13px; padding:4px; margin-bottom:24px; flex-wrap:wrap;
+  }
+  .tab-btn {
+    appearance:none; border:none; background:none; cursor:pointer;
+    padding:9px 16px; font-size:13.5px; font-weight:600; color:var(--ink-soft);
+    border-radius:9px; transition:background .15s, color .15s, box-shadow .15s;
+  }
+  .tab-btn:hover { color:var(--teal-800); }
+  .tab-btn.active { color: var(--teal-800); background:#fff; box-shadow:var(--shadow-sm); }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  .search-row { display:flex; gap:10px; margin-bottom:14px; }
+  .search-row input[type="search"], .search-row input[type="text"] {
+    flex:1; padding:12px 16px; border:1px solid var(--line); border-radius:12px;
+    font-size:14px; outline:none; background:#fff; transition:box-shadow .15s, border-color .15s;
+  }
+  .search-row input[type="search"]:focus, .search-row input[type="text"]:focus {
+    border-color: var(--teal-500); box-shadow:0 0 0 3px var(--teal-100);
+  }
+  .search-row input[type="date"] {
+    padding:12px 14px; border:1px solid var(--line); border-radius:12px;
+    font-size:13px; outline:none; background:#fff; color:var(--ink); transition:box-shadow .15s, border-color .15s;
+  }
+  .search-row input[type="date"]:focus { border-color: var(--teal-500); box-shadow:0 0 0 3px var(--teal-100); }
+
+  .chip-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .chip {
+    padding:6px 12px; border-radius:999px; border:1px solid var(--line);
+    background:#fff; font-size:12.5px; font-weight:500; color:var(--ink-soft); cursor:pointer;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .chip.active { background:var(--teal-700); border-color:var(--teal-700); color:#fff; }
+
+  .result-count { font-size:12.5px; color:var(--ink-soft); margin: -6px 0 12px; }
+
+  .card {
+    border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:12px;
+    background:#fff; cursor:pointer; box-shadow:var(--shadow-sm);
+    transition:box-shadow .15s, border-color .15s, transform .1s;
+  }
+  .card:hover { border-color: var(--teal-500); box-shadow:var(--shadow-md); transform:translateY(-1px); }
+  .card-title-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .card-title { font-size:15px; font-weight:700; color:var(--teal-900); }
+  .card-cat {
+    font-size:11px; padding:2px 8px; border-radius:999px; background:var(--teal-100);
+    color:var(--teal-800); white-space:nowrap; font-weight:600;
+  }
+  .card-snippet { color:var(--ink-soft); font-size:13px; margin-top:6px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .card-body { display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);
+    white-space:pre-wrap; font-size:13.5px; color:var(--ink); }
+  .card.open .card-body { display:block; }
+  .card.open .card-snippet { display:none; }
+  .card-tags { margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; }
+  .tag { font-size:11px; background:var(--teal-50); border:1px solid var(--line); border-radius:6px; padding:2px 6px; color:var(--teal-700); }
+  .source-note { margin-top:10px; font-size:11.5px; color:#8a9490; }
+  .source-note-meeting {
+    margin-top:12px; padding:9px 13px; border-radius:9px;
+    background:var(--teal-50); border:1px solid var(--teal-100);
+    font-size:13.5px; font-weight:700; color:var(--teal-800); line-height:1.5;
+  }
+  .source-note-meeting .snm-link { display:block; margin-top:3px; font-size:11.5px; font-weight:500; color:#8a9490; word-break:break-all; }
+
+  .empty-state { text-align:center; padding:40px 10px; color:var(--ink-soft); }
+
+  .data-table { border-collapse:collapse; width:100%; margin:10px 0 14px; font-size:13px; }
+  .data-table th, .data-table td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  .data-table th { background:var(--teal-50); color:var(--teal-900); font-weight:700; white-space:nowrap; }
+  .data-table td { color:var(--ink); white-space:pre-wrap; }
+
+  /* ---- Admin ---- */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(13,42,107,0.35); display:flex;
+    align-items:center; justify-content:center; z-index:1000; padding:20px;
+  }
+  .modal-box {
+    background:#fff; border-radius:var(--radius-lg); padding:24px; width:100%; max-width:360px;
+    box-shadow:0 24px 60px rgba(15,23,42,0.22);
+  }
+  .modal-box h2 { margin:0 0 6px; font-size:16px; color:var(--teal-900); font-weight:800; }
+  .modal-box p.hint { margin:0 0 14px; font-size:12.5px; color:var(--ink-soft); }
+  .modal-box input {
+    width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:10px;
+    font-size:14px; margin-bottom:10px; outline:none; transition:box-shadow .15s, border-color .15s;
+  }
+  .modal-box input:focus { border-color:var(--teal-500); box-shadow:0 0 0 3px var(--teal-100); }
+  .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:6px; }
+  .btn {
+    padding:9px 16px; border-radius:10px; border:1px solid var(--line); background:#fff;
+    font-size:13px; font-weight:600; cursor:pointer; color:var(--ink-soft);
+    transition:border-color .15s, background .15s, transform .1s, box-shadow .15s;
+  }
+  .btn:hover { border-color:var(--teal-500); transform:translateY(-1px); }
+  .btn-primary { background:var(--teal-700); border-color:var(--teal-700); color:#fff; box-shadow:var(--shadow-sm); }
+  .btn-primary:hover { background:var(--teal-800); border-color:var(--teal-800); }
+  .btn-danger { background:var(--danger-bg); border-color:#fda29b; color:var(--danger); }
+  .modal-error { color:var(--danger); font-size:12.5px; margin:-4px 0 10px; display:none; }
+
+  .admin-bar {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--teal-50); border:1px solid var(--teal-100); border-radius:12px;
+    padding:11px 15px; margin-bottom:16px; font-size:12.5px; color:var(--teal-800);
+  }
+  .admin-bar strong { color:var(--teal-900); }
+  .admin-bar .admin-bar-actions { display:flex; gap:8px; }
+
+  .admin-section { border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:18px; background:#fff; box-shadow:var(--shadow-sm); }
+  .admin-section h3 { margin:0 0 12px; font-size:15px; color:var(--teal-900); }
+  .admin-form-row { margin-bottom:10px; }
+  .admin-form-row label { display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:4px; }
+  .admin-form-row input[type="text"], .admin-form-row select, .admin-form-row textarea {
+    width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:13.5px;
+    font-family:inherit; outline:none; background:#fff;
+  }
+  .admin-form-row input:focus, .admin-form-row select:focus, .admin-form-row textarea:focus { border-color:var(--teal-500); }
+  .admin-form-row textarea { resize:vertical; }
+  .admin-form-row .field-hint { font-size:11.5px; color:#8a9490; margin-top:3px; }
+  .admin-entry-row {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:10px 12px; border:1px solid var(--line); border-radius:10px; margin-bottom:8px; background:#fff;
+  }
+  .admin-entry-row .aer-title { font-size:13.5px; font-weight:600; color:var(--teal-900); }
+  .admin-entry-row .aer-meta { font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .admin-entry-row .aer-actions { display:flex; gap:6px; flex-shrink:0; }
+  .admin-entry-row .aer-actions button { padding:6px 12px; font-size:12px; }
+  .admin-toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--teal-900); color:#fff;
+    padding:10px 18px; border-radius:999px; font-size:13px; z-index:1200; box-shadow:0 8px 20px rgba(0,0,0,0.2);
+  }
+
+  /* ---- 헤더 버튼 그룹 / 통합검색 / CSV 일괄 업로드 ---- */
+  .header-actions { display:flex; gap:8px; flex-shrink:0; }
+  .search-section-title { font-size:13px; font-weight:700; color:var(--teal-800); margin:18px 0 8px; display:flex; align-items:center; gap:8px; }
+  .search-section-title .search-section-count { font-weight:500; color:var(--ink-soft); font-size:12px; }
+  .search-type-badge {
+    font-size:10.5px; padding:2px 7px; border-radius:6px; background:var(--teal-900); color:#fff;
+    font-weight:700; white-space:nowrap;
+  }
+  .modal-box-wide { max-width:620px; max-height:86vh; overflow-y:auto; }
+  .bulk-hint-box {
+    background:var(--teal-50); border:1px solid var(--teal-100); border-radius:10px;
+    padding:12px 14px; font-size:12px; color:var(--ink-soft); margin-bottom:14px; line-height:1.6;
+  }
+  .bulk-hint-box code { background:#fff; border:1px solid var(--line); border-radius:4px; padding:1px 5px; font-size:11.5px; }
+  .bulk-file-input {
+    width:100%; padding:10px 12px; border:1px dashed var(--line); border-radius:8px;
+    font-size:13px; background:var(--teal-50); margin-bottom:12px;
+  }
+  .bulk-summary { font-size:12.5px; color:var(--ink-soft); margin-bottom:8px; }
+  .bulk-summary strong { color:var(--teal-800); }
+  .bulk-error-list { font-size:11.5px; color:var(--danger); margin:6px 0 0; padding-left:18px; max-height:120px; overflow-y:auto; }
+  /* ---- 통합검색 이스터에그(고양이) ---- */
+  .egg-card { border:1px dashed #ff8fab; background:#fff6f9; }
+  .card.egg-card .card-title { color:#e0507a; }
+  .saju-card.egg-card { border:1px dashed #b28dff; background:#f8f5ff; }
+  .card.saju-card .card-title { color:#7b4fe0; }
+  .saju-pillars { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 10px; }
+  .saju-pillar-chip {
+    font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;
+    background:#efe7ff; color:#6c3fd6; border:1px solid #d9c8ff;
+  }
+  .saju-pillar-chip.saju-pillar-main { background:#7b4fe0; color:#fff; border-color:#7b4fe0; }
+  .saju-pillar-chip.saju-pillar-empty { background:#f2f2f2; color:#999; border-color:#e2e2e2; }
+  .saju-year-block { margin-top:12px; padding-top:12px; border-top:1px dashed #d9c8ff; }
+  .saju-year-title { font-size:12.5px; font-weight:700; color:#7b4fe0; margin-bottom:6px; }
+  .saju-pillar-chip.saju-pillar-year { background:#fff; border-color:#b28dff; color:#7b4fe0; display:inline-block; margin-bottom:6px; }
+  /* ---- 헤더 안내 툴팁 / 푸터 ---- */
+  .header-title-row { position:relative; display:flex; align-items:center; gap:8px; }
+  .info-icon-btn {
+    border:1px solid var(--line); background:#fff; color:var(--ink-soft);
+    width:22px; height:22px; border-radius:50%; font-size:12px; line-height:1;
+    display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+  }
+  .info-icon-btn:hover { background:var(--teal-50); color:var(--teal-800); }
+  .info-tooltip {
+    display:none; position:absolute; top:calc(100% + 8px); left:0; z-index:50;
+    width:min(420px, 86vw); background:#fff; border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.12); padding:12px 14px; font-size:12.5px; color:var(--ink-soft); line-height:1.6;
+  }
+  .info-tooltip p { margin:0 0 8px; }
+  .info-tooltip p:last-child { margin-bottom:0; }
+  .info-icon-btn:hover + .info-tooltip,
+  .info-tooltip.show { display:block; }
+  .app-footer {
+    text-align:center; font-size:10px; color:#c7c7c7; opacity:0.55;
+    margin:28px 0 6px; user-select:none;
+  }
+
+  /* ---- 부동산정보 탭 ---- */
+  .search-hint { font-size:12px; color:var(--ink-soft); margin:0 0 18px; }
+  .re-status {
+    display:none; padding:12px 15px; border-radius:11px; font-size:13px; margin-bottom:16px;
+  }
+  .re-status.loading { display:block; background:var(--teal-50); color:var(--teal-800); }
+  .re-status.error { display:block; background:var(--danger-bg); color:var(--danger); }
+
+  .re-hero {
+    border:1px solid var(--line); border-radius:var(--radius-lg); padding:22px 24px; margin-bottom:14px;
+    background:linear-gradient(180deg,#fff 0%, var(--teal-50) 130%); box-shadow:var(--shadow-sm);
+  }
+  .re-hero-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .re-hero-addr { font-size:13px; color:var(--ink-soft); font-weight:600; }
+  .re-hero-stats { display:flex; flex-wrap:wrap; gap:28px; }
+  .re-stat-label { font-size:12px; color:var(--ink-soft); font-weight:600; margin-bottom:4px; }
+  .re-stat-value { font-size:26px; font-weight:800; color:var(--teal-900); letter-spacing:-0.4px; }
+  .re-stat-value.empty { color:#a8b0bd; font-weight:600; font-size:16px; }
+  .re-hero-sub { display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; padding-top:14px; border-top:1px dashed var(--line); }
+  .re-hero-sub-item { font-size:12px; color:var(--ink-soft); }
+  .re-hero-sub-item b { color:var(--ink); font-weight:700; }
+
+  .re-badge {
+    font-size:10.5px; padding:3px 9px; border-radius:999px; background:var(--teal-100);
+    color:var(--teal-800); font-weight:700; white-space:nowrap;
+  }
+  .re-badge.warn { background:var(--warn-bg); color:var(--warn); }
+
+  .re-event-row {
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    padding:11px 0; border-bottom:1px dashed var(--line);
+  }
+  .re-event-row:last-child { border-bottom:none; }
+  .re-event-label { font-weight:700; color:var(--ink); font-size:13.5px; flex-shrink:0; }
+  .re-event-value { text-align:right; font-size:13px; }
+  .re-event-value .re-date { font-weight:800; color:var(--teal-800); font-size:15px; }
+  .re-event-value .re-empty { color:#a8b0bd; font-weight:400; font-size:13px; }
+  .re-event-value a { color:var(--teal-700); text-decoration:none; font-size:11.5px; margin-left:8px; font-weight:600; }
+  .re-event-value a:hover { text-decoration:underline; }
+  .re-change-list { margin:6px 0 0; padding-left:0; list-style:none; font-size:12px; color:var(--ink-soft); }
+  .re-change-list li { padding:3px 0; }
+  .re-change-list a { color:var(--teal-700); text-decoration:none; font-weight:600; margin-left:6px; }
+
+  .re-disclaimer {
+    font-size:11.5px; color:var(--warn); background:var(--warn-bg); border:1px solid #fde3c8;
+    border-radius:10px; padding:9px 12px; margin-top:12px; line-height:1.55;
+  }
+
+  details.re-addr-detail {
+    border:1px solid var(--line); border-radius:14px; padding:14px 18px; margin-bottom:12px; background:#fff;
+  }
+  details.re-addr-detail summary {
+    cursor:pointer; font-size:12.5px; font-weight:600; color:var(--ink-soft); list-style:none;
+  }
+  details.re-addr-detail summary::-webkit-details-marker { display:none; }
+  details.re-addr-detail[open] summary { margin-bottom:10px; color:var(--teal-800); }
+  .re-kv-grid { display:grid; grid-template-columns:110px 1fr; row-gap:7px; column-gap:10px; font-size:13px; }
+  .re-kv-grid dt { color:var(--ink-soft); font-weight:600; }
+  .re-kv-grid dd { margin:0; }
+  .re-kv-grid dd.empty { color:#a8b0bd; }
+  .re-candidate-list { font-size:12px; color:var(--ink-soft); margin-top:10px; padding-left:0; list-style:none; }
+  .re-candidate-list li { padding:6px 0; border-top:1px dashed var(--line); }
+
+  details.re-source-list summary { cursor:pointer; font-size:13px; font-weight:600; color:var(--teal-800); }
+  .re-source-item { padding:10px 0; border-top:1px solid var(--line); }
+  .re-source-item:first-of-type { border-top:none; }
+  .re-source-item .rs-title { font-size:13px; font-weight:600; color:var(--ink); }
+  .re-source-item .rs-title a { color:inherit; text-decoration:none; }
+  .re-source-item .rs-title a:hover { text-decoration:underline; }
+  .re-source-item .rs-desc { font-size:12.5px; color:var(--ink-soft); margin-top:3px; }
+  .re-source-item .rs-meta { font-size:11px; color:#8a9490; margin-top:3px; }
+</style>
+</head>
+<body>
+<script>window.__ORIGINAL_HTML__ = document.documentElement.outerHTML;</script>
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="header-title-row">
+        <h1>유닛블랙 CX운영지원팀 고객지원파트 WIKI</h1>
+        <button class="info-icon-btn" id="header-info-btn" type="button" aria-label="위키 안내 보기">❓</button>
+        <div class="info-tooltip" id="header-info-tooltip" role="tooltip">
+          <p>업무 매뉴얼 · 용어사전 · 주간회의 — 사내 자료(양도세 이론 PPT, 세무사 자문 FAQ, Linear 이슈, 주간회의록) 기반으로 정리되어 있습니다.</p>
+          <p class="search-note">검색은 제목·용어뿐 아니라 태그·카테고리·본문에 포함된 어떤 키워드 조각이든 매칭됩니다. 정확한 명칭이 기억나지 않아도 떠오르는 단어 일부만 입력해 찾아보세요.</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="admin-toggle-btn" id="bulk-upload-btn">📤 업로드</button>
+      <button class="admin-toggle-btn" id="admin-toggle-btn">🔐 관리자 모드</button>
+    </div>
+  </div>
+
+  <div id="admin-bar-slot"></div>
+
+  <div class="tabs" id="main-tabs">
+    <button class="tab-btn active" data-tab="search">통합검색</button>
+    <button class="tab-btn" data-tab="realestate">부동산정보</button>
+    <button class="tab-btn" data-tab="manual">업무 매뉴얼</button>
+    <button class="tab-btn" data-tab="glossary">용어사전</button>
+    <button class="tab-btn" data-tab="meeting">주간회의</button>
+    <button class="tab-btn" id="admin-tab-btn" data-tab="admin" style="display:none;">관리자 모드</button>
+  </div>
+
+  <!-- 통합검색 -->
+  <div class="tab-panel active" id="panel-search">
+    <div class="search-row">
+      <input type="search" id="search-search" placeholder="업무 매뉴얼·용어사전·주간회의를 한 번에 검색 (예: 조정대상지역, 중과배제, 로직2 ...)">
+    </div>
+    <div class="result-count" id="search-count"></div>
+    <div id="search-results"></div>
+  </div>
+
+  <!-- 부동산정보 -->
+  <div class="tab-panel" id="panel-realestate">
+    <div class="search-row">
+      <input type="text" id="re-address-input" placeholder="예: 서울 강남구 대치동 은마아파트 101동 101호">
+      <button class="btn btn-primary" id="re-search-btn" type="button">조회</button>
+    </div>
+    <p class="search-hint">도로명/지번 혼용 입력, 단지명 생략·순서 상이, 동/호 포함 입력 모두 가능합니다. (건축물대장·네이버 검색 연동)</p>
+    <div class="re-status" id="re-status"></div>
+    <div id="re-result"></div>
+  </div>
+
+  <!-- 업무 매뉴얼 -->
+  <div class="tab-panel" id="panel-manual">
+    <div class="search-row">
+      <input type="search" id="manual-search" placeholder="예: 예정신고, CASE2, 일시적 2주택, 필요경비 ...">
+    </div>
+    <div class="chip-row" id="manual-chips"></div>
+    <div class="result-count" id="manual-count"></div>
+    <div id="manual-list"></div>
+  </div>
+
+  <!-- 용어사전 -->
+  <div class="tab-panel" id="panel-glossary">
+    <div class="search-row">
+      <input type="search" id="glossary-search" placeholder="예: 비과세, 조정대상지역, 장기보유특별공제 ...">
+    </div>
+    <div class="chip-row" id="glossary-chips"></div>
+    <div class="result-count" id="glossary-count"></div>
+    <div id="glossary-list"></div>
+  </div>
+
+  <!-- 주간회의 -->
+  <div class="tab-panel" id="panel-meeting">
+    <div class="search-row">
+      <input type="search" id="meeting-search" placeholder="예: 로직2, 알림톡, 종소세, 간단로직, 인용률 ...">
+      <input type="date" id="meeting-date-search" title="특정 일자 회의록 검색">
+      <button class="btn" id="meeting-date-clear" type="button">초기화</button>
+    </div>
+    <div class="result-count" id="meeting-count"></div>
+    <div id="meeting-list"></div>
+  </div>
+
+  <!-- 관리자 모드 -->
+  <div class="tab-panel" id="panel-admin"></div>
+
+  <div class="app-footer">제작자: 다람띠니 · 업데이트버전 v1.0</div>
+</div>
+
+<div id="modal-slot"></div>
+
+<script type="application/json" id="data-manual">
+[
+  {
+    "id": "m1",
+    "title": "양도소득세 예정신고·납부",
+    "category": "신고납부",
+    "tags": [
+      "예정신고",
+      "신고기한",
+      "가산세",
+      "무신고가산세",
+      "납부지연가산세",
+      "부동산",
+      "주식",
+      "파생상품"
+    ],
+    "snippet": "부동산은 양도일이 속하는 달의 말일부터 2개월 이내 예정신고·납부. 주식·파생상품은 별도 기준 적용.",
+    "body": "[부동산]\n양도일이 속하는 달의 말일부터 2개월 이내에 주소지 관할세무서에 예정신고·납부.\n예) 2021.7.15. 잔금을 지급받았다면 예정신고·납부기한은 2021.9.30.까지.\n- 양도시기는 원칙적으로 대금청산일. 단, 대금청산일 전 소유권이전등기를 한 경우 등기접수일이 양도시기가 됨.\n- 신고·납부기한이 토요일·일요일·공휴일·근로자의 날인 경우 그 다음 날이 기한.\n- 부담부증여 시 예정신고 기한은 증여일이 속하는 달의 말일부터 3개월.\n\n[미신고 시 불이익]\n예정신고를 하지 않으면 납부할 세액의 20%인 무신고가산세와, 1일 0.022%\n('19.2.11. 이전까지는 0.03%, '19.2.12~'22.2.14. 이전까지는 0.025%)의 납부지연가산세가 부과됨.\n\n[주식]\n양도일이 속하는 반기의 말일부터 2개월 이내 예정신고·납부 (반기 중 여러 건 양도 시 반기별로 합산 신고·납부).\n\n[파생상품]\n예정신고 없이, 해당연도 양도소득에 대해 다음해 5월 확정신고·납부(연 1회)만 이행.",
+    "source": "출처: 양도세 기본이론 PPT 6~9p"
+  },
+  {
+    "id": "m2",
+    "title": "양도소득세 확정신고",
+    "category": "신고납부",
+    "tags": [
+      "확정신고",
+      "신고기한",
+      "주식"
+    ],
+    "snippet": "당해연도에 여러 건 양도한 경우 다음해 5.1~5.31 확정신고. 1건이고 예정신고를 마쳤다면 생략 가능.",
+    "body": "당해연도에 부동산 등을 여러 건 양도한 경우, 다음해 5월 1일부터 5월 31일 사이에 주소지 관할세무서에 확정신고.\n\n다만 1건의 양도소득만 있는 자가 예정신고를 마친 경우에는 확정신고를 하지 않아도 됨.\n\n[주식등 - 예정신고를 했어도 확정신고 의무가 있는 경우]\n1. 누진세율 적용대상 주식등에 대한 예정신고를 2회 이상 한 자가 이미 신고한 양도소득금액과 합산하여 예정신고를 하지 아니한 경우\n2. 주식등을 2회 이상 양도한 경우로서 양도소득 기본공제의 적용순위로 인하여 당초 신고한 양도소득 산출세액이 달라지는 경우\n3. 둘 이상의 자산(주식은 기타자산만 해당)을 양도하는 경우 양도소득세 비교과세방식으로 예정신고하지 않은 경우('20.2.11. 이후 양도분부터)\n4. 감면소득이 있는 경우 기본공제(250만원) 적용순서에 따라 당초 신고한 양도소득세 산출세액이 달라지는 경우\n   (기본공제는 감면 외의 소득에서 먼저 공제하고, 감면 외의 소득금액 중 먼저 양도한 자산부터 공제)\n\n파생상품을 양도한 경우에는 해당연도 양도소득에 대하여 예정신고 없이 다음해 5월 확정신고·납부(연 1회)만 이행.",
+    "source": "출처: 양도세 기본이론 PPT 7p"
+  },
+  {
+    "id": "m3",
+    "title": "법정 신고기한 표 (소득종류별)",
+    "category": "신고납부",
+    "tags": [
+      "신고기한",
+      "법정신고기한",
+      "토지거래허가구역",
+      "주식"
+    ],
+    "snippet": "소득종류·예정/확정 구분별 법정신고기한 정리표.",
+    "body": "※ 부담부증여시 예정신고 기한: 증여일이 속하는 달의 말일부터 3개월\n※ 신고·납부기한이 토요일·일요일·공휴일·근로자의 날인 경우 그 다음 날을 기한으로 함.",
+    "table": {
+      "headers": [
+        "소득종류",
+        "구분",
+        "법정신고기한"
+      ],
+      "rows": [
+        [
+          "일반 양도소득 - 부동산 등",
+          "예정",
+          "양도일이 속하는 달의 말일부터 2개월"
+        ],
+        [
+          "일반 양도소득 - 부동산 등",
+          "확정",
+          "양도일이 속하는 연도의 다음연도 5.1~5.31"
+        ],
+        [
+          "토지거래계약허가구역 안의 토지 (허가 전 대금청산한 경우)",
+          "예정",
+          "그 허가일이 속하는 달의 말일부터 2개월"
+        ],
+        [
+          "토지거래계약허가구역 안의 토지 (허가 전 대금청산한 경우)",
+          "확정",
+          "그 허가일이 속하는 연도의 다음연도 5.1~5.31"
+        ],
+        [
+          "주식 또는 출자지분(신주인수권 포함)",
+          "예정",
+          "양도일이 속하는 반기의 말일부터 2개월 (국외주식, 파생상품은 예정신고 면제)"
+        ],
+        [
+          "주식 또는 출자지분(신주인수권 포함)",
+          "확정",
+          "양도일이 속하는 연도의 다음연도 5.1~5.31 (국외주식, 파생상품 포함)"
+        ]
+      ]
+    },
+    "source": "출처: 양도세 기본이론 PPT 8~9p"
+  },
+  {
+    "id": "m4",
+    "title": "실지거래가액에 의한 세액계산 - 양도가액·취득가액",
+    "category": "세액계산",
+    "tags": [
+      "실지양도가액",
+      "실지취득가액",
+      "세액계산",
+      "취득가액"
+    ],
+    "snippet": "실지 양도가액과 실지 취득가액의 정의 및 취득가액 계산 시 포함되는 항목.",
+    "body": "[01. 실지 양도가액]\n양도자와 양수자간에 실제로 거래한 가액.\n\n[02. 실지 취득가액]\n양도자산의 취득에 소요된 실지거래가액.\n- 취득에 소요된 실지거래가액이란 소득세법시행령 제89조 제1항의 규정을 준용하여 계산한 취득원가에 상당하는 가액.\n- 타인으로부터 매입한 자산: 매입가액에 취득세·등록세 기타 부대비용을 가산한 금액.\n- 자기가 행한 제조·생산 또는 건설 등에 의하여 취득한 자산: 원재료비·노무비·운임·하역비·보험료·수수료·공과금(취득세·등록세 포함)·설치비 기타 부대비용의 합계액.\n\n[취득가액 계산 시 포함되는 것]\n- 자산을 장기할부조건으로 매입하는 경우 발생한 채무를 기업회계기준에 따라 현재가치로 평가하여 현재가치할인차금으로 계상한 경우, 당해 현재가치할인차금 포함.\n  단, 양도자산의 보유기간 중 동 현재가치할인차금의 상각액을 각 연도의 부동산임대소득금액 또는 사업소득금액 계산 시 필요경비로 산입하였거나 산입할 금액이 있는 때에는 당해 금액을 공제.\n- 당사자 약정에 의한 대금지급방법에 따라 취득원가에 이자상당액을 가산하여 거래가액을 확정하는 경우, 당해 이자상당액은 취득가액에 포함.",
+    "source": "출처: 양도세 기본이론 PPT 10p"
+  },
+  {
+    "id": "m5",
+    "title": "실지거래가액에 의한 세액계산 - 기타 필요경비",
+    "category": "세액계산",
+    "tags": [
+      "필요경비",
+      "자본적지출액",
+      "양도비",
+      "세액계산"
+    ],
+    "snippet": "자본적지출액, 소송비용, 양도비 등 필요경비 인정 항목과 제외 항목(대출이자).",
+    "body": "[03. 기타 필요경비]\n자본적지출액, 양도비 등 실제 증빙에 의하여 계산한 가액의 합계액.\n\n[자본적 지출액]\n소득세법시행령 제67조 제2항의 규정을 준용하여 계산.\n「자본적 지출」이란 사업자가 소유하는 감가상각자산의 내용연수를 연장시키거나 당해 자산의 가치를 현실적으로 증가시키기 위하여 지출한 수선비로, 다음을 포함:\n- 본래의 용도를 변경하기 위한 개조\n- 엘리베이터 또는 냉난방장치의 설치\n- 빌딩 등의 피난시설 등의 설치\n- 재해 등으로 인하여 건물·기계·설비 등이 멸실 또는 훼손되어 당해 자산의 본래 용도로의 이용가치가 없는 것의 복구\n- 기타 개량·확장·증설 등 위와 유사한 성질의 것\n\n[기타 인정 항목]\n- 양도자산을 취득한 후 쟁송이 있는 경우, 그 소유권을 확보하기 위하여 직접 소요된 소송비용·화해비용 등의 금액(그 지출한 연도의 각 소득금액 계산 시 필요경비에 산입된 것은 제외)\n- 양도자산의 용도변경·개량 또는 이용편의를 위하여 지출한 비용\n- 양도비 등(증권거래세, 양도소득세 신고서 작성비용, 소개비)\n\n[주의 - 필요경비 제외]\n취득자금으로 활용된 은행대출이자 등은 필요경비에 해당하지 않음.",
+    "source": "출처: 양도세 기본이론 PPT 10~11p"
+  },
+  {
+    "id": "m6",
+    "title": "양도소득세 세액계산 구조 (부동산 등)",
+    "category": "세액계산",
+    "tags": [
+      "세액계산",
+      "양도차익",
+      "장기보유특별공제",
+      "기본공제",
+      "산출세액"
+    ],
+    "snippet": "양도가액에서 취득가액·필요경비를 차감해 세액을 산출하는 전체 계산 구조.",
+    "body": "양도가액에서 취득가액·필요경비를 차감해 세액을 산출하는 전체 계산 구조입니다.",
+    "table": {
+      "headers": [
+        "구조",
+        "내용"
+      ],
+      "rows": [
+        [
+          "양도가액",
+          "부동산 등의 양도당시 실지 거래가액"
+        ],
+        [
+          "- 취득가액",
+          "부동산 등의 취득당시 실지 거래가액 (확인불가 시 매매사례가액, 감정가액, 환산취득가액 적용 가능)"
+        ],
+        [
+          "- 필요경비",
+          "실가: 설비비·개량비, 자본적지출액, 양도비 / 매매사례가액·감정가액·환산취득가액은 기준시가의 3% 적용"
+        ],
+        [
+          "= 양도차익",
+          "양도가액 - 취득가액 - 필요경비"
+        ],
+        [
+          "- 장기보유특별공제",
+          "장기보유특별공제율 적용"
+        ],
+        [
+          "= 양도소득금액",
+          "양도차익 - 장기보유특별공제"
+        ],
+        [
+          "- 감면대상소득금액",
+          "조세특례제한법에서 규정한 경우 (미분양주택, 신축주택 등)"
+        ],
+        [
+          "- 양도소득기본공제",
+          "250만원 (미등기 양도자산은 적용 배제)"
+        ],
+        [
+          "= 양도소득과세표준",
+          "양도소득금액 - (감면대상소득금액 + 양도소득기본공제)"
+        ],
+        [
+          "x 세율",
+          "양도소득세율표 적용"
+        ],
+        [
+          "= 산출세액",
+          "양도소득과세표준 x 세율"
+        ],
+        [
+          "- 세액공제 + 감면세액",
+          "전자신고세액공제, 외국납부세액공제, 조세특례제한법상 감면세액"
+        ],
+        [
+          "= 자진납부할세액",
+          "산출세액 - (세액공제 + 감면세액)"
+        ]
+      ]
+    },
+    "source": "출처: 양도세 기본이론 PPT 11p"
+  },
+  {
+    "id": "m7",
+    "title": "주식등 양도소득세 세액계산 구조",
+    "category": "세액계산",
+    "tags": [
+      "세액계산",
+      "주식",
+      "세율",
+      "가산세",
+      "분납"
+    ],
+    "snippet": "주식등 양도차익 산정부터 신고불성실가산세, 분납 기준까지 정리한 계산 구조.",
+    "body": "주식등 양도차익 산정부터 신고불성실가산세, 분납 기준까지 정리한 계산 구조입니다.",
+    "table": {
+      "headers": [
+        "구조",
+        "내용"
+      ],
+      "rows": [
+        [
+          "양도가액 - 취득가액",
+          "취득가액 + 양도비용 등"
+        ],
+        [
+          "= 양도차익(=소득금액)",
+          "실가: 설비비·개량비, 자본적지출액, 양도비 / 매매사례가액·감정가액·환산취득가액은 기준시가의 3% 적용"
+        ],
+        [
+          "= 양도차액",
+          "양도가액 - 취득가액 - 필요경비"
+        ],
+        [
+          "- 기본공제",
+          "연간 250만원"
+        ],
+        [
+          "= 과세표준",
+          ""
+        ],
+        [
+          "x 세율",
+          "일반: 10, 20, 20~25, 30% / 기타자산: 6~45% / 비사업용 토지 50% 이상 특정주식 및 부동산과다보유법인: 16~55%"
+        ],
+        [
+          "= 산출세액",
+          ""
+        ],
+        [
+          "- 공제/감면세액",
+          "외국납부세액공제"
+        ],
+        [
+          "= 결정세액",
+          ""
+        ],
+        [
+          "+ 가산세",
+          "신고불성실 10~40%, 납부지연가산세 1일 22/100,000 ('22.2.14 이전은 25/100,000)"
+        ],
+        [
+          "= 총결정세액",
+          ""
+        ],
+        [
+          "- 기납부/고지세액",
+          "예정신고납부세액, 기경정/결정세액"
+        ],
+        [
+          "= 차가감 납부할 세액",
+          "2천만원 이하: 1천만원 초과금액 분납가능(2개월) / 2천만원 초과: 그 세액의 50% 이하 분납가능(2개월)"
+        ]
+      ]
+    },
+    "source": "출처: 양도세 기본이론 PPT 12p"
+  },
+  {
+    "id": "m8",
+    "title": "환급 검토 개요 - 고객지원파트 역할과 범위",
+    "category": "환급심사",
+    "tags": [
+      "환급",
+      "경정청구",
+      "내재화로직",
+      "1차판단체크리스트"
+    ],
+    "snippet": "고객지원파트는 주택 양도소득세만 검토하며, 환급 발생 포인트와 1차 판단 체크리스트를 우선 확인.",
+    "body": "[검토 대상 세금 - 양도소득세]\n- 개인이 주택을 양도하면서 발생한 이익에 대해 과세되는 세금.\n- 양도소득세는 양도한 시점에 한 번만 과세.\n- 고객지원파트는 주택 양도소득세만 검토.\n\n[환급 발생 포인트]\n- 비과세 / 특례 요건이 누락된 경우\n- 제도 / 판례 변경사항이 신고에 반영되지 않은 경우\n\n[1차 판단 체크리스트]\n- 주택 해당 여부\n- 1세대 기준 주택 수\n- 조정대상지역 여부\n\n[양도소득세 - 기본 3원칙]\n1. 양도 시점에 한 번만 발생한다 (자산을 보유하고 있는 동안에는 양도세가 발생하지 않음)\n2. 이익이 있어야 과세 대상이 된다 (손해를 보거나 차익이 없는 경우에는 과세되지 않음)\n3. 요건을 충족하면 이익이 있어도 세금이 없거나 줄어들 수 있다 (비과세 혹은 감면)\n\n[내재화 로직 - 검토 우선순위]\n양도세 경정청구가 가능한 다양한 케이스 중에서, 내재화 로직에 해당하는 아래 3가지 경우를 중심으로 환급가능성을 검토함.\n- CASE1. 1주택 비과세\n- CASE2. 일시적 1가구 2주택\n- CASE3. 혼인합가 / 동거봉양 합가 (간단 로직)",
+    "source": "출처: 16강 양도세 환급이론 PPT 3~5p"
+  },
+  {
+    "id": "m9",
+    "title": "CASE1. 1주택 비과세 판단 매뉴얼",
+    "category": "환급심사",
+    "tags": [
+      "CASE1",
+      "1주택비과세",
+      "조정대상지역",
+      "환급심사",
+      "고가주택",
+      "안분계산"
+    ],
+    "snippet": "1세대 1주택 비과세 판단 순서와 다주택자 예외(마지막 주택 양도) 처리 기준.",
+    "body": "[정의]\n1세대가 주택 1채만 보유한 상태에서 일정 요건을 충족하면 양도세가 비과세되는 제도.\n\n[판단 순서]\n1. 주택 수\n2. 보유기간\n3. 거주기간\n4. 조정대상지역 여부\n\n[조정대상지역 관련 유의사항]\n취득 당시 주택의 주소가 조정대상지역에 속한다 → 보유기간과 거주기간에 대한 요건이 추가됨.\n단, 조정대상지역 지정 이전에 매매계약을 체결하고 계약금을 지급한 무주택자라면 거주기간 요건 없음.\n\n[다주택자 예외 - 반드시 확인]\n양도 주택 2채 이상인 다주택자라도, 마지막 주택(보유 주택이 0채가 된 시점)을 양도하는 경우,\n보유기간 및 거주기간에 대한 요건을 충족하면 비과세가 가능함.\n→ 다주택 이력이 있다고 바로 배제하지 말고, 최종 양도 주택 기준으로 재검토할 것.\n\n[고가주택 안분계산 - 실지거래가액 12억원 초과분 과세]\n위 요건을 충족해도 양도가액이 12억원을 초과하면 12억원 초과분에 대해서만 과세됨('21.12. 이전 양도분은 9억원 기준).\n비과세 양도차익 = 양도차익 × (12억원 ÷ 양도가액), 과세대상 양도차익 = 양도차익 - 비과세 양도차익.\n예) 양도가액 14억원·취득가액 9억원·필요경비 2천만원(양도차익 4억 8천만원)인 경우, 비과세 양도차익 ≈ 4억 1,140만 8천원, 과세대상 양도차익 ≈ 6,859만 2천원만 과세됨(이후 장기보유특별공제·기본공제 추가 차감).",
+    "source": "출처: 16강 양도세 환급이론 PPT 6p / 노션 '내재화로직' 페이지(비과세 정의·계산방법)"
+  },
+  {
+    "id": "m10",
+    "title": "CASE2. 일시적 1가구 2주택 판단 매뉴얼",
+    "category": "환급심사",
+    "tags": [
+      "CASE2",
+      "일시적2주택",
+      "양도기한",
+      "조정대상지역",
+      "환급심사"
+    ],
+    "snippet": "종전주택 보유 중 신규주택 취득 시 일시적 2주택 비과세 판단 순서와 연도별 양도기한표.",
+    "body": "[정의]\n1세대가 종전 주택을 보유한 상태에서 신규 주택을 취득하여 일시적으로 2주택이 된 경우,\n일정 요건을 충족하면 종전 주택 양도 시 1주택으로 보아 비과세를 적용하는 제도.\n\n[판단 순서]\n1. 주택 수 변동 구조 (종전 → 신규)\n2. 신규 주택 취득 시점\n3. 종전 주택 양도 시점\n4. 종전 주택 양도 기한 충족 여부\n5. 조정대상지역 여부\n\n[기본 흐름]\nA주택 취득 → (일정 기간 이상 보유) → B주택 취득 → (정해진 기한 내) → A주택 양도\n※ 조정대상지역 여부 및 주택 요건에 따라 보유기간, 양도기한 등 세부 요건은 달라질 수 있음.\n\n아래 표는 연도별 양도기한 변천 이력입니다 (참고만 할 것).\n\n[실습 사례 - 정답은 개별 건별로 세부 요건 확인 후 판단]\n사례1) A주택 취득 → 6개월 후 B주택 취득 → 2년 후 A주택 양도: 비과세 적용 대상인지 개별 확인 필요\n사례2) A주택 취득 → 1년 후 B주택 취득 → 10년 후 A주택 양도: 비과세 적용 대상인지 개별 확인 필요\n※ 이 두 사례는 PPT 원자료에도 \"정답 미제시, 판단 연습용\" 문제로만 제시되어 있음. 결론은 담당자가 취득일·양도일·조정대상지역 지정일을 실제 확인 후 판단할 것.",
+    "table": {
+      "headers": [
+        "양도 날짜",
+        "기한",
+        "조정대상지역 요건 (보유·신규 주택 모두 해당 시)"
+      ],
+      "rows": [
+        [
+          "~2020.2.10",
+          "3년 이내",
+          "2년 이내"
+        ],
+        [
+          "2020.2.11~2022.5.9",
+          "3년 이내",
+          "1년 이내 (+ 신규 주택으로 세대 전원 1년 이내 전입 조건 필요)"
+        ],
+        [
+          "2020.5.10~2023.1.11",
+          "3년 이내",
+          "2년 이내"
+        ],
+        [
+          "2023.1.12~",
+          "3년 이내",
+          "3년 이내"
+        ]
+      ]
+    },
+    "source": "출처: 16강 양도세 환급이론 PPT 7~9p"
+  },
+  {
+    "id": "m11",
+    "title": "CASE3. 혼인합가 / 동거봉양 합가 판단 매뉴얼",
+    "category": "환급심사",
+    "tags": [
+      "CASE3",
+      "혼인합가",
+      "동거봉양",
+      "환급심사"
+    ],
+    "snippet": "혼인합가·동거봉양 합가로 인한 일시적 2주택 케이스의 간단 판단 로직.",
+    "body": "[정의]\n혼인합가 또는 동거봉양 합가로 인해 일시적으로 2주택이 된 경우에 한정하여 검토하는 간단 로직.\n\n[확인 항목]\n- 혼인신고일\n- 봉양 부모님의 나이 / 질환 기준 충족 여부\n\n[세무사 자문으로 확인된 요건 - FAQ No.34]\n① 동거봉양합가 특례 기본 요건\n- 부모 중 한 명이 만 60세 이상일 것\n- 합가 전 각 세대가 1주택씩 보유 (합산 2주택)\n- 위 조건 충족 시 → 일시적 2주택 특례 적용 가능\n\n② 확인 순서\n- 부모·자녀(또는 봉양 대상) 명의 보유주택 취득일 확인\n- 합가를 위해 이사간 날짜 확인\n- 합가 전 각 세대의 주택 보유 여부 판단\n\n③ 세대원 전원 무주택인 경우\n합가 전 각 1주택 요건을 충족하지 못하므로 동거봉양합가 특례 해당 없음\n→ 이 경우 세대원 전원 무주택이므로 단순비과세로 처리\n\n※ 위 세무사 자문 사례는 \"동생 봉양\" 케이스에 대한 답변이며, 정확한 법 조문상 연령·기간 기준은 세법 원문으로 별도 확인 권장.",
+    "source": "출처: 16강 양도세 환급이론 PPT 5p / 고객지원파트 지식자산FAQ No.34 (세무사 자문)"
+  },
+  {
+    "id": "faq1",
+    "title": "로드뷰에 건물 있으나 등기부에 토지만 나오는 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "등기부",
+      "일시적2주택",
+      "건축물대장",
+      "취득일"
+    ],
+    "snippet": "등기부등본 발급 시 건물이 없고 토지만 조회되는 경우, 건축물대장을 추가로 발급하여 실제 건물 존재 여부를 확인",
+    "body": "[질문]\n로드뷰에 건물 있으나 등기부에 토지만 나오는 경우\n\n[답변]\n등기부등본 발급 시 건물이 없고 토지만 조회되는 경우, 건축물대장을 추가로 발급하여 실제 건물 존재 여부를 확인\n건축물대장과 등기부등본을 교차 확인한 결과 해당 주소지에 주택이 존재하는 것으로 확인된다면, 일시적 2주택 요건 적용이 가능한 것으로 판단\n처리 절차\n등기부등본 확인 → 토지만 조회될 경우\n건축물대장 추가 발급\n로드뷰 현황 + 건축물대장 교차 확인으로 주택 존재 여부 판단\n주택으로 확인 시 → 일시적 2주택 요건 검토 진행",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.1 (세무사 자문)"
+  },
+  {
+    "id": "faq5",
+    "title": "건물 상속 후 재개발로 주택 취득한 경우 취득원인 종류",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "상속",
+      "취득일",
+      "재개발",
+      "입주권",
+      "취득원인"
+    ],
+    "snippet": "재개발 이전에 건물을 상속으로 취득한 경우, 이후 해당 건물이 재개발되어 신축 아파트를 취득하더라도 취득원인은 '상속'",
+    "body": "[질문]\n건물 상속 후 재개발로 주택 취득한 경우 취득원인 종류\n- 건물을 상속 받은 이후 재개발 진행되어 조합원입주권으로 바뀐 경우 취득원인이 상속 / 매매인지 구분\n\n[답변]\n재개발 이전에 건물을 상속으로 취득한 경우, 이후 해당 건물이 재개발되어 신축 아파트를 취득하더라도 취득원인은 '상속'\n취득원인은 최초 취득 시점을 기준으로 판단하며, 재개발은 기존 자산의 형태 변환에 해당하므로 원시 취득원인이 유지\n\n※ 취득 당시 종류(입주권 vs 건물) 선택 시 → 건물로 선택\n\n- 상속받은 건물이 재개발된 경우 : 상속\n- 재개발 조합원 지위를 별도 매수한 경우 : 매매 (입주권)",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.5 (세무사 자문)"
+  },
+  {
+    "id": "faq6",
+    "title": "양도자산 소재지가 미국으로 돼있는 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "주소지오류"
+    ],
+    "snippet": "국외 양도자산의 경우 로직 미해당",
+    "body": "[질문]\n양도자산 소재지가 미국으로 돼있는 경우\n- 양도소득세 신고서 내 소재지가 국외\n\n[답변]\n국외 양도자산의 경우 로직 미해당",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.6 (세무사 자문)"
+  },
+  {
+    "id": "faq7",
+    "title": "일시적 2주택 해당하는 주택을 보유했을 경우, 위 주택이 공동명의일 경우 일시적 ...",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "일시적2주택",
+      "공동명의"
+    ],
+    "snippet": "공동명의 주택도 진행 적용 가능",
+    "body": "[질문]\n일시적 2주택 해당하는 주택을 보유했을 경우, 위 주택이 공동명의일 경우 일시적 2주택 해당여부\n\na주택\n취득일자 : 2013.06.26\n양도일자 : 2020.05.15\n\nb주택\n취득일자 : 2020.05.01\n특이사항 : 본인 / 배우자 지분보유로 인한 공동명의 \n\n위 경우 지분으로 나눠져있을 경우, 일시적 2주택 적용 가능 여부\n\n[답변]\n공동명의 주택도 진행 적용 가능",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.7 (세무사 자문)"
+  },
+  {
+    "id": "faq12",
+    "title": "홈택스 자산코드 03으로 잡혔지만 실제 분양권 상태로 전매한 주택",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "분양권"
+    ],
+    "snippet": "분양권은 양도세 환급 검토 대상 아님",
+    "body": "[질문]\n홈택스 자산코드 03으로 잡혔지만 실제 분양권 상태로 전매한 주택\n\n[답변]\n분양권은 양도세 환급 검토 대상 아님",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.12 (세무사 자문)"
+  },
+  {
+    "id": "faq13",
+    "title": "사용승인일 전 취득일자 확인 시 우선순위 여부",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "취득일"
+    ],
+    "snippet": "잔금을 다 청산해도 주택이 완공되지 않을 경우 주택 사용승인일(혹은 임시사용승인일)을 주택 취득시기 로 하는 예규대로 판단",
+    "body": "[질문]\n사용승인일 전 취득일자 확인 시 우선순위 여부\n사용승인일 : 18.12.27\n신고서 상 취득일 : 18.03.01\n주택 미완성시 잔금 청산일이 더 빠를 경우 사용승인거 교부일이 기준시점이 되는 것이 맞는지\n\n[답변]\n잔금을 다 청산해도 주택이 완공되지 않을 경우 주택 사용승인일(혹은 임시사용승인일)을 주택 취득시기 로 하는 예규대로 판단\n※현재 주택 세율(1년 ~ 2년 미만 보유 : 60%)은 2021. 6. 1. 이후 양도분부터 적용",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.13 (세무사 자문)"
+  },
+  {
+    "id": "faq20",
+    "title": "분양전환으로 주택 취득한 고객",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "취득일",
+      "분양전환",
+      "거주요건",
+      "비과세",
+      "조정대상지역"
+    ],
+    "snippet": "분양전환으로 취득한 주택의 경우, 임차일이 아닌 해당 주택을 양도하는 시점의 거주기간을 기준으로 확인",
+    "body": "[질문]\n분양전환으로 주택 취득한 고객\n\n[답변]\n분양전환으로 취득한 주택의 경우, 임차일이 아닌 해당 주택을 양도하는 시점의 거주기간을 기준으로 확인\n다만 비과세 요건 판단 시 아래 두 가지를 함께 검토\n① 거주요건 충족 여부\n분양전환 취득자는 임차 기간 중 해당 주택에 실거주한 경우가 많지 않으므로, 양도 주택에 실제 전입 여부가 핵심입니다. 거주요건을 충족하지 못하더라도 비과세가 가능한지는 아래 ②로 판단\n② 조정대상지역 여부 확인\n보유 주택과 양도 주택이 모두 조정대상지역인 경우 거주요건(2년)이 필수입니다. 단, 분양전환 취득 시점이 조정대상지역 제도 법제화(2017.8.3.) 이전이라면 거주요건 없이 비과세 적용이 가능\n\n판단 순서\n\n분양전환 취득일 확인\n취득일이 2017.8.3. 이전인지 여부 확인\n이전 취득 → 조정대상지역 거주요건 미적용, 비과세 검토 가능\n이후 취득 → 보유·양도 주택 모두 조정대상지역이면 거주 2년 필요, 비과세 어려울 수 있음\n\n\n※ 양도세 신고서상 취득일자와 분양전환 계약일이 다를 수 있으므로 신고서 기준 취득일 반드시 교차 확인\n※ 분양전환 = 반드시 실거주한 것은 아님",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.20 (세무사 자문)"
+  },
+  {
+    "id": "faq27",
+    "title": "보유 기간동안 법률혼은 아니나 사실혼 관계였던 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "보유기간"
+    ],
+    "snippet": "양도소득세에서 배우자는 사실혼을 포함하므로 사실혼 기간의 배우자 보유주택도 확인",
+    "body": "[질문]\n보유 기간동안 법률혼은 아니나 사실혼 관계였던 경우\n\n[답변]\n양도소득세에서 배우자는 사실혼을 포함하므로 사실혼 기간의 배우자 보유주택도 확인",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.27 (세무사 자문)"
+  },
+  {
+    "id": "faq28",
+    "title": "비거주용 오피스텔인데 이후에 임대사업자를 등록한 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "거주요건",
+      "비과세",
+      "임대주택",
+      "오피스텔",
+      "임대사업자"
+    ],
+    "snippet": "최초 취득 시 비거주용이었던 오피스텔이라도, 이후 주택임대사업자로 등록한 경우 거주주택 비과세 적용을 검토",
+    "body": "[질문]\n비거주용 오피스텔인데 이후에 임대사업자를 등록한 경우\n\n[답변]\n최초 취득 시 비거주용이었던 오피스텔이라도, 이후 주택임대사업자로 등록한 경우 거주주택 비과세 적용을 검토\n단, 아래 요건을 순서대로 확인\n① 주택임대사업자 등록 여부 확인\n임대사업자 등록은 세무서 + 구청 양쪽 모두 등록되어 있어야 인정됩니다. 어느 한쪽만 등록된 경우 요건 미충족\n② 임대사업자 말소 경위 확인\n자동말소 : 의무임대기간을 모두 채운 후 자동 종료 → 요건 충족 가능\n자진말소 : 의무기간 중 본인이 직접 말소 → 임대기간 충족 여부 별도 확인 필요\n③ 양도 주택 거주요건 확인\n거주주택 비과세가 가능하려면 양도 주택에 세대 전원이 2년 이상 거주해야 합니다. 신고서상 주소지와 양도 주택 주소가 다른 경우, 실제 거주 여부를 별도로 확인\n\n처리 절차\n\n오피스텔 임대사업자 등록 확인 (세무서 + 구청)\n등록 기간 및 말소 경위 확인\n양도 주택 세대 전원 2년 거주 여부 확인\n신고서상 주소 ↔ 양도 주택 주소 교차 확인\n전 항목 충족 시 → 거주주택 비과세 검토 진행",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.28 (세무사 자문)"
+  },
+  {
+    "id": "faq29",
+    "title": "90년대 후반~2000년대 초반까지 신축 아파트 분양권에 대한 문의",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "분양권",
+      "입주권",
+      "취득일",
+      "주택수",
+      "체크리스트"
+    ],
+    "snippet": "90년대 후반~2000년대 초반에 최초 분양으로 취득한 아파트는 현행 세법상 분양권 개념과 상이",
+    "body": "[질문]\n90년대 후반~2000년대 초반까지 신축 아파트 분양권에 대한 문의\n\n[답변]\n90년대 후반~2000년대 초반에 최초 분양으로 취득한 아파트는 현행 세법상 분양권 개념과 상이 \n체크리스트에서 분양권/입주권 여부 확인 시 아래 기준으로 판단\n현행 세법상 분양권 기준\n현행 세법상 분양권이 주택 수에 포함되는 것은 2021.1.1. 이후 취득분부터 적용됩니다. 그 이전에 취득한 분양권/입주권은 적용 기준이 다르므로 취득 시점을 반드시 확인합니다.\n판단 기준 요약\n\n일반등기부에 완공 상태로 등재 → 분양권 아님, 주택 취득으로 체크\n취득 시점이 2021.1.1. 이전 → 현행 분양권 주택 수 산입 규정 미적용\n\n\n※ 구축 아파트라도 최초 취득 당시 등기부 상태 기준으로 판단하며, 현시점 완공 여부와 혼동하지 않도록 주의",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.29 (세무사 자문)"
+  },
+  {
+    "id": "faq31",
+    "title": "기경정 신고 년도가 다른 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "경정청구",
+      "기경정",
+      "홈택스",
+      "계산기"
+    ],
+    "snippet": "계산기상 기수령 환급액의 과세연도와 고객이 인지하는 신청 연도가 다른 경우, 계산기 오류가 아닌 고객 혼동으로 먼저 판단합니다.",
+    "body": "[질문]\n기경정 신고 년도가 다른 경우\n\n[답변]\n계산기상 기수령 환급액의 과세연도와 고객이 인지하는 신청 연도가 다른 경우, 계산기 오류가 아닌 고객 혼동으로 먼저 판단합니다.\n계산기는 홈택스 데이터를 그대로 스크래핑하므로 연도 오류가 발생할 수 없습니다.\n처리 절차\n\n홈택스에서 실제 경정청구 신고 연도 직접 확인\n고객 인지 연도와 홈택스 확인 연도 비교\n불일치 시 → 고객 혼동으로 판단, 실제 신청 연도 기준으로 안내\n계산기 데이터는 홈택스 원본 기준이므로 별도 수정 불필요\n\n\n※ 계산기 연도 이력은 홈택스 데이터 기반으로 자동 반영되며, 임의 오류 가능성 없음",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.31 (세무사 자문)"
+  },
+  {
+    "id": "faq34",
+    "title": "동거봉양합가 특례 적용 가능여부 문의",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "동거봉양",
+      "합가",
+      "비과세",
+      "단순비과세",
+      "세대원"
+    ],
+    "snippet": "동거봉양합가 특례는 합가 전 각 세대가 1주택씩 보유한 상태여야 적용됩니다. 따라서 아래 요건을 순서대로 확인합니다.",
+    "body": "[질문]\n동거봉양합가 특례 적용 가능여부 문의\n\n어머니(만 60세 이상)와 동생과 함께 살기 위해 첫 번째 양도주택으로 이사\n사유는 동생이 사고로 장애가 생겨 봉양 목적\n이사 전 어머니의 주택 보유 여부는 알 수 없음\n\n[답변]\n동거봉양합가 특례는 합가 전 각 세대가 1주택씩 보유한 상태여야 적용됩니다. 따라서 아래 요건을 순서대로 확인합니다.\n① 동거봉양합가 특례 기본 요건\n\n부모 중 한 명이 만 60세 이상일 것\n합가 전 각 세대가 1주택씩 보유 (합산 2주택)\n위 조건 충족 시 → 일시적 2주택 특례 적용 가능\n\n② 확인 순서\n\n어머니·동생 명의 보유주택 취득일 확인\n양도 주택으로 이사간 날짜 확인\n합가 전 각 세대의 주택 보유 여부 판단\n\n③ 세대원 전원 무주택인 경우\n합가 전 각 1주택 요건을 충족하지 못하므로 동거봉양합가 특례 해당 없음\n→ 이 경우 세대원 전원 무주택이므로 단순비과세로 처리\n판단 기준 요약\n합가 전 세대 1주택 보유 → 동거봉양합가 특례 적용 검토\n합가 전 어머니·동생 무주택 → 특례 해당 없음, 단순비과세 처리",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.34 (세무사 자문)"
+  },
+  {
+    "id": "faq60",
+    "title": "주소지 임시로 옮겨 놓았을 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "주소지오류"
+    ],
+    "snippet": "주민등록상 주소지를 일시적으로 타인(부모님 등) 명의 주택으로 이전한 경우라도, 실제 거주 사실이 입증되면 거주요건 충족으로 보고 경정청구 진행...",
+    "body": "[질문]\n주소지 임시로 옮겨 놓았을 경우\n\n[답변]\n주민등록상 주소지를 일시적으로 타인(부모님 등) 명의 주택으로 이전한 경우라도, 실제 거주 사실이 입증되면 거주요건 충족으로 보고 경정청구 진행이 가능합니다.\n① 핵심 판단 기준\n주민등록 주소지가 아닌 실제 거주 여부가 기준입니다. 주소지 이전 기간 중 실제로는 본인 주택에 거주했다면, 해당 기간을 거주기간에 산입할 수 있습니다.\n② 추가 보유주택 판단\n주소지를 옮겨놓은 부모님 댁이 부모님 명의 주택인 경우, 고객 본인 명의 주택이 아니므로 추가 보유주택으로 보지 않습니다.\n③ 처리 절차\n\n주소지 이전 기간 확인 (이전일 ~ 복귀일)\n해당 기간 중 실제 거주지 확인\n실제 거주 사실 입증 서류 수취\n서류 확인 후 거주요건 충족으로 판단 → 경정청구 진행\n\n④ 실제 거주 입증 서류 예시\n주민등록등본과 실제 거주기간이 다를 경우 아래 서류로 실거주 사실을 입증합니다.\n\n카드명세서, 전화가입증명원\n공과금 및 관리비 납부영수증\n병원진료기록, 금융거래내역서\n생활용품 구입영수증, 수영권·대중교통 이용내역\n가스·전기 요금 고지서, 이삿짐센터 확인서\n\n\n※ 실제 거주기간이 주민등록등본과 차이가 있을 경우, 위 서류 중 복수로 제출하여 합리적이고 구체적인 증빙을 갖추는 것이 중요합니다",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.60 (세무사 자문)"
+  },
+  {
+    "id": "faq72",
+    "title": "[신고서상 일반 주택 > 등기부 열람시 토지]",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "등기부"
+    ],
+    "snippet": "당초 신고시 자산종류코드를 잘못 신고한 케이스",
+    "body": "[질문]\n[신고서상 일반 주택 > 등기부 열람시 토지]\n\n[답변]\n당초 신고시 자산종류코드를 잘못 신고한 케이스\n실제 자산 형태로 확인하여 유효 여부 체크",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.72 (세무사 자문)"
+  },
+  {
+    "id": "faq73",
+    "title": "조합원입주권 → 주택양도시 사용승인일 기준 요건 문의",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "취득일",
+      "조합원입주권",
+      "임시사용승인"
+    ],
+    "snippet": "재건축·재개발로 조합원입주권 상태였던 주택을 양도하는 경우, 임시사용승인일 또는 실제 입주일 중 먼저 도래한 날을 주택 취득일로 봅니다.",
+    "body": "[질문]\n조합원입주권 → 주택양도시 사용승인일 기준 요건 문의\n\n[답변]\n재건축·재개발로 조합원입주권 상태였던 주택을 양도하는 경우, 임시사용승인일 또는 실제 입주일 중 먼저 도래한 날을 주택 취득일로 봅니다.\n\n본 케이스 적용\n\n2023년 임시사용승인 및 입주 시작\n2024년 양도\n2025년 사용승인 최종 처리\n\n→ 임시사용승인일인 2023년 시점에 이미 주택으로 취득한 것으로 보므로, 양도 시점(2024년) 기준 주택 상태로 양도한 것으로 처리",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.73 (세무사 자문)"
+  },
+  {
+    "id": "faq74",
+    "title": "갑구에 소유이력이 없는 고객의 소유가능성 판단",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "등기부"
+    ],
+    "snippet": "명의자와 특수관계로 유추할 수는 있으나, 을구는 갑구의 소유 이력과 무관",
+    "body": "[질문]\n갑구에 소유이력이 없는 고객의 소유가능성 판단\n\n[답변]\n명의자와 특수관계로 유추할 수는 있으나, 을구는 갑구의 소유 이력과 무관",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.74 (세무사 자문)"
+  },
+  {
+    "id": "faq78",
+    "title": "미분양된 주택을 공매로 취득한 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "취득일"
+    ],
+    "snippet": "취득시 주택 형태는 일반 매매로 간주",
+    "body": "[질문]\n미분양된 주택을 공매로 취득한 경우\n\n[답변]\n취득시 주택 형태는 일반 매매로 간주",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.78 (세무사 자문)"
+  },
+  {
+    "id": "faq85",
+    "title": "기경정 이력은 있으나 검토 년도가 아닌 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "경정청구"
+    ],
+    "snippet": "경정청구가 아닌 자동 환급에 의한 결과일 가능성",
+    "body": "[질문]\n기경정 이력은 있으나 검토 년도가 아닌 경우\n- 해당 케이스의 경우 기경정이 아닌 기수령 환급액 존재\n\n[답변]\n경정청구가 아닌 자동 환급에 의한 결과일 가능성\n기수령 환급액 : 양도세 오계산·차손 상계 등으로 국가가 자동 환급\n기경정으로 보지 않으므로 양도세 환급 대상",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.85 (세무사 자문)"
+  },
+  {
+    "id": "faq90",
+    "title": "일반주택으로 신고되어 있지만 유치원으로 사용한 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "기타",
+      "자산코드",
+      "보육시설",
+      "기타건물"
+    ],
+    "snippet": "주택으로 신고된 건물의 일부를 유치원 등 비주거 용도로 사용한 경우, 홈택스 신고서상 자산코드를 기준으로 주택 해당 여부를 판단",
+    "body": "[질문]\n일반주택으로 신고되어 있지만 유치원으로 사용한 경우\n- 일반 유치원\n- 가정형 어린이집\n- 일반 어린이집\n\n[답변]\n주택으로 신고된 건물의 일부를 유치원 등 비주거 용도로 사용한 경우, 홈택스 신고서상 자산코드를 기준으로 주택 해당 여부를 판단\n\n자산코드 \n03 일반주택 : 비과세 신청 가능\n04 기타건물(유치원·상가 등) : 주택 아님, 환급 대상 제외\n\n시설 유형\n가정형 어린이집 : 주택으로 볼 수 있음\n유치원 : 주택 아님\n어린이집 : 주택 아님\n\n처리 절차\n홈택스 신고서상 자산코드 확인\n03(주택) / 04(기타건물) 분리 여부 확인\n04로 잡힌 부분 → 환급 대상 제외\n03으로 잡힌 주택 부분만 → 비과세 신청 진행",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.90 (세무사 자문)"
+  },
+  {
+    "id": "faq99",
+    "title": "양도 시 손해 본 금액이 다른 연도의 양도차익보다 크다면 양도세 환급 검토가 불가...",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "양도세"
+    ],
+    "snippet": "차손 상계는 동일 년도만 해당",
+    "body": "[질문]\n양도 시 손해 본 금액이 다른 연도의 양도차익보다 크다면 양도세 환급 검토가 불가능한가요?\n\n[답변]\n차손 상계는 동일 년도만 해당",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.99 (세무사 자문)"
+  },
+  {
+    "id": "faq100",
+    "title": "공동명의 상속",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "상속",
+      "공동명의"
+    ],
+    "snippet": "인별과세이기 때문에 각자 상속받은 지분의 양도소득세 납부 금액 만큼의 환급 판단 가능",
+    "body": "[질문]\n공동명의 상속\n- 단독 상속이 아닌 형제자매 혹은 다른 공동상속인이 있는 경우 환급 여부\n\n[답변]\n인별과세이기 때문에 각자 상속받은 지분의 양도소득세 납부 금액 만큼의 환급 판단 가능",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.100 (세무사 자문)"
+  },
+  {
+    "id": "faq101",
+    "title": "토지 취득 후 직접 집을 지은 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "취득일"
+    ],
+    "snippet": "건축주로 직접 집을 지은 경우 취득 형태 일반주택으로 확인",
+    "body": "[질문]\n토지 취득 후 직접 집을 지은 경우\n\n[답변]\n건축주로 직접 집을 지은 경우 취득 형태 일반주택으로 확인\n(※ 이 경우 등본상 계약일과 잔금일 동일할 가능성)",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.101 (세무사 자문)"
+  },
+  {
+    "id": "faq103",
+    "title": "30세 미만 자녀 보유 주택 세대 분리",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "기타"
+    ],
+    "snippet": "세대분리 신고 여부를 먼저 확인",
+    "body": "[질문]\n30세 미만 자녀 보유 주택 세대 분리\n\n[답변]\n세대분리 신고 여부를 먼저 확인\n해당 자녀가 혼인을 한 경우 : 분리 가능 / 미혼인 경우 : 분리 불가능\n위 요건 충족이 안되는 경우 세대 분리 불가능",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.103 (세무사 자문)"
+  },
+  {
+    "id": "faq112",
+    "title": "재판 결과로 상속한 주택은 상속주택이 맞나요?",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "상속"
+    ],
+    "snippet": "상속인들간 분쟁이 있어 재판 화해결정 통지 등으로 취득하게 된 경우",
+    "body": "[질문]\n재판 결과로 상속한 주택은 상속주택이 맞나요?\n\n[답변]\n상속인들간 분쟁이 있어 재판 화해결정 통지 등으로 취득하게 된 경우\n- 취득 원인 : 상속\n- 취득일자 : 상속개시일(피상속인 사망일)",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.112 (세무사 자문)"
+  },
+  {
+    "id": "faq121",
+    "title": "사라진 지번으로 주소 입력이 불가한 상황 체크리스트 처리 방법",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "체크리스트"
+    ],
+    "snippet": "재건축 진행 중 기존 주소지 멸실된 경우, 동일 동/읍/면/리의 주변 주소 임의로 체크해서 진행",
+    "body": "[질문]\n사라진 지번으로 주소 입력이 불가한 상황 체크리스트 처리 방법\n\n[답변]\n재건축 진행 중 기존 주소지 멸실된 경우, 동일 동/읍/면/리의 주변 주소 임의로 체크해서 진행",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.121 (세무사 자문)"
+  },
+  {
+    "id": "faq125",
+    "title": "홈택스로 불러와진 양도주택의 주소지가 다르다고 하는 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "양도세",
+      "주소지오류"
+    ],
+    "snippet": "당초 신고시 양도주택 주소지를 잘못 신고한 케이스",
+    "body": "[질문]\n홈택스로 불러와진 양도주택의 주소지가 다르다고 하는 경우\n\n[답변]\n당초 신고시 양도주택 주소지를 잘못 신고한 케이스\n진행하지 않음",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.125 (세무사 자문)"
+  },
+  {
+    "id": "faq128",
+    "title": "도시형생활주택도 보유 주택으로 간주하는 게 맞을까요?",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "기타"
+    ],
+    "snippet": "도시형 생활주택으로 등기되었다면 태생부터 주택",
+    "body": "[질문]\n도시형생활주택도 보유 주택으로 간주하는 게 맞을까요?\n\n[답변]\n도시형 생활주택으로 등기되었다면 태생부터 주택\n공부상 아파트, 연립, 다세대 등으로 확인",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.128 (세무사 자문)"
+  },
+  {
+    "id": "faq135",
+    "title": "양도 주택의 취득 당시 갖고 있던 상가주택은 거주용 주택일까요?",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "거주요건"
+    ],
+    "snippet": "실제 사용 용도를 기준으로 판단",
+    "body": "[질문]\n양도 주택의 취득 당시 갖고 있던 상가주택은 거주용 주택일까요?\n\n[답변]\n실제 사용 용도를 기준으로 판단\n(건축물대장상 주택으로 표시되어 있는지/ 세입자·고객이 거주용으로 사용했는지)",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.135 (세무사 자문)"
+  },
+  {
+    "id": "faq172",
+    "title": "자산코드 03 지식산업센터인 경우",
+    "category": "실무 FAQ (세무사 자문)",
+    "tags": [
+      "기타"
+    ],
+    "snippet": "공부상 주택이 아니더라도 실사용이 주택인 경우 환급 검토 대상",
+    "body": "[질문]\n자산코드 03 지식산업센터인 경우\n\n[답변]\n공부상 주택이 아니더라도 실사용이 주택인 경우 환급 검토 대상\n실제 사용 용도를 기준으로 판단\n(건축물대장상 주택으로 표시되어 있는지/ 세입자·고객이 거주용으로 사용했는지)",
+    "source": "출처: 고객지원파트 지식자산FAQ, No.172 (세무사 자문)"
+  },
+  {
+    "id": "linear-tr472",
+    "linearId": "TR-472",
+    "title": "용도변경 주택(호텔→일반주택)의 체크리스트 작성 방법",
+    "category": "실무 FAQ (Linear 이슈)",
+    "tags": [
+      "용도변경",
+      "체크리스트",
+      "호텔",
+      "오피스텔",
+      "자산코드"
+    ],
+    "snippet": "양도 주택이 용도변경된 경우, 신고 기준으로 체크리스트를 진행하고 일반주택으로 표시 후 완료하면 됨. 추후 검토는 리뷰파트에서 진행.",
+    "body": "[질문]\n주소지 확인시 호텔, 용도변경해서 팔았다고 하는 경우\n양도 주택: 서머셋팰리스 서울\n고객에게 확인시 용도변경하여 양도했다고 합니다.\n이 경우 일반주택 / 오피스텔 종류로 간주하고 체크리스트를 완료하면 될까요?\n\n[답변]\n양도 주택 용도의 경우 신고 기준으로 체크리스트 진행 해주시면 되고 추후 검토는 리뷰 쪽에서 진행 하기 때문에 메모만 잘 적어 두시면 될 것 같습니다.\n일반 주택으로 찍고 체크리스트 완료 넘겨주시면 될 것 같습니다.",
+    "source": "출처: Linear TR-472 (라벨: Wiki, 고객지원파트 / 상태: Done) — https://linear.app/unitblack/issue/TR-472/용도변경-주택의-체크리스트-작성-방법-문의"
+  },
+  {
+    "id": "m12",
+    "title": "컨택 업무 우선순위 및 대상아님 판단 기준",
+    "category": "업무프로세스",
+    "tags": [
+      "컨택우선순위",
+      "대상아님판단",
+      "인용율",
+      "업무프로세스"
+    ],
+    "snippet": "고객 컨택 전 반드시 확인하는 우선순위 기준과 대상아님 처리 기준. 인용율이 높은 순서로 처리하며, 보유주택 2년 미만·추가주택 2채 이상 등 5가지 기준에 해당하면 업무 대상에서 제외.",
+    "body": "고객 컨택 전 반드시 확인해야 하는 우선순위 기준과 대상아님 처리 기준. 업무 효율 및 오처리를 방지하기 위해 실무 전 가장 먼저 확인함.\n\n[1. 컨택 우선순위]\n고객 컨택 시 인용율을 기준으로 우선순위를 정하여 처리. 환급 가능성이 높은 고객을 먼저 처리함으로써 전체 인용율을 효과적으로 높임.\n1. 로직2(2009~2012년 중과배제) 유도\n2. 자료 요청\n3. 검증콜 대상\n4. 신규 DB(배정일 오래된 순) — 회계사검토 → 약관동의완료 → 예상결과(확인)\n5. 추적DB(배정일 오래된 순) — 회계사검토 → 약관동의완료 → 예상결과(확인)\n\n[2. 대상아님 판단 기준]\n내부적으로 환급 가능성 판단 기준을 수립하여 환급 확률이 낮은 고객은 업무 대상에서 제외. 업무 효율성을 높이고 환급 가능성이 높은 고객에게 집중하기 위함. 단, 예외적인 상황 발생 시 기준을 완화해서 진행하기도 함.\n1. 양도 주택의 양도 시점에 보유 주택(추가 주택) 2채 이상\n2. 기경정 이력\n3. 양도 주택의 보유 기간 2년 미만\n4. 예상환급액 40만원 이하\n5. 5개년 내 양도 주택 6채 이상",
+    "source": "출처: 노션 개인페이지 - [매뉴얼] 컨택 업무 우선 순위 및 대상아님 판단 기준"
+  },
+  {
+    "id": "m13",
+    "title": "체크리스트 에어테이블 필드값",
+    "category": "업무프로세스",
+    "tags": [
+      "체크리스트",
+      "에어테이블",
+      "유도status",
+      "검증status",
+      "오토메이션버튼",
+      "업무프로세스"
+    ],
+    "snippet": "체크리스트 진행 상태를 관리하는 에어테이블 필드값 정의 — 유도status, 검증status, 오토메이션 버튼의 의미와 처리 절차.",
+    "body": "에어테이블 필드값은 고객의 현재 진행 상태와 업무 처리 현황을 일관된 기준으로 관리하기 위한 내부 운영 기준. 선택된 필드값은 데일리 지표를 비롯한 월별·분기별 운영 데이터 및 성과 분석의 기초 자료로 활용됨.\n\n[1. 체크리스트_유도 status]\n유도 status는 고객이 아직 체크리스트를 완료하지 않은 상태에서, 담당자가 고객과 연락하며 체크리스트 완료를 유도하는 과정의 진행 상태.\n\n1-1) 1차~2차\n고객과 연락을 시도한 차수를 표시하는 상태값.\n- 1차: 첫 번째 연락 시도\n- 2차: 두 번째 연락 시도\n※ 고객이 부재일 경우 3차까지 연락을 시도하지만, 3차 연락은 유도status 값을 3차로 변경하지 않고 3회차 통화 결과에 대한 처리 값을 넣고 마무리함.\n\n1-2) 종결\n더 이상 체크리스트를 진행하지 않는 상태. 3회 이상 연락 부재 혹은 고객의 요청에 의해 취소 종결되는 경우.\n- 고객이 직접 취소 요청한 경우: 체크리스트 메모 작성 → 유도status: 종결 → 통화시간 입력 → 완료일 입력 → 재산세_취소 사유: 취소 요청 사유 입력 → 오토메이션: 신청취소\n- 3회 이상 연락 부재: 체크리스트 메모 작성 → 유도status: 종결 → 완료일 입력 → 재산세_취소 사유: 통화 보류/불가 (※ 1차부터 부재였을 경우 체크리스트_최초 부재 항목도 체크되어 있어야 함)\n\n1-3) 확인완료\n검토에 필요한 정보 수집이 완료된 상태. 담당자가 고객 컨택을 통해 체크리스트를 완료한 후 검토 가능한 로직이 표출된 경우.\n- 체크리스트 메모 작성 → 유도status: 확인완료 → 통화시간 입력 → 완료일 입력 → 오토메이션: 검토요청\n\n1-4) 환급불가\n체크리스트는 완료했지만 확인 결과 환급 가능한 로직이 없는 경우.\n- 체크리스트 메모 작성 → 유도status: 환급불가 → 통화시간 입력 → 완료일 입력 → 오토메이션: 환급불가\n\n1-5) 대상아님\n애초에 검토 대상이 아닌 건일 경우 사용. (대상아님 기준: 주택 보유기간 2년 미만, 양도시점 추가 보유주택 2채 이상, 기경정 이력 有, 예상환급액 40만원 이하, 5개년 내 양도주택 6채 이상)\n- 대상이 아님을 확인한 경우: 체크리스트 메모 작성 → 유도status: 대상아님 → 완료일 입력 → 오토메이션: 환급불가\n\n1-6) 종결대기\n특정 사유에 의해 잠시 보류 상태로 둘 경우 사용.\n\n1-7) 추가서류 수취\n체크리스트 진행 중 고객에게 추가 서류를 받아야 하는 경우 사용.\n\n1-8) 재컨택 대상\n추가 연락이 더 필요하거나 일시적으로 보류해야 하는 경우 사용. (3회 이상 추가 컨택 필요 / 시스템 이슈 등으로 잠시 보류 필요)\n\n1-9) 문자발송\n체크리스트 통화 시 고객이 부재중이어서 알림톡/문자를 발송했고, 이후 고객이 메시지를 확인한 뒤 직접 체크리스트를 완료한 경우.\n- 내재화 로직 표출: 체크리스트 메모 작성 → 유도status: 문자발송 → 검증status: 검증완료(검증콜 완료 후) → 완료일 입력 → 오토메이션: 검토요청\n- 내재화 이외 로직 표출: 체크리스트 메모 작성 → 유도status: 문자발송 → 검증status: 미진행접수 → 완료일 입력 → 오토메이션: 검토요청\n- 환급 로직 없음: 체크리스트 메모 작성 → 유도status: 문자발송 → 검증status: 환급불가 → 완료일 입력 → 오토메이션: 환급불가\n\n1-10) 자연성공\n고객과 한 번 이상 통화된 이력이 있고, 이후 고객이 직접 체크리스트를 완료한 경우.\n- 내재화 로직 표출: 체크리스트 메모 작성 → 유도status: 자연성공 → 검증status: 검증완료(검증콜 완료 후) → 완료일 입력 → 오토메이션: 검토요청\n- 내재화 이외 로직 표출: 체크리스트 메모 작성 → 유도status: 자연성공 → 검증status: 미진행접수 → 완료일 입력 → 오토메이션: 검토요청\n- 환급 로직 없음: 체크리스트 메모 작성 → 유도status: 자연성공 → 검증status: 환급불가 → 완료일 입력 → 오토메이션: 환급불가\n\n[2. 체크리스트_검증 status]\n검증status는 담당자 배정되기 전에 고객이 이미 체크리스트를 완료한 경우, 내재화 로직이 표출된 상태에서 고객이 입력한 정보가 맞는지 확인하는 과정의 상태.\n\n2-1) 1~2차\n고객에게 검증콜을 시도한 횟수. 1차: 첫 번째 연락 시도 / 2차: 두 번째 연락 시도 (※ 3차까지 시도하되 유도status 3차로는 변경하지 않음)\n\n2-2) 환급불가\n검증콜 진행 대상이나, 검증콜 이후 최종적으로 환급 가능한 로직이 없는 경우.\n- 체크리스트_유도status: 검증콜 대상 → 체크리스트_메모 작성 → 체크리스트_검증status: 환급불가 → 완료일 입력 → 오토메이션: 환급불가\n\n2-3) 검증완료\n검증콜을 진행한 결과, 내재화 로직이 소거되지 않고 필요한 검증이 모두 끝난 경우.\n- 체크리스트_유도status: 검증콜 대상 → 체크리스트_메모 작성 → 체크리스트_검증status: 검증완료 → 완료일 입력 → 오토메이션: 검토요청\n\n2-4) 미진행접수\n검증콜 완료 후, 내재화 로직(일시적2주택, 1주택 단순비과세, 동거봉양, 혼인합가)이 아닌 간단 로직으로 변경되어 선일에 검토 요청이 필요한 경우.\n- 체크리스트_유도status: 검증콜 대상 → 체크리스트_메모 작성 → 체크리스트_검증status: 미진행접수 → 완료일 입력 → 오토메이션: 검토요청\n\n[3. 오토메이션 버튼]\n부재 종결을 제외한 나머지 상태에서, 최종 처리 또는 다음 단계로 넘어가기 위해 사용하는 버튼. 단순 상태 표시가 아닌 후속 처리를 실행하는 버튼임.\n\n3-1) 신청취소\n고객이 취소 요청을 한 경우. 체크리스트_유도status: 종결 → 체크리스트_메모 작성 → 완료일 입력 → 오토메이션: 신청취소\n\n3-2) 환급불가\n체크리스트 완료 후 환급 가능 로직이 없는 경우. 체크리스트_유도status: 환급불가 → 체크리스트_메모 입력 → 완료일 입력 → 오토메이션: 환급불가\n\n3-3) 진행재개\n취소 요청 또는 장기 부재로 종결 처리되었으나 이후 고객이 재진행을 요청하는 경우. 종료된 건을 다시 진행 상태로 되돌릴 때 사용.\n\n3-4) 검토요청\n로직이 표출된 건에 대해 검토 단계로 넘기기 위해 사용. 체크리스트 또는 검증완료 이후 실제 검토 진행을 위해 누르는 버튼.",
+    "source": "출처: 노션 개인페이지 - [매뉴얼] 체크리스트 에어테이블 필드값"
+  },
+  {
+    "id": "m14",
+    "title": "등기부등본 발급 매뉴얼",
+    "category": "업무프로세스",
+    "tags": [
+      "등기부등본",
+      "발급기준",
+      "보관매뉴얼",
+      "인터넷등기소"
+    ],
+    "snippet": "등기부등본 발급 계정·결제 방법, 발급이 필요한 판단 기준, 발급받은 등기부등본의 에어테이블 보관 절차.",
+    "body": "고객 주택 정보 확인에 필요한 등기부등본 발급 방법 안내. 발급 절차와 확인 포인트를 단계별로 정리.\n\n[발급 계정 정보]\n인터넷등기소(iros.go.kr) → 로그인 → [선불전자지급수단]으로 결제.\n충전 필요 시 HR 총무파트에 업무 요청.\n\n[등기부등본 발급 기준]\n기본적으로 '모르겠어요' 선택으로 인해 RISK 메시지가 표출되나, 등기부등본으로 충분히 해소할 수 있는 경우 발급.\n- 체크리스트 진행 시 추가보유주택의 취득년도를 모를 때 발급 (양도주택보다 이후에 취득했다고만 고객이 답변한 경우 — 내재화 로직상 한시적 1가구 2주택을 예상할 수 있는 경우)\n- 리스크 표출이 없더라도, 고객이 애매모호하게 답변하여 명확함이 없는 경우 발급\n- 체크리스트 진행 중 주택 취득 연도(상속 주택 최초 취득 등)를 모르는 경우\n  - 대략적으로 유추조차 못 하는 경우(양도주택 기준 전후조차 기억 못하는 경우)\n  - 대략 유추한 연도가 일시적 2주택 가능성이 있는 경우\n  - 상속 주택인 경우 (★★★★★ 특히 중요)\n※ 입주권, 분양권 등을 타인으로부터 권리만 양도받은 경우에는 발급 대상 아님.\n\n[등기부등본 보관 매뉴얼]\n발급받은 모든 등기부등본은 에어테이블 고객 서류에 업로드. 다른 고객 인터페이스에 업로드되지 않도록 주의할 것.\n업로드 절차: 에어테이블 고객 서류란에 파일을 끌어다 업로드(업로드 오류로 여러 차례 재시도가 필요할 수 있음) → 파일 미리보기가 정상적으로 뜨는지 확인(여러 건인 경우 점으로 건수 표시됨) → 업로드 후 '고객서류 동기화' 버튼 클릭 → '서류동기화_완료' 로그 표출 시 완료.\n※ 상세 화면 스크린샷은 노션 원본 페이지(에어테이블 내 업로드 방법) 참고.",
+    "source": "출처: 노션 개인페이지 - [매뉴얼] 등기부등본 발급 매뉴얼"
+  },
+  {
+    "id": "wm-20260721-1",
+    "title": "로직2 컨택 후 처리 프로세스 (마수동 null값 고객)",
+    "category": "업무프로세스",
+    "tags": [
+      "로직2",
+      "컨택프로세스",
+      "톡트리거",
+      "마수동",
+      "null값",
+      "10일룰"
+    ],
+    "snippet": "마수동 null(마케팅 수신 동의 미확인) 고객 로직2 컨택 시 톡트리거·문자 발송 금지, 3차 부재 시 폐기, 10일 룰 등 처리 기준.",
+    "body": "[대상]\n마수동 null값(마케팅 수신 동의 여부가 아직 확인되지 않은) 고객에 대한 로직2(2009~2012년 중과배제) 컨택. (X값 고객은 본인이 직접 동의를 거부한 것이므로 컨택 대상 제외)\n\n[처리 프로세스]\n- 톡트리거 발송 금지, 문자 발송 금지 (단, 마케팅 수신 동의 O인 경우에는 적극적으로 컨택 가능)\n- 재수집 시 로직2 해당 여부 외에 정기신고 신청자 여부도 백오피스에서 확인하고 인지한 뒤 진행\n- 단선 / \"안 해요\" 응답 → 바로 폐기 (알림톡 발송 금지)\n- 부재 → 3차 부재 시 담당자 스위치 → 재배정된 담당자도 3차 부재 시 폐기 (재배정은 순수 부재로만 3차인 DB만 대상)\n- \"생각해볼게요 / 논의해볼게요 / 알아볼게요\" 응답 → 추적 대상으로 전환, 5영업일 이후 재컨택, 신청 의사 없으면 폐기\n- 최초 담당자 배정 후 10일 이내에 결론 짓기 (10일 룰)\n- 컨택 스크립트: 인입 채널 언급 없이 해피콜 방식으로 접근 (예: \"고객님, 이번에 세금 환급 조회 해주셨는데, 양도세 예상환급액이 확인되는데 신청까진 안 하셨더라구요. 혹시 하시다가 불편한 부분 있으실까요?\")\n※ 현재 검수가 끝난 알림톡 템플릿은 시스템 자동 발송 중이며, 마케팅성 메시지로 간주하지 않음.",
+    "source": "출처: 2026-07-21 주간회의록 (Notion) — https://app.notion.com/p/3a42d1e13d1580379f7fcb10d5c16aeb",
+    "notionPageId": "3a42d1e1-3d15-8037-9f7f-cb10d5c16aeb",
+    "meetingDate": "2026-07-21"
+  },
+  {
+    "id": "wm-20260721-2",
+    "title": "간단 로직 검토 보류 정책",
+    "category": "업무프로세스",
+    "tags": [
+      "간단로직",
+      "검토보류",
+      "환급불가",
+      "안내정책"
+    ],
+    "snippet": "간단 로직은 현재 선일에서 검토하지 않으며, 고객이 검토 결과를 요청하면 '환급불가'로 안내.",
+    "body": "[정책]\n간단 로직은 현 시점 선일에서 검토하지 않고 있음.\n고객이 검토 결과를 요청하는 경우 '환급불가'로 안내할 것.",
+    "source": "출처: 2026-07-21 주간회의록 (Notion) — https://app.notion.com/p/3a42d1e13d1580379f7fcb10d5c16aeb",
+    "notionPageId": "3a42d1e1-3d15-8037-9f7f-cb10d5c16aeb",
+    "meetingDate": "2026-07-21"
+  },
+  {
+    "id": "edu1-1",
+    "title": "일시적2주택 날짜 입력 리스크 — 개요 및 연차별 처분기한",
+    "category": "환급심사",
+    "tags": [
+      "일시적2주택",
+      "계약일",
+      "취득일",
+      "전입일",
+      "처분기한",
+      "날짜입력"
+    ],
+    "snippet": "새 집 계약일·취득일·전입일이 비었거나 애매하면 계산기가 리스크 메시지를 띄움. 연차별 처분기한(1~3년)과 조정지역 요건 정리.",
+    "body": "[배경]\n일시적2주택 비과세는 종전주택을 정해진 기한(처분기한) 안에 팔아야 적용됨. 처분기한은 신규주택을 언제 계약·취득했는지, 조정대상지역 해당 여부로 결정됨. 그래서 신규주택의 계약일·취득일, 전입일이 판정의 핵심 입력값이며, 이 값이 비어있거나 애매하면 계산기가 리스크 메시지를 띄워 사람이 확인하도록 함.\n\n[연차별 처분기한] (종전주택 양도 시점 기준 — 세법 개정으로 시점별 상이)\n※ 계산기는 양도 시점에 맞는 기한을 자동 적용하므로, 리뷰 시에는 해당 케이스 양도연도의 기한을 통과했는지만 확인하면 됨.\n※ 예외: 신규주택 계약금 지급이 조정지역 지정 공고일(강화규정 시행일) 이전이면 더 완화된(대개 3년) 옛 기준이 적용될 수 있음 → 계약서로 계약일 확인.\n\n[현행 기준] 2023.1.12 이후 양도분은 조정 여부와 무관하게 처분기한 3년. 과거 연차(2020·2022 양도)만 1·2년 및 전입요건이 붙음.",
+    "table": {
+      "headers": [
+        "종전주택 양도 시점",
+        "처분기한 (종전·신규 둘 다 조정)",
+        "비조정",
+        "신규주택 전입요건"
+      ],
+      "rows": [
+        [
+          "2023.1.12 이후 (현행)",
+          "3년 (조정 무관)",
+          "3년",
+          "없음"
+        ],
+        [
+          "2022.5.10 ~ 2023.1.11",
+          "2년",
+          "3년",
+          "없음"
+        ],
+        [
+          "2020.2.11 ~ 2022.5.9",
+          "1년",
+          "3년",
+          "취득 1년내 전입"
+        ],
+        [
+          "~ 2020.2.10",
+          "2년",
+          "3년",
+          "없음"
+        ]
+      ]
+    },
+    "source": "출처: 교육자료_1_계약일_취득일_전입일.html (운영 교육자료, 2026-07-16)"
+  },
+  {
+    "id": "edu1-2",
+    "title": "일시적2주택 날짜 리스크 메시지 종류 및 공통 입력 규칙",
+    "category": "업무프로세스",
+    "tags": [
+      "리스크메시지",
+      "Y.check",
+      "AN열",
+      "AM열",
+      "CX열",
+      "입력규칙"
+    ],
+    "snippet": "계약일(AN)·취득일(AM)·전입일(CX) 등 리스크 메시지 6종과, 날짜는 반드시 작은따옴표+8자리로 입력해야 하는 공통 규칙.",
+    "body": "[리스크 메시지가 뜨는 상황 요약]\n① 정기신고분 취득일자 검토 필요 — 신고서상 취득일이 실제와 맞는지 → 신고서·계약서 대조\n② 양도 당시 보유주택 수 확인 필요 — 팔 때 몇 채 갖고 있었는지 → 보유 현황 확인\n③ AM열(보유주택 취득일) 정확히 입력 필요 — 신규주택 취득(잔금)일이 비었거나 덜 채워짐 → 취득(잔금)일 확인\n④ AN열(보유주택 계약일) 확인/입력 필요 — 신규주택 계약일이 비었거나 임시 판정됨 → 계약일 확인 (권장/반드시 2단계)\n⑤ CX열(신규주택 전입일) 입력/재확인 필요 — 신규주택 전입일이 비었거나 취득일보다 빠름 → 전입일 확인\n⑥ G·BH열(양도자산 지분·공동명의) 입력 필요 — 판 집이 공동명의인지·지분이 얼마인지 → 지분·공동명의 확인\n\n[④ 계약일은 2단계]\n- 권장: 계약일이 비었지만 같은 집의 다른 신고분에서 가져와 임시 판정(O)한 상태 → 실제 계약일 확인을 권장하는 수준.\n- 반드시: 계약일을 어디서도 못 찾아 일단 인정(최장 3년 기준)한 상태 → 접수 전 반드시 확인 필요.\n\n[★ 공통 입력 규칙 — 반드시 지킬 것]\n날짜는 반드시 작은따옴표(') + 8자리로 입력: Y.check에 날짜를 넣을 때는 맨 앞에 '(작은따옴표)를 붙여 'YYYYMMDD 형식으로 입력. 예) 2021년 12월 29일 → '20211229\n- 이유: ' 없이 20211229를 넣으면 계산기가 숫자로 인식해 날짜 로직이 깨짐. '를 붙이면 텍스트 8자리로 저장되어 정상 작동.\n- 연·월·일을 다 알면 8자리('20211229), 월까지만 알면 6자리('202112), 연도만 알면 4자리('2021) — 아는 만큼 정확히 입력.\n- 입력 위치: 해당 보유(추가)주택 행의 지정된 열(취득일=AM, 계약일=AN, 전입일=CX). 행은 어드민 뷰어에서 매칭.\n- 수정 방법: (a) 고객이 답변 링크로 재입력 (b) 실무자가 Y.check 셀 직접 입력. 어느 쪽이든 ' 규칙은 동일하게 적용.",
+    "source": "출처: 교육자료_1_계약일_취득일_전입일.html (운영 교육자료, 2026-07-16)"
+  },
+  {
+    "id": "edu1-3",
+    "title": "일시적2주택 날짜 리스크 — 고객지원파트 상황별 대응 절차",
+    "category": "업무프로세스",
+    "tags": [
+      "계약일",
+      "취득일",
+      "전입일",
+      "고객응대",
+      "공동명의",
+      "날짜확인"
+    ],
+    "snippet": "계약일(AN)·취득일(AM)·전입일(CX)·공동명의(G·BH) 확인 시 요청할 서류와 단계별 대응 절차.",
+    "body": "[④ 계약일 (AN열) — 핵심]\n1. 안내: 새로 취득한 주택의 매매계약서(분양이면 분양계약서)를 확인하려 한다고 안내\n2. 자료 요청: 계약서에서 계약일자(및 계약금 지급일)가 보이도록 사진 촬영해 전송 요청 (페이지 전체가 나오게)\n3. 확인: 사진의 계약 체결일 확인 (분양권이면 분양계약일)\n4. 입력: 해당 보유주택 행 AN열에 'YYYYMMDD 입력. 예 '20211229\n5. 확인: 결과·리스크 메시지가 정상으로 바뀌는지 확인\n※ 권장 vs 반드시: 권장은 이미 임시 판정이 O이니 계약서로 실제 계약일을 확인해 정확히 입력. 반드시는 계약일이 없어 일단 인정된 상태 → 계약서 확인이 안 되면 일시적2주택 적용 재검토 필요, 접수 전 필수.\n\n[③ 취득일 (AM열)]\n- 서류: 신규주택 매매계약서 잔금일 또는 등기부등본(등기접수일). (취득일 = 원칙적으로 잔금 지급일)\n- 사진 요청 → 잔금일/등기접수일 확인 → 보유주택 행 AM열에 'YYYYMMDD 입력.\n- 메시지가 월/일까지 요구하면 연·월·일 다, 일자만 요구하면 일까지 입력.\n\n[⑤ 전입일 (CX열)]\n- 서류: 주민등록초본(전입일자) 또는 전입세대열람.\n- 사진 요청 → 신규주택 전입신고일 확인 → 보유주택 행 CX열에 'YYYYMMDD 입력.\n- 전입일이 취득일보다 빠름 메시지 → 초본으로 전입일·취득일 재대조.\n\n[⑥ 공동명의·지분 (G·BH열) / ①② 검토]\n- ⑥ 판 집 등기부등본의 공유자·지분 확인 → 공동명의(BH)·지분율(G) 입력.\n- ①② 신고서 취득일자·양도 당시 보유주택 수를 신고서/계약서로 대조.",
+    "source": "출처: 교육자료_1_계약일_취득일_전입일.html (운영 교육자료, 2026-07-16)"
+  },
+  {
+    "id": "edu1-4",
+    "title": "일시적2주택 날짜 리스크 — 리뷰파트 접수 전 최종 검토 (참고)",
+    "category": "리뷰파트 참고",
+    "tags": [
+      "리뷰파트",
+      "접수전검토",
+      "계약일",
+      "처분기한"
+    ],
+    "snippet": "리뷰파트가 접수 전에 확인하는 7가지 항목 — 고객지원파트 업무 범위는 아니지만 협업을 위해 참고.",
+    "body": "[리뷰파트 접수 전 최종 검토 항목]\n1. 계약일 근거 — AN열 계약일이 고객 계약서 사진과 일치하는가. (반드시 확인 건은 계약서 없이 접수 금지)\n2. 취득·전입일 근거 — AM·CX가 등기부/초본과 일치하는가. ' 붙은 8자리 텍스트로 들어갔는가.\n3. 처분기한 충족 — 신규주택 취득 후 종전주택을 기한(1·2·3년) 내에 팔았는가. 조정지역이면 단축 기준.\n4. 조정지역·경과조치 — 신규주택 계약일이 조정지역 지정 공고일 이전이면 완화(3년) 대상인지.\n5. 전입요건 — 1년 특례 구간(2019.12.17~2022.5.9 취득)이면 신규주택에 1년 내 전입했는지 초본 확인.\n6. 지분·공동명의 — 공동명의면 지분에 맞게 환급액이 산정됐는가.\n7. 리스크 메시지 잔존 — 화면에 남은 리스크가 모두 해소(확인)됐는가.\n\n[한 줄 원칙] 이 갈래 리스크는 계산기가 넘긴 확인 요청임. 근거 서류로 값을 채우면 해소됨. 반드시 확인 건은 근거 없이 접수하지 않음.",
+    "source": "출처: 교육자료_1_계약일_취득일_전입일.html (운영 교육자료, 2026-07-16) — 리뷰파트 업무 범위, 참고용"
+  },
+  {
+    "id": "edu2-1",
+    "title": "보유기간 재기산 경고 — 개념과 발생 이유",
+    "category": "환급심사",
+    "tags": [
+      "보유기간재기산",
+      "최종1주택",
+      "경정청구",
+      "비과세취소"
+    ],
+    "snippet": "여러 채 중 1채만 남기고 다 판 뒤 남은 집을 팔면 보유기간을 다시 계산하는 제도. 계약일 리스크와 달리 비과세 자체가 취소될 수 있는 경고.",
+    "body": "[다른 리스크와의 차이]\n계약일·취득일 같은 리스크는 값을 채우면 해소되지만, 보유기간 재기산 경고는 비과세 자체가 취소될 수 있다는 신호임. 값을 채우는 문제가 아니라 사실을 확인해 판단하는 문제. 계산기 화면에 예상환급액이 그대로(O로) 보여도, 이 경고가 있으면 접수 전 반드시 사람이 판단해야 함. 그냥 넘기면 실제로는 환급이 안 되는 건을 접수하게 됨.\n\n[개념]\n여러 채 중 1채만 남기고 다 판 뒤 남은 집을 팔면, 그 남은 집의 보유기간을 다른 집을 다 판 날부터 다시 계산함 (2021.1.1~2022.5.9 양도분 적용). 다시 세면 2년이 안 돼 비과세가 안 될 수 있음. 원래 일시적2주택은 이 재기산에서 빼주지만, 다 판 뒤에 새 집을 사서 일시적2주택이 된 경우는 빼주지 않음. 즉 겉보기엔 일시적2주택이라도 실제로는 비과세 불가일 수 있음.\n\n[예시 타임라인 - 재기산 대상이 되는 전형]\n2021.12.20 다른 주택(A)을 과세로 판매 → 남은 집(B)이 최종 1주택이 됨\n2021.12.29 그 뒤에 새 집(C)을 취득 → 일시적2주택이 됨\n2022.02.14 남은 집(B)을 양도 → 경정청구 대상\n→ B의 보유기간이 2021.12.20부터로 다시 계산돼 약 2개월 → 2년 미달 → 비과세 불가. 그런데 고객이 최근 2년내 판 주택 없음이라 답하면 계산기는 이를 모르고 O를 냄.\n\n[경고가 뜨는 이유 - 자동 대조]\n계산기가 국세청 신고이력을 자동으로 대조함. 고객이 최근 2년내 판 주택 없음이라 답했지만 신고서에는 과세로 판 주택이 있으면 답변과 사실이 다르다며 경고를 띄움.\n\n[실제 메시지 예]\n[보유기간 재기산 확인] 체크리스트에는 최근 2년 내 양도한 다른 주택이 '없음'으로 되어 있으나, 국세청 신고서상 이 주택 양도 이전에 과세된 주택 양도가 확인됩니다(답변과 사실 불일치). '최종 1주택' 보유기간 재계산 대상이면 2년 보유요건 미달로 비과세가 불가할 수 있으니 반드시 재확인 요망.\n※ 고객 답변에 따라 강도가 다름 — 없음이라 답했으면 강(반드시 재확인), 모르겠어요·과세 아님이면 중(재확인). 어느 쪽이든 사실확인이 필요.",
+    "source": "출처: 교육자료_2_보유기간재기산.html (운영 교육자료, 2026-07-16)"
+  },
+  {
+    "id": "edu2-2",
+    "title": "보유기간 재기산 경고 — 고객지원파트 대응 절차",
+    "category": "업무프로세스",
+    "tags": [
+      "보유기간재기산",
+      "CK열",
+      "CL열",
+      "홈택스대조",
+      "고객응대"
+    ],
+    "snippet": "고객에게 재확인 질문, 홈택스 신고이력 대조, 재기산 대상 여부는 리뷰파트/회계사에 위임, CK·CL열 정정 절차.",
+    "body": "1. 안내: 이 집을 팔기 전 2년 안에, 다른 주택을 파신 적이 있는지 다시 여쭙기. (특히 세금을 낸(과세된) 양도인지)\n2. 대조: 홈택스 → 양도소득세 신고내역(또는 고객이 받은 신고서)으로 최근 2년 양도 이력 확인. 계산기가 이미 신고서상 과세 주택양도를 감지했으므로, 그 건이 무엇인지 특정.\n3. 판단 위임: 1채 빼고 다 판 뒤 새 집을 사서 일시적2주택이 된 구조면 재기산 대상 → 비과세 불가 가능. 단독 판단 금지 — 사실관계(양도일·과세여부·주택수 순서)를 정리해 리뷰파트/회계사에 위임.\n4. 입력: 확인 결과를 CK열(최근 2년내 양도: 네/아니요)·CL열(그게 과세였나: 과세/비과세)에 정정. 날짜가 아닌 선택값이라 ' 불요, 화면 선택지대로 입력.\n\n[★ 주의] 이 경고는 고객 답변만으로 지울 수 없음. 계산기가 신고이력을 자동 대조하므로, 실제 신고이력과 맞춰 정정해야 함. 판 적 없다는 말만 믿고 넘어가면 안 됨.",
+    "source": "출처: 교육자료_2_보유기간재기산.html (운영 교육자료, 2026-07-16)"
+  },
+  {
+    "id": "edu2-3",
+    "title": "보유기간 재기산 경고 — 리뷰파트 접수 전 최종 검토 (참고)",
+    "category": "리뷰파트 참고",
+    "tags": [
+      "리뷰파트",
+      "보유기간재기산",
+      "접수전검토"
+    ],
+    "snippet": "신고이력 대조, 재기산 구조 판단, 접수 보류/에스컬레이션 처리 — 리뷰파트 업무, 참고용.",
+    "body": "1. 신고이력 대조 — 경고가 있었다면 홈택스 양도소득세 신고내역으로 이 집 양도 전 2년 내 본인의 과세 주택양도가 있었는지 확인.\n2. 구조 판단 — 있으면 1채 빼고 다 판 뒤 새 집 취득 구조인지 따져 재기산 대상(비과세 불가) 여부 판단.\n3. 처리 — 재기산 대상이면 접수 보류/불가 처리. 애매하면 회계사 검토로 에스컬레이션.\n4. 기록 — CK·CL열 정정 여부 및 판단 근거를 남김.\n\n[한 줄 원칙] 재기산 경고는 환급이 안 될 수도 있다는 신호. 예상환급액이 O로 보여도, 신고이력 근거 없이 접수하지 않음.",
+    "source": "출처: 교육자료_2_보유기간재기산.html (운영 교육자료, 2026-07-16) — 리뷰파트 업무 범위, 참고용"
+  },
+  {
+    "id": "edu3-1",
+    "title": "부득이한 사유(수도권 밖 주택) 특례 — 개요 및 요건",
+    "category": "환급심사",
+    "tags": [
+      "부득이한사유",
+      "수도권밖",
+      "일시적2주택",
+      "취학",
+      "근무",
+      "요양",
+      "학교폭력"
+    ],
+    "snippet": "취학·근무·요양·학교폭력 등 부득이한 사유로 수도권 밖에 집을 사서 이사간 경우, 사유 해소일부터 3년 내 원래 집을 팔면 비과세.",
+    "body": "[근거] 소득세법 시행령 제155조 제8항. 혼인·동거봉양 합가와는 다름 — 합가가 아니라 어쩔 수 없는 사정으로 수도권 밖에 집을 하나 더 사서 이사가야 했던 경우.\n\n[정의] 집이 한 채인 가족이 취학(고교·대학 진학, 초·중학교 제외)·근무상 형편(전근 등)·질병 요양(1년 이상)·학교폭력 전학 중 하나의 사정으로 수도권(서울·인천·경기) 밖에 집을 하나 더 사서 온 가족이 이사가야 하는 경우, 원래 집(일반주택) + 지방 집 = 2주택이 됨. 이 경우 사정이 없어진 날(해소일)부터 3년 안에 원래 집(일반주택)을 팔면, 1주택처럼 보아 비과세.\n\n[파는 집(일반주택)은 지역 제한 없음] 수도권 밖이어야 하는 건 부득이하게 새로 취득한 다른 집뿐. 파는 집은 수도권이든 지방이든 상관없음. (법조문상 부득이-취득 주택에만 수도권 밖이 걸리고, 일반주택엔 소재지 제한 없음 — 시행령 §155⑧)\n\n[다른 시·군 요건 — 지방→지방 이사 시 주의] 새로 산 집이 기존 주택과 다른 시(市)·군(郡)에 있어야 부득이한 사유로 인정됨. 같은 시(市) 안에서의 이동은 인정받지 못함 (시행규칙 §71③·§72⑦).\n- 인정: 대전 → 부산 (다른 시로 이동)\n- 인정: 충남 천안 → 충남 서산 (같은 도 안이지만 다른 시)\n- 불인정: 부산 해운대구 → 부산 수영구 (같은 시 안에서의 구간 이동)\n- 예외적 인정(법령 명시): 같은 광역시 안이라도 구(區) ↔ 읍·면(군 지역) 이동은 다른 시·군으로 인정 (예: 부산 해운대구 → 부산 기장군). 시행규칙 §71③이 명시. (세종시·제주 행정시는 동↔읍·면 기준)\n\n[5가지 확인 조건]\n① 지방 집이 수도권 밖인가 (서울·인천·경기 밖)\n② 부득이한 사유로 그 집을 사서 이사갔나 (취학·근무·요양·학폭 — 투자용 아님)\n③ 원래 집과 다른 시·군으로, 세대전원이 이사가 살았나 (같은 시·군이면 불가, 실제 거주해야)\n④ 그 사정이 끝난 날부터 3년 안에 원래 집을 팔았나 (미해소면 기한 상관없이 대상)\n⑤ 파는 집이 원래 1주택 비과세 조건을 갖췄나 (2년 보유, 조정지역이면 2년 거주 등)\n※ ②③④는 체크리스트로 완전히 못 받음. 계산기는 관대하게 대상으로 띄워주되, 전화로 확인하고 증빙(재직·재학·요양 증명서 등)을 받아야 접수됨. 확인 없이 접수하면 세무서에서 부인·추징될 수 있음.\n\n[온 가족이 이사 원칙과 예외] 원칙은 세대 전원이 지방(수도권 밖) 집으로 이사가 사는 것. 단, 사정이 생긴 당사자(예: 전근난 본인)는 반드시 이사·거주해야 하지만, 나머지 가족 중 일부가 자기 사정(취학·근무·사업상 형편)으로 못 따라가면 그래도 세대전원이 이사한 것으로 인정됨 (시행규칙 §72⑨).\n\n[3년 기산 기준] 3년은 사정이 끝난 날(해소일)부터 셈. 아직 안 끝났으면 카운트다운이 시작조차 안 함.\n① 사정이 아직 진행 중(미해소) — 예: 전근 발령이 계속 중, 자녀가 아직 재학 중 → 3년 기한이 시작 안 됨 = 몇 년이 지나 팔아도 비과세 대상\n② 사정이 끝남(해소) — 예: 발령 끝나 복귀, 졸업, 요양 종료 → 끝난 날부터 3년 이내에 원래 집을 팔아야 비과세. 3년 넘기면 대상 아님.\n\n[해소일 확인 근거] 사유별 해소 시점을 콕 집어 정한 국세청 예규는 없음 — 아래는 실무 판단·증빙 기준(발생 증빙의 거울상). 애매하면 세무로직파트에 확인.",
+    "table": {
+      "headers": [
+        "부득이 사유",
+        "발생(취득 사유) 증빙",
+        "해소일(사정 종료) 확인 근거"
+      ],
+      "rows": [
+        [
+          "취학 (고교·대학)",
+          "재학증명서",
+          "졸업증명서 · 자퇴(제적)증명서상 일자"
+        ],
+        [
+          "근무상 형편 (전근·직장변경)",
+          "재직증명서",
+          "원소재지 복귀 발령서 · 퇴직증명서 · 전보발령서상 일자"
+        ],
+        [
+          "질병 요양 (1년↑)",
+          "요양증명서",
+          "치료종료 소견서 · 완치 진단서상 일자"
+        ],
+        [
+          "학교폭력 전학",
+          "전학 관련 확인서",
+          "원학교 복귀 · 대책위 전학필요 인정 종료 시점"
+        ]
+      ]
+    },
+    "source": "출처: 부득이수도권외_고객응대_교육자료.html (고객응대 교육자료, 대상: 고객지원파트·리뷰파트)"
+  },
+  {
+    "id": "edu3-2",
+    "title": "부득이한 사유(수도권 밖) — 고객 응대 스크립트 및 Y.check 매핑",
+    "category": "업무프로세스",
+    "tags": [
+      "부득이한사유",
+      "고객응대스크립트",
+      "Y.check",
+      "CY열",
+      "증빙서류"
+    ],
+    "snippet": "다른 집을 왜 어디에 사서 이사갔나를 출발 질문으로, 6개 확인 질문과 Y.check 셀 매핑, 컨택 후 기록 절차.",
+    "body": "[출발 질문] 파시는 집 말고 다른 집을, 왜·어디에 사서 이사가셨어요? → 수도권 밖 + 부득이 사유(전근·취학·요양·학폭)면 이 특례 트랙. 투자용/수도권 안/사유 없음이면 이 특례 아님(다른 특례·일반과세 검토).\n\n[확인 질문 6개]\n1. 다른 집이 어느 지역에 있어요? (서울·인천·경기 밖인가요?) — 부득이 취득 대상은 수도권 밖 주택. 수도권 밖(지방)→대상 / 서울·인천·경기→비대상.\n2. 그 집으로 왜 이사가셨어요? (전근·자녀 진학·요양·학교폭력 등) — 부득이 사유 4가지 중 하나여야 함. 가장 중요한 확인 항목. [risk] 부득이 사유 확인 안내 해소 [증빙] 재직·발령·재학·요양 증명서. 전근·취학·요양·학폭→대상 / 특별한 사유 없음→비대상 / 애매→구체 사정 확인+증빙.\n3. 그 지방 집으로 온 가족이 이사가서 실제로 사셨나요? 원래 집과 다른 시·군이죠? — 세대전원이 다른 시·군으로 주거 이전(거주)해야 함. [risk] 세대전원 이전 확인 안내 해소 [증빙] 주민등록등본(전입 이력). 세대전원 이사·거주→대상 / 당사자는 이사·일부 가족만 잔류(취학·근무·사업상)→완화 대상 / 당사자도 안 감·집만 삼→비대상.\n4. 그 사정이 지금은 끝났나요? (발령 복귀·졸업·요양 종료 등) 끝났다면 언제요? — 해소일부터 3년 안에 양도해야 비과세, 미해소면 기한 상관없이 대상. [risk] 해소일 3년 확인 안내 해소. 미해소→기한 무관 대상 / 끝났고 3년 내 양도→대상 / 끝난 지 3년 넘어 양도→비대상 / 애매→해소일·양도일 확인.\n5. 혹시 그 지방 이사가 공공기관(공기업)이 지방으로 옮겨서 따라간 거였나요? — 공공기관 지방이전으로 따라간 경우는 이 특례(§155⑧)가 아니라 다른 특례(§155⑯) 대상. [risk] 공공기관 이전 여부 확인 안내 해소. 일반 회사 전근→이 특례 / 공공기관 지방이전→§155⑯ 트랙으로 별도 검토.\n6. 파시려는 원래 집은 2년 이상 보유(조정지역이면 2년 거주)하셨죠? — 파는 집이 원래 1주택 비과세 기본 조건을 갖춰야 함. [risk] 거주기간 미입력 안내 해소. 보유·거주 충족→대상 / 미달→비대상 / 모름→보유·거주기간 확인.\n\n[질문 ↔ Y.check 셀 매핑] (행5=양도자산(파는 집), 행6=추가(보유·지방)주택)\n- 다른(지방) 집 지역(수도권 밖?) → 추가주택›주소 → T열(T6) → 예: 강원특별자치도… / 부산광역시…\n- 이사간 사유(부득이 사유) → 추가주택›이사간 사유 → CY열(CY6) → 교육/전근/요양치료/학교폭력/수도권밖이전/해당사유없음\n- 지방 집 거주 여부 → 추가주택›거주기간 → BD열(BD6) → 거주한적없음/1년이상2년미만…10년이상\n- 다른 집 소유자 → 추가주택›소유자 → U열(U6) → 본인\n- 다른 집 취득일 → 추가주택›취득일 → AM열(AM6) → yyyy/yyyymm/yyyymmdd\n- 양도 당시 주택 수 → 추가주택›주택 수 → S열(S6) → 1채\n- 파는 집 거주기간 → 양도자산›거주기간 → BC열(BC5) → 2년이상3년미만…\n※ 이사간 사유(CY열)는 추가주택 거주이력을 입력해야 뜨는 질문. 고객이 지방 집에 거주했다고 답해야 사유를 받을 수 있음. 사유가 해당사유없음이면 계산기가 대상에서 제외.\n\n[고객 컨택 후 확인·기록 절차 (고객지원파트)]\n고객 확인·증빙 요청은 고객지원파트가 담당. 전화로 위 질문으로 확인하고, 필요한 증빙을 요청·수취한 뒤 코멘트로 기록. 이 기록이 있어야 리뷰파트가 접수함. [risk] 태그·[증빙] 항목은 빠지면 안 됨.\n1. 대상 여부 — 부득이(수도권밖) 대상 확인 또는 비대상(사유)\n2. 사유·지역 — 어떤 부득이 사유로 / 어느 지방(시·군)에 집을 사서 / 언제 이사가 살았는지\n3. 해소 여부·시점 — 사정이 끝났는지(미해소면 미해소), 끝났으면 해소일 + 양도일이 3년 내인지\n4. 공공기관 여부 — 공공기관 지방이전 따라간 것인지(맞으면 §155⑯로 별도)\n5. 증빙 — 재직·발령·재학·요양 증명서, 주민등록등본(전입 이력) 수취 여부\n6. 통화 기록 — 고객이 말한 그대로 + 통화일\n※ 고객이 확신 못 하면 비대상으로 단정하지 말고 추가확인·증빙대기로 남기고 리뷰파트/세무로직파트에 공유. 잘못 접수하면 취하·추징 위험.",
+    "source": "출처: 부득이수도권외_고객응대_교육자료.html (고객응대 교육자료, 대상: 고객지원파트·리뷰파트)"
+  },
+  {
+    "id": "edu3-3",
+    "title": "부득이한 사유(수도권 밖) — 리뷰파트 접수 전 검토 (참고)",
+    "category": "리뷰파트 참고",
+    "tags": [
+      "리뷰파트",
+      "부득이한사유",
+      "증빙검토"
+    ],
+    "snippet": "증빙 구비, 해소일 3년 기한, 다른 시·군 거주, 공공기관 이전 배제 등 리뷰파트의 게이트 역할 — 참고용.",
+    "body": "리뷰파트는 고객과 직접 통화하지 않음. 접수 전에 ① 고객지원파트가 확인을 마쳤는지 ② 필요한 서류(증빙)가 갖춰졌는지를 검토하는 게이트 역할 (고객지원파트 코멘트 + 신고서 데이터 기준). 이 특례는 증빙 확인이 사실상 핵심.\n- 증빙 구비 검토 — 부득이 사유 증빙(재직/발령/재학/요양 증명서)과 세대전원 이전 증빙(주민등록등본)이 갖춰졌는지. 없으면 접수 보류 + 고객지원파트에 수취 요청. 코멘트만으로 접수 금지.\n- 고객지원 확인내용 점검 — 대상여부/사유·지역/해소여부·시점/공공기관여부/증빙/통화기록이 코멘트에 있는지 확인. 빠졌으면 고객지원파트에 재확인 요청.\n- 해소일(3년 기한) — 사유가 아직 안 끝났으면(미해소) 기한 무관 → 미해소 사실만 코멘트에 있으면 3년이 지났어도 대상(예규상 계속 적용). 사유가 끝났으면 해소일+양도일이 3년 내인지 확인.\n- 다른 시·군 + 거주 — 종전주택과 다른 시·군의 수도권 밖 주택에 세대전원이 실제 거주했는지(투자용은 부인 대상).\n- 공공기관 이전 배제 — 공공기관 지방이전 종사자면 §155⑧이 아니라 §155⑯ 요건으로 판단(법제처 회신).\n- 세무서 소명 근거 — 시행령 §155⑧(부득이) + 시행규칙 §71③(사유)·§72⑦⑧⑨(세대전원·증빙) + §154①(거주). 부득이 사유가 해소된 날부터 3년 이내 일반주택 양도 시 1세대1주택으로 보아 §154① 적용.",
+    "source": "출처: 부득이수도권외_고객응대_교육자료.html (고객응대 교육자료) — 리뷰파트 업무 범위, 참고용"
+  },
+  {
+    "id": "edu3-4",
+    "title": "부득이한 사유(수도권 밖) — 자주 헷갈리는 점",
+    "category": "환급심사",
+    "tags": [
+      "부득이한사유",
+      "주의사항",
+      "FAQ"
+    ],
+    "snippet": "파는 집은 지역 무관, 3년은 취득일이 아닌 해소일 기준, 미해소면 기한 무관, 같은 시 안 이동은 불인정 등 실무 유의사항.",
+    "body": "- 파는 집 = 일반주택(원래 집), 지역 제한 없음 — 비과세되는 건 지방 집이 아니라 일반주택(원래 집)임. 이 일반주택은 수도권이든 지방이든 무관(예: 대전 집 팔고 부득이 취득한 부산 집 보유 → 대전 집 비과세 가능). 수도권 밖 요건은 부득이 취득한 다른 집에만 걸림.\n- 3년은 취득일이 아니라 사유 해소일 기준 — 지방 집을 산 지 오래됐어도, 사정이 아직 안 끝났거나 끝난 지 3년 안이면 대상.\n- 미해소면 기한 무관 — 발령이 계속 중이면 몇 년이 지나도 대상(예규).\n- 거주(세대전원 이사)가 요건 — 지방에 집만 사두고 안 살았으면(투자) 대상 아님.\n- 다른 시·군이어야 — 같은 시 안 이동은 불인정 — 대전→부산·천안→서산은 O, 부산 해운대구→수영구(같은 부산시, 구↔구)는 불인정. 단 광역시 내 구↔읍·면(군) 이동은 인정(시행규칙 §71③ 명시).\n- 공공기관 지방이전 ≠ 이 특례 — 그건 §155⑯ 별개 트랙. 반드시 구분해 물어봐야 함.\n- 초·중학교 취학은 사유 아님 — 취학은 고교·대학만.",
+    "source": "출처: 부득이수도권외_고객응대_교육자료.html (고객응대 교육자료)"
+  },
+  {
+    "id": "edu4-1",
+    "title": "상생임대주택 특례 — 개요 및 5가지 조건",
+    "category": "환급심사",
+    "tags": [
+      "상생임대주택",
+      "거주요건면제",
+      "임대료5%",
+      "경정청구"
+    ],
+    "snippet": "임대료를 직전보다 5% 이내로만 올려 세 놓은 경우, 거주 2년을 안 채워도 채운 것으로 인정해 비과세. 계약서로만 확인 가능한 5가지 조건.",
+    "body": "[근거] 소득세법 시행령 제155조의3. ★ 이 특례는 판정이 아니라 발굴 — 계산기가 대상 여부를 정하는 게 아니라, 임대차계약서를 봐야만 알 수 있는 정보(임대료 5% 이내 인상 여부, 임대기간, 계약일)이기 때문에 계산기는 계약서 확인해볼 만한 후보만 골라줌. 진짜 확정은 전화로 묻고 계약서를 받아서 함.\n\n[정의] 조정대상지역 1세대1주택 비과세는 원칙적으로 거주 2년 요건이 있으나, 사정상 실거주 못 하고 세를 놓은 경우라도 세입자에게 임대료(보증금·월세)를 직전 계약 대비 5% 이내로만 올려 착하게 빌려줬다면, 실제로 2년 안 살았어도 산 걸로 쳐서 비과세 인정. 이미 세금을 냈다면 경정청구로 돌려받을 수 있음.\n\n[5가지 진짜 조건 — 전부 계약서로만 확인됨]\n① 임대료를 5% 이내만 올렸나 — 직전 계약 대비 보증금·월세 증가율 5% 이하 (보증금↔월세 바꿨으면 환산) → 계약서(직전·상생 두 장 비교)\n② 직전에 1년 반(1년 6개월) 넘게 빌려줬나 — 직전 임대차계약 임대기간 1년 6개월 이상 → 계약서·실제 임대기간\n③ 착한 계약으로 2년 넘게 빌려줬나 — 상생 임대차계약 임대기간 2년 이상 → 계약서·실제 임대기간\n④ 그 착한 계약을 정해진 기간에 맺었나 — 상생계약 체결일이 2021.12.20~2026.12.31 → 계약서 체결일 + 계약금 증빙\n⑤ 집 산 뒤 직접 계약했나 (갭투자 아님) — 취득 시 세입자 승계받은 계약은 직전계약 불인정, 산 뒤 본인이 새로 맺어야 → 계약서·취득 경위\n※ ①~⑤ 다섯 가지는 전부 계약서에만 있어 계산기·스크래핑·체크리스트로는 확인 불가. 계산기는 이 사람은 임대했을 가능성이 있으니 계약서 확인해볼 후보라고 골라주는 역할만 함.",
+    "source": "출처: 상생임대_고객응대_교육자료.html (고객응대·발굴 교육자료, 대상: 고객지원파트·리뷰파트)"
+  },
+  {
+    "id": "edu4-2",
+    "title": "상생임대주택 — 계산기 발굴 로직 및 컨택 우선순위(Tier)",
+    "category": "업무프로세스",
+    "tags": [
+      "상생임대주택",
+      "발굴",
+      "Tier",
+      "임대소득신고",
+      "우선순위"
+    ],
+    "snippet": "계산기가 물리적으로 불가능한 사람은 걸러내고, 남은 후보는 임대 확실성에 따라 1~3순위(Tier)로 나눠 컨택. 임대소득 신고 없어도 버리면 안 되는 함정 주의.",
+    "body": "[계산기가 먼저 거르는 조건 — 물리적으로 불가능한 사람 제외]\n- 양도일이 2023.12.20 이후 — 착한 계약을 아무리 빨리(2021.12.20) 맺고 2년 빌려줘도 양도는 2023.12.20 이후일 수밖에 없음\n- 집 산 날부터 판 날까지 40개월 이상 — 직전 1.5년+상생 2년을 채우려면 물리적으로 최소 40개월 필요(월 단위 올림 반영). 이보다 짧으면 불가능\n- 양도 시점 1세대 1주택 — 상생임대 비과세는 최종적으로 1주택이어야 적용\n- 거주 2년 미충족 — 2년 살았으면 이미 비과세라 이 특례가 필요 없음\n\n[컨택 우선순위 Tier]\n1순위 — 주택임대소득을 신고한 사람(스크래핑 z5010에 임대소득이 잡힘). 실제로 세를 놓고 소득까지 신고 = 임대한 게 가장 확실, 전환율 최고 → 먼저 컨택.\n2순위 — 임대사업자로 등록한 집이라고 체크리스트에 답한 사람. 임대 정황은 있으나, 등록 때 세입자 승계한 경우가 많아 직전계약에서 걸릴 수 있음 → 다음 컨택.\n3순위 — 임대 신호가 안 잡히는 사람(물리요건은 통과). 신호는 없지만 버리면 안 됨 → 여력 시 컨택(큐에 유지).\n\n[⚠ 절대 함정] 주택임대소득 신고(z5010)가 없으면 임대 안 한 사람이라고 잘라내면 안 됨. 국세청 규정상 상생임대의 핵심 타깃이 오히려 임대소득 신고를 안 하는 사람들이기 때문:\n- 1주택자(기준시가 12억 이하)가 세 놓은 경우 → 임대소득이 아예 비과세 → 신고 안 함 → z5010에 안 뜸. 그런데 이 사람이 바로 전형적인 상생임대 대상.\n- 전세(보증금만)로 놓은 2주택자 → 간주임대료 과세가 3주택부터라 신고 안 함 → z5010에 안 뜸.\n- 임대하면 임대사업자로 등록했겠지도 틀림 — 등록은 주로 다주택 절세용이고, 1주택 실거주자가 잠깐 세 놓는 건 등록 안 함.\n→ 임대 신호(z5010·임대사업자)는 우선순위를 올리는 가점이지, 없으면 탈락시키는 기준이 아님. 신호 없어도 물리요건(40개월·1주택·거주부족) 통과자는 3순위 큐에 남겨 여력 될 때 발굴 (잘라내면 매출 놓침).",
+    "source": "출처: 상생임대_고객응대_교육자료.html (고객응대·발굴 교육자료)"
+  },
+  {
+    "id": "edu4-3",
+    "title": "상생임대주택 — 전화 3문 스크립트",
+    "category": "업무프로세스",
+    "tags": [
+      "상생임대주택",
+      "전화스크립트",
+      "고객응대"
+    ],
+    "snippet": "계약서를 무작정 다 받지 말고, 전화로 세놓은 적/5% 인상 여부/직전계약 여부 3가지만 먼저 물어 통과한 사람에게만 계약서 요청.",
+    "body": "계약서를 무작정 다 받으면 수취·검토 부하가 큼. 전화로 딱 3가지만 먼저 물어, 3문 다 통과한 사람에게만 계약서를 요청. 하나라도 명백히 아니면 계약서 없이 종료.\n\n1. 파신 그 집, 예전에 세 놓으신 적 있으시죠? → 임대 사실 확인. 아니요, 계속 비워뒀어요/직접 살았어요 → 상생임대 아님(종료).\n2. 세입자와 재계약하거나 갱신할 때, 보증금이나 월세를 직전보다 5% 넘게 올리신 적 있나요? → 5% 요건. 5% 넘게 올렸다 → 명백히 불인정(종료). 안 올렸다/조금만 → 통과.\n3. 그 집 사신 뒤에 직접 세 계약을 하셨나요? (사면서 세입자를 떠안은 게 아니라요) 그 계약이 1년 반은 갔나요? → 직전계약·갭투자 확인. 살 때 세입자 있어서 그대로 이어받았다 → 직전계약 불인정 위험(주의). 사고 나서 내가 새로 놨다 → 통과.\n\n3문 다 통과 → 정확한 확인을 위해 그때 계약서(예전 것 + 최근 것) 두 장만 보내주시겠어요? 로 계약서 요청.\n\n[주의] 전화 3문은 1차 거르기일 뿐, 확정이 아님. 고객이 헷갈려 하거나 애매하면 비대상으로 단정하지 말고 계약서 확인 필요로 남길 것. 특히 5%·기간은 고객 기억보다 계약서가 정확.",
+    "source": "출처: 상생임대_고객응대_교육자료.html (고객응대·발굴 교육자료)"
+  },
+  {
+    "id": "edu4-4",
+    "title": "상생임대주택 — 리뷰파트 접수 전 검토 및 경계 예시 (참고)",
+    "category": "리뷰파트 참고",
+    "tags": [
+      "리뷰파트",
+      "상생임대주택",
+      "경정청구",
+      "계약서검토"
+    ],
+    "snippet": "계약서로 5요건(5%인상·직전1.5년·상생2년·체결일범위·갭투자여부)을 확정하는 리뷰파트 게이트 업무와 하루·개월 차이 경계 예시 — 참고용.",
+    "body": "리뷰파트는 고객과 직접 통화하지 않음. 고객지원파트가 받아온 계약서(직전·상생)와 코멘트를 보고, 아래 5가지를 확정하는 게이트 역할.\n1. 5% 이내 인상 — 직전 계약 대비 보증금·월세 증가율 5% 이하. (보증금↔월세 전환 시 환산해서 계산.) 직전 계약기간 중 임대료가 바뀌었으면 바뀐 뒤 금액 기준.\n2. 직전 임대기간 1년 6개월 이상 — 계약이 1년짜리여도 다른 계약과 합쳐 1.5년 이상이면 인정(예규).\n3. 상생 임대기간 2년 이상 — 2년 채우기 전에 팔았으면 불인정. (세입자가 사정상 일찍 나가 새 계약으로 이어졌으면 기간 합산 — 계약서 확인.)\n4. 체결일 2021.12.20~2026.12.31 — 상생계약 체결일이 이 안이어야. 계약금 지급 증빙도 확인.\n5. 취득 후 본인 체결(갭투자 아님) — 살 때 세입자 승계받은 계약은 직전계약 불인정.\n※ 관대하게 인정되는 것(예규): 직전·상생 세입자가 달라도 OK / 두 계약 사이 공실·본인 거주 있어도 OK / 다가구·다세대는 호별로 각각 판정 / 계약기간이 아니라 실제 임대기간 기준.\n\n[경계 예시]\n① 체결일 하루 차이 = 불인정 — 상생계약 체결일이 2021.12.20부터여야 함. 2021.12.19에 맺었으면 하루 앞서서 불인정. (직전 계약이 언제 끝났는지는 상관없고, 오직 상생계약 체결일이 2021.12.20~2026.12.31 안인지가 기준.) 예: 체결 2021.12.19 → 불인정 / 12.20 → 인정\n② 상생 2년 미충족 = 불인정 — 1년 6개월만 빌려주고 팔았으면 불인정. (세입자가 일찍 나가 새 계약으로 이어졌으면 기간 합산.) 계산기의 양도 2023.12.20 이후·40개월 이상 필터가 대부분 걸러주지만, 계약을 늦게 맺은 경우의 2년 미충족은 리뷰파트가 계약서로 확정.\n③ 5% 초과·직전 1.5년 미달·갭투자 승계 = 불인정 — 계약서로 확인.\n\n[경정청구 성립 — 출시 전 세무 확인 필요, 지금은 가능 여부 검토로만 안내] 당초 신고 때 계약서·특례적용신고서를 안 냈어도, 나중에 경정청구하면서 첨부해 환급받을 수 있을 것으로 보이나(제출요건이 절차의무이고 국세기본법 경정청구권이 우선), 이 아이템은 성립 자체가 여기 걸려 있어 관련 예규·판례나 외부 세무사 검토를 출시 전 최소 하나 확보해야 함. 그 전까지 고객·운영 안내는 충족·성립 표현을 쓰지 말고 계약서·특례적용신고서 첨부로 경정청구 가능 여부 검토 수준으로만 할 것.",
+    "source": "출처: 상생임대_고객응대_교육자료.html (고객응대·발굴 교육자료) — 리뷰파트 업무 범위, 참고용"
+  },
+  {
+    "id": "edu4-5",
+    "title": "상생임대주택 — 자주 헷갈리는 점",
+    "category": "환급심사",
+    "tags": [
+      "상생임대주택",
+      "주의사항",
+      "FAQ"
+    ],
+    "snippet": "계산기 대상 표시는 확정이 아니고, 임대소득 신고나 임대사업자 등록이 없어도 대상일 수 있음 등 실무 유의사항.",
+    "body": "- 계산기 대상 표시 = 확정 아님 — 계약서 확인 후보라는 뜻. 계약서 없이 접수 금지.\n- 임대소득 신고 없어도 대상일 수 있음 — 1주택·전세 임대인은 원래 신고 안 함. 신호 없다고 버리지 말 것.\n- 임대사업자 등록은 요건이 아님 — 등록 안 한 임대인도 상생임대 대상. 등록 안 했으니 아님은 틀림.\n- 거주 2년 채운 사람은 대상 아님 — 이미 비과세라 이 특례가 필요 없음.\n- 취득 시 세입자 승계(갭투자) = 직전계약 불인정 — 산 뒤 본인이 새로 놓은 계약이어야.\n- 임대개시 때 다주택이어도 됨 — 단 양도 시점엔 1주택이어야(나머지 다 판 상태).\n- 경정청구는 가능 여부 검토로만 안내 — 성립 근거 확정 전까지 충족·성립 표현 금지.",
+    "source": "출처: 상생임대_고객응대_교육자료.html (고객응대·발굴 교육자료)"
+  },
+  {
+    "id": "m15",
+    "title": "다주택자 양도소득세 중과세 및 한시적 중과배제 (2022.5.10~2026.5.9)",
+    "category": "세액계산",
+    "tags": [
+      "중과세",
+      "중과배제",
+      "다주택자",
+      "조정대상지역",
+      "장기보유특별공제",
+      "2026유예종료"
+    ],
+    "snippet": "다주택자가 조정대상지역 내 주택 양도 시 적용되는 중과세 제도와, 2022.5.10~2026.5.9 한시적으로 적용됐던 중과배제(유예) 및 종료 후 보완방안 정리.",
+    "body": "[중과세란]\n다주택자가 조정대상지역 내 주택을 양도할 때, 기본세율(6~45%)에 추가세율을 더해 더 높은 세율로 과세하는 제도.\n\n[중과 적용 요건]\n- 양도 주택을 포함해 2주택 이상 보유(양도 주택 제외 1채 이상)한 상태에서 양도\n- 양도하는 주택이 조정대상지역에 소재 (양도 시점 기준으로 판단)\n- 추가 보유주택이 임대주택, 지방저가주택 등 법령상 제외 요건에 해당하면 주택 수 산정에서 제외되어 중과 대상에서 빠질 수 있음\n\n[중과세율 및 효과]\n- 2주택자(양도 주택 제외 1채): 기본세율 + 20%p\n- 3주택 이상(양도 주택 제외 2채 이상): 기본세율 + 30%p\n- 중과 대상 주택은 장기보유특별공제 적용도 배제됨\n\n[2022년 한시적 중과배제(유예) - 2022.5.10~2026.5.9]\n1세대 2주택 이상 보유자가 보유기간 2년 이상인 조정대상지역 내 주택을 이 기간 중 양도하는 경우, 중과세율 대신 기본세율(6~45%)을 적용하고 장기보유특별공제도 함께 받을 수 있었음. 부동산 거래 정상화를 위한 한시적 조치로 도입되어 여러 차례 연장되어 왔음.\n\n[⚠ 2026.5.9. 유예 종료 - 실무 필수 확인 사항]\n위 한시적 유예는 2026.5.9. 양도분까지만 적용되고 종료됨. 즉 2026.5.10. 이후 양도분부터는 조정대상지역 내 다주택자 양도 시 원칙적으로 중과세가 다시 적용됨. 담당자는 양도일이 2026.5.10. 이후인 다주택 건은 조정대상지역 해당 여부와 보유 주택 수를 반드시 재확인해야 함.\n\n[유예 종료에 따른 보완방안 - 2026년 2월 시행령 개정(입법예고 기준)]\n- 계약일 기준 특례: 기존에는 5.9.까지 잔금 지급까지 완료해야 유예가 인정됐으나, 개정 후에는 5.9.까지 매매계약만 체결하면 유예 적용. 특히 2025.10.15. 기준 조정대상지역인 서울 강남구·서초구·송파구·용산구 소재 주택은 5.9. 이전 매매계약을 체결하고 계약일로부터 4개월 이내 양도하면 중과 배제.\n- 세입자가 있는 주택: 매수 주택에 기존 세입자가 있는 경우, 일정 기한 내 입주해야 하는 기존 요건과 무관하게 세입자와의 임대차계약이 끝날 때까지는 입주하지 않아도 특례 유지.\n- 전세대출 회수 유예: 매수 주택에 세입자가 거주 중인 경우, 해당 임대차계약의 잔여기간까지는 전세대출이 회수되지 않음.\n※ 위 보완방안은 2026년 2월 입법예고된 내용을 기준으로 하며, 최종 개정·시행 여부와 세부 요건은 소득세법 시행령·부동산거래신고법 시행령 확정본으로 반드시 재확인할 것.\n\n[실무 유의사항]\n- 체크리스트·검토 시 양도일이 2026.5.10. 이후인 다주택 건은 조정대상지역 여부·보유 주택 수·(해당 시) 계약체결일을 함께 확인.\n- 유예 기간(2022.5.10~2026.5.9) 내 양도 건은 기존과 동일하게 기본세율 검토.\n- 이 항목은 세법 개정·유권해석에 따라 계속 바뀔 수 있는 영역이므로, 실제 적용 전 최신 시행령·국세청 안내를 교차 확인할 것.",
+    "source": "출처: 노션 '내재화로직' 페이지(용어정리-중과세) + 대한민국 정책브리핑 등 공개자료(다주택자 양도소득세 중과 유예 종료 및 보완방안, 2026년) — https://www.korea.kr/news/policyNewsView.do?newsId=148963387 , https://www.korea.kr/news/policyNewsView.do?newsId=148959488"
+  },
+  {
+    "id": "m16",
+    "title": "과세표준 계산구조 및 연도별 양도소득세율 변천",
+    "category": "세액계산",
+    "tags": [
+      "과세표준",
+      "세율",
+      "연도별세율",
+      "장기보유특별공제",
+      "기본공제"
+    ],
+    "snippet": "양도차익→양도소득금액→과세표준으로 이어지는 계산구조와, ~2020년부터 2025년까지 과세표준 구간·세율이 바뀌어온 흐름 정리.",
+    "body": "[과세표준 계산구조]\n용어: 양도차익 → 의미: 양도가액 - 취득가액 - 필요경비\n용어: 양도소득금액 → 의미: 양도차익에서 장기보유특별공제를 차감한 금액\n용어: 과세표준 → 의미: 양도소득금액에서 기본공제(연 250만원)를 차감한 금액\n\n계산 순서: 과세대상 양도차익 - 장기보유특별공제(해당 시) = 양도소득금액 → 양도소득금액 - 기본공제(연 250만원) = 과세표준\n※ 장기보유특별공제는 최소 2년 이상 보유 시 보유기간·거주기간에 따라 최대 80%까지 공제(조정대상지역은 거주 2년 필수). 기본공제는 토지·건물·주택 등 양도세 과세대상 재산 전체 기준 연 250만원 한도이며, 같은 연도에 여러 재산을 양도해도 중복 적용되지 않음.",
+    "table": {
+      "headers": [
+        "시점",
+        "과세표준 구간",
+        "세율 및 특징",
+        "비고"
+      ],
+      "rows": [
+        [
+          "~2020년",
+          "약 1,200만~8,800만원 이상 (4단계)",
+          "6~45% 누진세율, 누진공제액 상대적으로 적음",
+          "기본구간 단순 구조"
+        ],
+        [
+          "2021년",
+          "구간 세분화",
+          "고가주택·단기보유에 높은 단일세율 도입",
+          "중과세율 최대 75%"
+        ],
+        [
+          "2023년",
+          "1,200만~5억원 이상",
+          "누진공제액 범위 확대, 최고세율 42%",
+          "다주택자 중과 적용"
+        ],
+        [
+          "2024년",
+          "1,400만~10억원 이상",
+          "누진공제액 확대, 최고세율 52%",
+          "중과세 한시적 배제(유예) 동시 적용"
+        ],
+        [
+          "2025년",
+          "1,400만~10억원 이상",
+          "세율 세분화, 누진공제액 최적화, 최고 45% 이상",
+          "최신 법령 반영"
+        ]
+      ]
+    },
+    "source": "출처: 노션 '내재화로직' 페이지(용어정리-과세표준)"
+  }
+]
+</script>
+<script type="application/json" id="data-glossary">
+[
+  {
+    "id": "g1",
+    "term": "양도소득세",
+    "category": "기본개념",
+    "tags": [
+      "양도세",
+      "세금정의"
+    ],
+    "def": "개인이 토지, 건물 등 부동산이나 주식 등과 파생상품의 양도 또는 분양권과 같은 부동산에 관한 권리를 양도함으로 인하여 발생하는 이익(소득)을 과세대상으로 하여 부과하는 세금.",
+    "source": "출처: 양도세 기본이론 PPT 3p / 16강 환급이론 PPT 4p"
+  },
+  {
+    "id": "g2",
+    "term": "과세대상 1그룹 (부동산)",
+    "category": "과세대상",
+    "tags": [
+      "과세대상",
+      "부동산",
+      "토지",
+      "건물",
+      "영업권",
+      "이축권"
+    ],
+    "def": "부동산(토지, 건물 - 무허가·미등기 건물도 포함), 부동산에 관한 권리(취득할 수 있는 권리, 지상권, 전세권, 등기된 부동산 임차권), 기타자산(사업용 고정자산과 함께 양도하는 영업권, 특정시설물 이용권·회원권, 특정주식, 부동산 과다보유 법인주식, 이축권 등).",
+    "source": "출처: 양도세 기본이론 PPT 4p"
+  },
+  {
+    "id": "g3",
+    "term": "과세대상 2그룹 (주식 등)",
+    "category": "과세대상",
+    "tags": [
+      "과세대상",
+      "주식",
+      "대주주",
+      "비상장주식"
+    ],
+    "def": "대주주가 양도하거나 소액주주가 증권시장 밖에서 양도하는 상장주식 및 비상장주식 등. 주식등은 주식 또는 출자지분, 신주인수권, 증권예약증권을 포함.",
+    "source": "출처: 양도세 기본이론 PPT 4p"
+  },
+  {
+    "id": "g4",
+    "term": "과세대상 3그룹 (파생상품)",
+    "category": "과세대상",
+    "tags": [
+      "과세대상",
+      "파생상품",
+      "CFD",
+      "ELW"
+    ],
+    "def": "국내·외 주가지수를 기초자산으로 하는 파생상품, 차액결제거래파생상품(CFD), 주식워런증권(ELW), 국외 장내파생상품, 경제적 실질이 주가지수를 기초자산으로 하는 장내파생상품과 동일한 장외파생상품.",
+    "source": "출처: 양도세 기본이론 PPT 4p"
+  },
+  {
+    "id": "g5",
+    "term": "과세대상 4그룹 (신탁수익권)",
+    "category": "과세대상",
+    "tags": [
+      "과세대상",
+      "신탁수익권"
+    ],
+    "def": "신탁의 이익을 받을 권리(「자본시장과 금융투자업에 관한 법률」 제110조에 따른 수익증권 및 같은 법 제189조에 따른 투자신탁의 수익권 등 대통령령으로 정하는 수익권은 제외)의 양도로 발생하는 소득.",
+    "source": "출처: 양도세 기본이론 PPT 4p"
+  },
+  {
+    "id": "g6",
+    "term": "비과세 (1세대 1주택)",
+    "category": "비과세·감면",
+    "tags": [
+      "비과세",
+      "1세대1주택",
+      "고가주택",
+      "조정대상지역",
+      "거주기간"
+    ],
+    "def": "1세대가 양도일 현재 국내에 1주택을 보유하고 2년 이상 보유한 경우 양도소득세 비과세. 양도 당시 실지거래가액 12억원 초과 고가주택은 제외. '17.8.3. 이후 취득 당시 조정대상지역에 있는 주택은 거주기간 2년 이상 요건이 추가됨. 주택에 딸린 토지는 도시지역 내 정착면적의 5배(수도권 주거·상업·공업지역은 3배)까지, 도시지역 밖은 10배까지 비과세 범위로 인정.\n\n[고가주택 안분계산 - 12억원 초과분 과세] 요건을 충족해도 양도가액이 12억원을 초과하면 12억원 초과분에 대해서만 과세됨('21.12. 이전 양도분은 9억원 기준). 비과세 양도차익 = 양도차익 × (12억원 ÷ 양도가액), 과세대상 양도차익 = 양도차익 - 비과세 양도차익. 예) 양도가액 14억원·취득가액 9억원·필요경비 2천만원(양도차익 4억 8천만원)인 경우, 비과세 양도차익 ≈ 4억 1,140만 8천원, 과세대상 양도차익 ≈ 6,859만 2천원만 과세됨(이후 장기보유특별공제·기본공제 추가 차감).",
+    "source": "출처: 양도세 기본이론 PPT 6p / 노션 '내재화로직' 페이지(비과세 정의·계산방법)"
+  },
+  {
+    "id": "g7",
+    "term": "감면",
+    "category": "비과세·감면",
+    "tags": [
+      "감면",
+      "장기임대주택",
+      "신축주택",
+      "자경농지"
+    ],
+    "def": "장기임대주택, 신축주택 취득, 공공사업용 토지, 8년 이상 자경농지 등의 경우 감면요건을 충족하면 양도소득세 감면.",
+    "source": "출처: 양도세 기본이론 PPT 6p"
+  },
+  {
+    "id": "g8",
+    "term": "예정신고",
+    "category": "신고납부",
+    "tags": [
+      "예정신고",
+      "신고기한",
+      "가산세"
+    ],
+    "def": "부동산 양도 시 양도일이 속하는 달의 말일부터 2개월 이내 신고·납부. 주식은 양도일이 속하는 반기의 말일부터 2개월 이내(반기별 합산신고). 파생상품은 예정신고 없이 다음해 5월 확정신고만 이행. 미이행 시 무신고가산세(납부세액의 20%)와 납부지연가산세(1일 0.022%, 시기별 상이) 부과.",
+    "source": "출처: 양도세 기본이론 PPT 6~7p"
+  },
+  {
+    "id": "g9",
+    "term": "확정신고",
+    "category": "신고납부",
+    "tags": [
+      "확정신고",
+      "신고기한"
+    ],
+    "def": "당해연도에 부동산 등을 여러 건 양도한 경우 다음해 5월 1일부터 5월 31일 사이에 관할세무서에 신고. 1건의 양도소득만 있고 예정신고를 마친 경우 확정신고 불필요(단, 주식등은 예외 조건 있음).",
+    "source": "출처: 양도세 기본이론 PPT 7p"
+  },
+  {
+    "id": "g10",
+    "term": "부담부증여 예정신고기한",
+    "category": "신고납부",
+    "tags": [
+      "부담부증여",
+      "예정신고",
+      "신고기한"
+    ],
+    "def": "부담부증여 시 예정신고 기한은 증여일이 속하는 달의 말일부터 3개월.",
+    "source": "출처: 양도세 기본이론 PPT 9p"
+  },
+  {
+    "id": "g11",
+    "term": "실지양도가액",
+    "category": "세액계산",
+    "tags": [
+      "실지양도가액",
+      "세액계산"
+    ],
+    "def": "양도자와 양수자간에 실제로 거래한 가액.",
+    "source": "출처: 양도세 기본이론 PPT 10p"
+  },
+  {
+    "id": "g12",
+    "term": "실지취득가액",
+    "category": "세액계산",
+    "tags": [
+      "실지취득가액",
+      "세액계산",
+      "취득가액"
+    ],
+    "def": "양도자산의 취득에 소요된 실지거래가액. 타인으로부터 매입한 자산은 매입가액에 취득세·등록세 등 부대비용을 가산한 금액, 자기가 제조·생산·건설한 자산은 원재료비·노무비·운임·하역비·보험료·수수료·공과금(취득세·등록세 포함)·설치비 등 부대비용의 합계액.",
+    "source": "출처: 양도세 기본이론 PPT 10p"
+  },
+  {
+    "id": "g13",
+    "term": "필요경비 (기타 필요경비)",
+    "category": "세액계산",
+    "tags": [
+      "필요경비",
+      "자본적지출액",
+      "양도비"
+    ],
+    "def": "자본적지출액, 양도비 등 실제 증빙에 의해 계산한 가액의 합계액. 취득자금으로 활용된 은행대출이자 등은 필요경비에 해당하지 않음.",
+    "source": "출처: 양도세 기본이론 PPT 10~11p"
+  },
+  {
+    "id": "g14",
+    "term": "자본적 지출액",
+    "category": "세액계산",
+    "tags": [
+      "자본적지출액",
+      "필요경비"
+    ],
+    "def": "사업자가 소유하는 감가상각자산의 내용연수를 연장시키거나 당해 자산의 가치를 현실적으로 증가시키기 위하여 지출한 수선비. 용도변경 개조, 엘리베이터·냉난방장치 설치, 피난시설 설치, 재해복구, 개량·확장·증설 등이 포함됨.",
+    "source": "출처: 양도세 기본이론 PPT 10p"
+  },
+  {
+    "id": "g15",
+    "term": "장기보유특별공제",
+    "category": "세액계산",
+    "tags": [
+      "장기보유특별공제",
+      "세액계산"
+    ],
+    "def": "양도차익에서 보유기간별 공제율을 적용하여 공제하는 항목. 양도소득금액 = 양도차익 - 장기보유특별공제.",
+    "source": "출처: 양도세 기본이론 PPT 11p"
+  },
+  {
+    "id": "g16",
+    "term": "양도소득기본공제",
+    "category": "세액계산",
+    "tags": [
+      "기본공제",
+      "미등기양도자산",
+      "세액계산"
+    ],
+    "def": "연간 250만원. 미등기 양도자산은 기본공제 적용이 배제됨.",
+    "source": "출처: 양도세 기본이론 PPT 11~12p"
+  },
+  {
+    "id": "g17",
+    "term": "미등기 양도자산",
+    "category": "세액계산",
+    "tags": [
+      "미등기양도자산",
+      "기본공제"
+    ],
+    "def": "소유권 이전등기를 하지 않고 양도한 자산. 양도소득기본공제 적용이 배제됨.",
+    "source": "출처: 양도세 기본이론 PPT 11p"
+  },
+  {
+    "id": "g18",
+    "term": "신고불성실가산세 / 납부지연가산세 (주식등)",
+    "category": "세액계산",
+    "tags": [
+      "가산세",
+      "신고불성실",
+      "납부지연",
+      "주식"
+    ],
+    "def": "주식등 양도소득세의 신고불성실가산세는 10~40%, 납부지연가산세는 1일 22/100,000('22.2.14 이전은 25/100,000).",
+    "source": "출처: 양도세 기본이론 PPT 12p"
+  },
+  {
+    "id": "g19",
+    "term": "분납",
+    "category": "세액계산",
+    "tags": [
+      "분납",
+      "세액계산"
+    ],
+    "def": "차가감납부할세액이 2천만원 이하인 경우 1천만원 초과금액을 분납 가능(2개월 이내), 2천만원 초과인 경우 세액의 50% 이하 분납 가능(2개월 이내).",
+    "source": "출처: 양도세 기본이론 PPT 12p"
+  },
+  {
+    "id": "g20",
+    "term": "경정청구",
+    "category": "환급심사",
+    "tags": [
+      "경정청구",
+      "환급",
+      "내재화로직"
+    ],
+    "def": "이미 신고·납부한 세액에 비과세·감면 요건 누락이나 제도·판례 변경 등이 반영되지 않은 경우, 이를 바로잡아 환급을 구하는 절차. 고객지원파트는 1주택 비과세, 일시적 1가구 2주택, 혼인합가/동거봉양 합가 3가지 케이스를 중심으로 환급가능성을 검토함.",
+    "source": "출처: 16강 환급이론 PPT 5p"
+  },
+  {
+    "id": "g21",
+    "term": "환급 발생 포인트",
+    "category": "환급심사",
+    "tags": [
+      "환급",
+      "비과세",
+      "감면",
+      "판례"
+    ],
+    "def": "비과세/특례 요건이 누락되었거나, 제도·판례 변경사항이 신고에 반영되지 않은 경우 환급이 발생할 수 있음.",
+    "source": "출처: 16강 환급이론 PPT 3p"
+  },
+  {
+    "id": "g22",
+    "term": "CASE1. 1주택 비과세",
+    "category": "환급심사",
+    "tags": [
+      "1주택비과세",
+      "CASE1",
+      "조정대상지역"
+    ],
+    "def": "1세대가 주택 1채만 보유한 상태에서 보유기간·거주기간·조정대상지역 여부 등 요건을 충족하면 양도세가 비과세되는 제도. 다주택자라도 마지막 주택(보유주택 0채가 된 시점) 양도 시 요건 충족하면 비과세 가능.",
+    "source": "출처: 16강 환급이론 PPT 6p"
+  },
+  {
+    "id": "g23",
+    "term": "CASE2. 일시적 1가구 2주택",
+    "category": "환급심사",
+    "tags": [
+      "일시적2주택",
+      "CASE2",
+      "조정대상지역",
+      "양도기한"
+    ],
+    "def": "종전 주택을 보유한 상태에서 신규 주택을 취득해 일시적으로 2주택이 된 경우, 종전주택 양도기한 등 요건을 충족하면 1주택으로 보아 비과세를 적용하는 제도. 조정대상지역 해당 여부·취득 시기에 따라 양도기한이 1~3년으로 달라짐.",
+    "source": "출처: 16강 환급이론 PPT 7~8p"
+  },
+  {
+    "id": "g24",
+    "term": "CASE3. 혼인합가 / 동거봉양 합가",
+    "category": "환급심사",
+    "tags": [
+      "혼인합가",
+      "동거봉양",
+      "CASE3"
+    ],
+    "def": "혼인합가 또는 동거봉양 합가로 일시적 2주택이 된 경우에 한정해 검토하는 간단 로직. 세무사 자문(FAQ No.34)에 따르면, 부모 중 한 명이 만 60세 이상이고 합가 전 각 세대가 1주택씩 보유(합산 2주택)한 경우에 특례 적용을 검토하며, 합가 전 세대원 전원이 무주택이었다면 특례가 아닌 단순비과세로 처리.",
+    "source": "출처: 16강 환급이론 PPT 5p / 고객지원파트 지식자산FAQ No.34 (세무사 자문)"
+  },
+  {
+    "id": "g25",
+    "term": "조정대상지역",
+    "category": "기본개념",
+    "tags": [
+      "조정대상지역",
+      "거주요건",
+      "장기보유특별공제",
+      "중과세"
+    ],
+    "def": "부동산 시장 과열을 막기 위해 정부가 「주택법」 제63조의2에 따라 지정하는 지역으로, 시장 과열 신호가 있을 때 정해진 주기 없이 불규칙적으로 지정·해제됨. 2017.8.3. 「소득세법」에 처음 등장했고, 2023.1.4. 서울 서초·송파·강남·용산을 제외한 전 지역이 해제되었다가, 2025.10.16. 서울 전체와 경기도 일부가 다시 지정됨. 주택 취득일·양도일 시점을 기준으로 그 당시 조정대상지역 여부를 판단해야 함(정확한 지정 현황은 계산기의 지역 시트 참고).\n\n[조정대상지역이 양도세에 미치는 영향]\n① 단순 비과세·일시적 2주택: 취득 당시 조정대상지역이면 보유 요건에 더해 거주 요건(2년 이상)이 추가됨. 단, 계약 시 비조정이었다가 취득(잔금청산) 시 조정으로 바뀐 경우 무주택자에 한해 거주 요건 면제.\n② 일시적 2주택(2020.2.11.~2022.5.9. 양도분 한정): 신규주택 취득 당시 종전·신규 주택이 모두 조정대상지역이면 전입 요건(1년 이내 세대 전원 전입)과 짧은 양도기한(1년)이 적용됨. 2022.5.10. 이후 양도분부터는 전입 요건이 폐지되고 양도기한이 2년(2023.1.12. 이후는 3년)으로 연장됨.\n③ 양도 당시 조정대상지역이면 다주택자 양도세 중과세(2주택 중 1채 양도 +20%, 3주택 이상 중 1채 양도 +30%). 2022.5.10.~2026.5.9. 양도분은 한시적으로 중과가 유예되어 기본세율이 적용됐으나, 이 유예는 2026.5.9.로 종료되어 2026.5.10. 이후 양도분부터는 원칙적으로 중과가 다시 적용됨(2026-07-22 기준. 단, 계약일 기준 특례 등 보완방안 있음 — [다주택자 양도세 중과배제(2022~2026 한시적 유예)] 항목 참고).\n④ 양도 당시 조정대상지역이면 장기보유특별공제 배제. 1세대 1주택자는 보유 2년+거주 2년 시 연 4%+4%(최대 10년, 특례) 공제를 받을 수 있으나, 중과세 대상이면 장기보유특별공제도 배제됨(단, 2022.5.10.~2026.5.9. 유예 기간에는 장특공제도 함께 적용 가능했음. 2026.5.10. 이후 양도분은 중과 재개에 따라 장특공제도 다시 배제될 수 있음).",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 8~11p / 2026.5.9. 중과 유예 종료 및 보완방안 부분은 노션 '내재화로직' 페이지 + 대한민국 정책브리핑 등 공개자료로 갱신(2026-07-22 확인) — https://www.korea.kr/news/policyNewsView.do?newsId=148963387 , https://www.korea.kr/news/policyNewsView.do?newsId=148959488"
+  },
+  {
+    "id": "g26",
+    "term": "기경정",
+    "category": "환급심사",
+    "tags": [
+      "기경정",
+      "경정청구",
+      "홈택스"
+    ],
+    "def": "이미 경정청구(신고)가 완료된 이력을 말함. 계산기상 기수령 환급액의 과세연도와 고객이 인지하는 신청 연도가 다른 경우, 계산기 오류가 아니라 홈택스 원본 데이터를 기준으로 실제 경정청구 신고 연도를 확인해 고객 혼동 여부를 먼저 판단함.",
+    "source": "출처: 고객지원파트 지식자산FAQ No.31, No.85 (세무사 자문)"
+  },
+  {
+    "id": "g27",
+    "term": "기수령 환급액",
+    "category": "환급심사",
+    "tags": [
+      "기수령환급액",
+      "경정청구",
+      "자동환급"
+    ],
+    "def": "경정청구가 아니라 양도세 오계산·차손 상계 등의 사유로 국가가 자동으로 환급한 금액. 기경정 이력으로 보지 않으므로 별도의 양도세 환급 대상이 될 수 있음.",
+    "source": "출처: 고객지원파트 지식자산FAQ No.85 (세무사 자문)"
+  },
+  {
+    "id": "g28",
+    "term": "차손 상계",
+    "category": "세액계산",
+    "tags": [
+      "차손상계",
+      "양도세"
+    ],
+    "def": "양도 시 발생한 손해(차손)를 다른 자산의 양도차익과 상계하는 것. 차손 상계는 동일 연도 내의 양도소득에 대해서만 적용되며, 다른 연도의 차익과는 상계되지 않음.",
+    "source": "출처: 고객지원파트 지식자산FAQ No.99 (세무사 자문)"
+  },
+  {
+    "id": "g29",
+    "term": "인별과세",
+    "category": "기본개념",
+    "tags": [
+      "인별과세",
+      "공동명의",
+      "상속"
+    ],
+    "def": "양도소득세는 인별로 과세되므로, 공동상속 등으로 여러 명이 지분을 나눠 보유한 경우 각자 상속받은 지분에 대한 양도소득세 납부 금액만큼만 환급 여부를 판단함.",
+    "source": "출처: 고객지원파트 지식자산FAQ No.100 (세무사 자문)"
+  },
+  {
+    "id": "g30",
+    "term": "임시사용승인일",
+    "category": "세액계산",
+    "tags": [
+      "임시사용승인일",
+      "취득일",
+      "조합원입주권"
+    ],
+    "def": "재건축·재개발로 조합원입주권 상태였던 주택을 양도하는 경우, 임시사용승인일 또는 실제 입주일 중 먼저 도래한 날을 주택 취득일로 봄. 잔금을 다 청산해도 주택이 완공되지 않은 경우에도 (임시)사용승인일을 취득시기로 판단.",
+    "source": "출처: 양도세 기본이론 PPT 10p / 고객지원파트 지식자산FAQ No.13, No.73 (세무사 자문)"
+  },
+  {
+    "id": "g31",
+    "term": "세법상 주택",
+    "category": "기본개념",
+    "tags": [
+      "주택정의",
+      "세법상주택",
+      "건축물대장",
+      "등기부등본"
+    ],
+    "def": "국민이 안전하게 먹고 자고 쉴 수 있는 집으로, 서류(건축물대장, 등기부등본)상 건물 용도가 주택이면 세법상 주택으로 인정됨(공실이어도 주택). 다만 서류상 용도가 상가라도 취사기구·화장실 등 실제 사용 형태가 주거용이면(예: 오피스텔) 주택으로 판단할 수 있음. 양도 시에는 1세대 1주택일 때 비과세·장기보유특별공제 등 혜택이 크므로 주택으로 인정받는 것이 유리하지만, 보유 시에는 취득세·종합부동산세·양도세 중과 대상이 될 수 있어 불리함.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 3p"
+  },
+  {
+    "id": "g32",
+    "term": "1세대(동일세대)",
+    "category": "기본개념",
+    "tags": [
+      "1세대",
+      "동일세대",
+      "생계",
+      "직계존속",
+      "직계비속"
+    ],
+    "def": "같이 살고 있는 구성원으로서 생계를 같이 하는 자 모두를 의미. 생계를 같이 한다는 것은 일상생활에서 동일한 생활자금으로 생활(숙식+경제활동을 함께 함)하는 것을 뜻함. 직계존속은 어머니·아버지·할머니·할아버지 등 직속 윗세대, 직계비속은 자녀·손자녀 등 직속 아랫세대를 의미.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 5p"
+  },
+  {
+    "id": "g33",
+    "term": "별도세대",
+    "category": "기본개념",
+    "tags": [
+      "별도세대",
+      "세대분리",
+      "중위소득"
+    ],
+    "def": "같이 살고 있어도 다음 중 하나에 해당하면 별도 세대로 인정됨: ① 만 30세 이상, ② 배우자가 사망하거나 이혼한 경우, ③ 중위소득 40% 이상 소득이 있는 경우(2025년 기준 1인 가구 월 약 95만 6,805원, 4인 가구 월 약 243만 9,109원 이상). 등본에 함께 기재되어 있어도 위 요건을 충족하면 세대를 분리해 판단하며, 반대로 등본에 없어도 배우자·미성년자는 무조건 세대에 포함됨.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 6~7p"
+  },
+  {
+    "id": "g34",
+    "term": "보유기간 재기산",
+    "category": "비과세·감면",
+    "tags": [
+      "보유기간재기산",
+      "다주택자",
+      "일시적2주택"
+    ],
+    "def": "보유기간은 원칙적으로 취득일~양도일이지만, 2주택 이상 보유했던 다주택자의 경우 다른 주택을 양도한 날부터 해당 주택 양도일까지로 다시 계산하는 제도(2021.1.1.~2022.5.9. 양도분 한정 적용). 다주택자가 주택을 팔았으면 남은 주택은 그 시점부터 2년을 더 보유해야 비과세를 받게 하려는 취지. 일시적 2주택 등 비과세 요건을 충족해 양도한 경우에는 재기산되지 않음. 아래 3가지 사건이 모두 발생한 경우에만 재기산됨: ① 해당 기간 중 다주택자였던 적이 있음 ② 해당 기간 중 비과세를 받지 못하고 주택을 양도한 적이 있음 ③ 해당 기간 중 주택을 2회 이상 양도한 적이 있음.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 18~19p"
+  },
+  {
+    "id": "g35",
+    "term": "수용 (비과세 특례)",
+    "category": "비과세·감면",
+    "tags": [
+      "수용",
+      "비과세특례",
+      "사업시행인가일"
+    ],
+    "def": "보유 중인 주택 또는 그 부수토지가 도로 정비, 재개발 등 국가 사업으로 인해 국가에 소유권이 이전되는 거래. 관련 공고문에 「공익사업을 위한 토지 등의 취득 및 보상에 관한 법률」 또는 「도시 및 주거환경정비법」 등에 따라 사업을 시행한다는 내용이 명시되어 있음. 사업시행인가일 이전에 취득한 주택에 한해 보유기간 요건 없이 수용 비과세 특례가 적용됨.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 15~16p"
+  },
+  {
+    "id": "g36",
+    "term": "부득이한 사유 (비과세 특례)",
+    "category": "비과세·감면",
+    "tags": [
+      "부득이한사유",
+      "비과세특례",
+      "전학",
+      "전근",
+      "요양"
+    ],
+    "def": "교육(고교·대학·특수학교 진학, 초·중학교는 제외), 직장 이동·전근·발령, 건강상 사유(1년 이상 요양·치료가 필요한 경우), 학교폭력(학교폭력대책자치위원회가 전학이 필요하다고 인정한 경우) 중 하나로 인해 부득이하게 집을 팔게 된 경우, 보유기간에 관계없이 비과세를 인정하는 제도. 단, 양도 주택에 1년 이상 거주했어야 하며, 세대 전원이 다른 시/군으로 이사해야 함. 사유별로 재학증명서·재직증명서·요양증명서 등 증빙서류가 필요함.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 17p"
+  },
+  {
+    "id": "g37",
+    "term": "상속주택 (일시적 2주택 특례)",
+    "category": "환급심사",
+    "tags": [
+      "상속주택",
+      "일시적2주택",
+      "공동상속",
+      "소수지분"
+    ],
+    "def": "1주택을 보유한 상태에서 피상속인으로부터 주택을 1채 상속받은 경우, 상속받기 전부터 보유하던 일반주택은 상속주택을 보유 주택 수에 산입하지 않고(★보유 주택 산입 제외) 언제든지 양도해도 비과세 가능(상속주택 자체를 양도하면 비과세 적용 안 됨). 단, 피상속인 사망일로부터 2년 이내에 사망자에게 증여한 주택을 상속받은 경우는 제외(악용 방지). 조합원입주권·분양권을 상속받아 완공되는 주택도 상속주택으로 인정.\n\n[1인이 2채 이상 상속받는 경우 — 상속주택 우선순위]\n1순위: 피상속인이 가장 오래 소유한 주택 / 2순위: 소유기간이 같다면 피상속인이 가장 오래 거주한 주택 / 3순위: 소유·거주기간이 같다면 피상속인 사망일 당시 거주하던 주택 / 4순위: 거주 사실이 없고 소유기간도 같다면 기준시가가 가장 높은 주택(그래도 같으면 상속인이 선택).\n\n[공동상속 — 상속주택 소유자 우선순위]\n1순위: 최대지분 소유자 / 2순위: 지분율이 같다면 상속주택에 거주하는 사람 / 3순위: 최연장자. 이 우선순위에 해당하지 않는 소수지분 상속인은 상속주택을 보유 주택 수에 산입하지 않음.\n\n※ 상속받기 전 일반주택을 먼저 취득해야 상속주택 특례(일시적 2주택 인정)가 적용됨. 반대로 먼저 상속받고 이후 일반주택을 취득한 경우에도 1주택으로 인정되어 비과세 가능.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 27~29p"
+  },
+  {
+    "id": "g38",
+    "term": "혼인합가",
+    "category": "환급심사",
+    "tags": [
+      "혼인합가",
+      "일시적2주택",
+      "혼인신고일"
+    ],
+    "def": "각자 1주택자였던 두 사람이 결혼하여 세대를 합침으로써 일시적으로 2주택이 된 경우 적용되는 비과세 특례(소득세법 시행령 제155조 제5항). 혼인신고일(결혼식을 올린 날이 아니라 혼인신고일 기준)부터 10년 이내에 두 주택 중 먼저 양도하는 1채에 한해 1주택으로 보아 비과세를 적용. 다만 2024.11.11. 이전 양도분은 5년 기준이 적용됨. 어느 주택을 팔든 그 주택이 보유 2년 이상(조정대상지역이면 거주 요건까지) 등 1세대 1주택 비과세의 기본 요건을 별도로 충족해야 함.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 26p / 혼인봉양합가_고객응대_교육자료.html"
+  },
+  {
+    "id": "g39",
+    "term": "동거봉양 합가",
+    "category": "환급심사",
+    "tags": [
+      "동거봉양합가",
+      "일시적2주택",
+      "직계존속",
+      "중증질환"
+    ],
+    "def": "1주택을 보유한 사람이, 1주택을 보유한 부모님(본인 또는 배우자의 부모님 모두 인정)을 모시기 위해 세대를 합쳐 일시적으로 2주택이 된 경우 적용되는 비과세 특례(소득세법 시행령 제155조 제4항). 합가 대상 부모님 중 한 명이라도 합가일 기준 만 60세 이상이면 적용되며, 모두 60세 미만이더라도 중증질환자·희귀난치성질환자·결핵환자에 해당하면 예외적으로 인정됨. 합가일부터 10년 이내에 두 주택 중 먼저 양도하는 1채에 한해 1주택으로 보아 비과세를 적용하며, 어느 주택을 팔든 보유 2년 이상(조정대상지역이면 거주 요건까지)의 기본 요건은 별도로 충족해야 함.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 26p / 혼인봉양합가_고객응대_교육자료.html"
+  },
+  {
+    "id": "g40",
+    "term": "직계존속",
+    "category": "기본개념",
+    "tags": [
+      "직계존속",
+      "직계비속",
+      "1세대"
+    ],
+    "def": "어머니, 아버지, 할머니, 할아버지 등 본인 또는 배우자의 직속 윗세대를 모두 포함하는 개념(배우자의 부모도 포함). 반대로 자녀, 손자녀 등 직속 아랫세대는 직계비속이라 함. 동거봉양 합가 특례의 부모님 범위, 1세대 판단 시 세대원 포함 여부 등에서 자주 쓰이는 기준.",
+    "source": "출처: 주택 비과세(내재화 Logic) PPT 5p / 혼인봉양합가_고객응대_교육자료.html"
+  },
+  {
+    "id": "g41",
+    "term": "먼저 양도",
+    "category": "환급심사",
+    "tags": [
+      "먼저양도",
+      "혼인합가",
+      "동거봉양합가",
+      "일시적2주택"
+    ],
+    "def": "혼인합가·동거봉양 합가로 일시적 2주택이 된 경우, 두 주택 중 시간상 먼저 파는 주택만 비과세 특례의 대상이 됨을 뜻하는 표현(나중에 파는 주택은 별도로 요건을 다시 판단). 실무적으로는 양도 당시 배우자·부모님 명의의 다른 주택을 보유 중이었는지를 물어, 보유 중이었다면 이 주택이 먼저 양도한 것으로 갈음해 확인함(체크리스트 주택 수 항목으로 확인). 두 주택을 비슷한 시기에 양도해 선후가 애매한 경우에만 추가로 선후 관계를 확인.",
+    "source": "출처: 혼인봉양합가_고객응대_교육자료.html / 혼인봉양합가_고객응대_치트시트.html"
+  },
+  {
+    "id": "g42",
+    "term": "안내(risk) 메시지",
+    "category": "기본개념",
+    "tags": [
+      "안내메시지",
+      "risk",
+      "계산기",
+      "체크리스트"
+    ],
+    "def": "환급 가능성 계산기가 특정 항목에 대해 추가 확인이 필요하다고 표시하는 안내 문구. 담당자가 고객과의 통화를 통해 해당 항목(예: 혼인일, 거주기간, 합가시점, 부모님 생년월일 등)을 확인하고 체크리스트·코멘트에 기록해야 이 메시지가 해소되어 다음 단계(검토요청 등)로 진행할 수 있음.",
+    "source": "출처: 혼인봉양합가_고객응대_교육자료.html"
+  },
+  {
+    "id": "g43",
+    "term": "상생임대주택",
+    "category": "환급심사",
+    "tags": [
+      "상생임대주택",
+      "거주요건면제",
+      "임대료5%"
+    ],
+    "def": "임대료를 직전 계약보다 5% 이내로만 올려 세 놓은 집. 조정대상지역 1세대1주택 비과세의 거주 2년 요건을 채우지 못했어도, 상생임대주택 요건(5% 이내 인상, 직전 1년6개월+상생 2년 이상 임대, 2021.12.20~2026.12.31 체결, 갭투자 아닌 본인 체결)을 갖추면 거주한 것으로 보아 비과세 적용. 소득세법 시행령 §155의3.",
+    "source": "출처: 상생임대_고객응대_교육자료.html"
+  },
+  {
+    "id": "g44",
+    "term": "직전임대차계약",
+    "category": "환급심사",
+    "tags": [
+      "상생임대주택",
+      "직전임대차계약"
+    ],
+    "def": "상생임대차계약(착한 계약) 바로 전의 임대차계약. 취득 후 본인이 직접 맺고 1년 6개월 이상 유지해야 인정되며, 취득 시 세입자를 승계한 계약(갭투자)은 직전계약으로 인정되지 않음.",
+    "source": "출처: 상생임대_고객응대_교육자료.html"
+  },
+  {
+    "id": "g45",
+    "term": "상생임대차계약",
+    "category": "환급심사",
+    "tags": [
+      "상생임대주택",
+      "상생임대차계약"
+    ],
+    "def": "직전 계약 대비 임대료(보증금·월세)를 5% 이내로만 인상하고, 2021.12.20~2026.12.31 사이에 체결하며, 2년 이상 임대한 계약. 이 요건을 충족하면 거주요건 면제(2년 거주한 것으로 인정).",
+    "source": "출처: 상생임대_고객응대_교육자료.html"
+  },
+  {
+    "id": "g46",
+    "term": "부득이한 사유 해소일",
+    "category": "환급심사",
+    "tags": [
+      "부득이한사유",
+      "해소일",
+      "3년기산"
+    ],
+    "def": "부득이한 사유(취학·근무·요양·학교폭력)로 수도권 밖에 집을 취득해 이사간 사정이 없어진 날. 이 날부터 3년 이내에 원래 주택(일반주택)을 양도해야 비과세 적용. 사정이 아직 끝나지 않았다면(미해소) 3년 기산이 시작되지 않아 기한과 무관하게 대상이 됨.",
+    "source": "출처: 부득이수도권외_고객응대_교육자료.html"
+  },
+  {
+    "id": "g47",
+    "term": "Y.check 날짜 입력 규칙",
+    "category": "기본개념",
+    "tags": [
+      "Y.check",
+      "날짜입력",
+      "작은따옴표"
+    ],
+    "def": "체크리스트 계산기(Y.check)에 날짜를 입력할 때는 반드시 앞에 작은따옴표(')를 붙여 텍스트 형식(예: '20211229)으로 입력해야 함. 작은따옴표 없이 숫자로 입력하면 날짜 로직이 깨짐. 연·월·일을 다 알면 8자리, 월까지만 알면 6자리, 연도만 알면 4자리로 아는 만큼 입력.",
+    "source": "출처: 교육자료_1_계약일_취득일_전입일.html"
+  },
+  {
+    "id": "g48",
+    "term": "중과세 (다주택자 양도소득세)",
+    "category": "세액계산",
+    "tags": [
+      "중과세",
+      "다주택자",
+      "조정대상지역",
+      "장기보유특별공제"
+    ],
+    "def": "다주택자가 조정대상지역 내 주택을 양도할 때 기본세율에 추가세율을 더해 부과하는 제도. 양도 주택 포함 2주택 이상 보유 + 조정대상지역 내 주택 양도(양도 시점 기준) 요건을 모두 충족하면 적용되며, 임대주택·지방저가주택 등 법령상 제외 요건에 해당하는 주택은 주택 수 산정에서 빠질 수 있음. 2주택자는 기본세율+20%p, 3주택 이상은 기본세율+30%p가 가산되고, 중과 대상 주택은 장기보유특별공제도 배제됨. 2022.5.10.~2026.5.9. 양도분은 한시적으로 중과가 유예되었으나 2026.5.9.로 유예가 종료됨 → [다주택자 양도세 중과배제(2022~2026 한시적 유예)] 항목 참고.",
+    "source": "출처: 노션 '내재화로직' 페이지(용어정리-중과세)"
+  },
+  {
+    "id": "g49",
+    "term": "다주택자 양도세 중과배제 (2022.5.10~2026.5.9 한시적 유예)",
+    "category": "세액계산",
+    "tags": [
+      "중과배제",
+      "중과유예",
+      "2026유예종료",
+      "보완방안"
+    ],
+    "def": "1세대 2주택 이상 보유자가 보유기간 2년 이상인 조정대상지역 내 주택을 2022.5.10.부터 2026.5.9.까지 양도하는 경우, 다주택자 중과세율 대신 기본세율(6~45%)을 적용하고 장기보유특별공제도 받을 수 있게 한 한시적 조치. 부동산 거래 정상화를 위해 여러 차례 연장되며 유지되어 왔음. ⚠ 2026.5.9.로 유예가 종료되어, 2026.5.10. 이후 양도분부터는 조정대상지역 내 다주택자 양도 시 원칙적으로 중과세가 다시 적용됨(2026-07-22 기준 현재 상태). 다만 국민 불편·혼란을 줄이기 위한 보완방안(2026년 2월 시행령 개정 입법예고 기준)으로, 5.9.까지 매매계약만 체결하면 유예를 인정(잔금일이 아닌 계약일 기준)하고, 세입자가 있는 주택은 임대차 계약 종료 시까지 입주 의무를 유예하며, 해당 기간 전세대출 회수도 유예하는 조치가 함께 시행됨. 실제 적용 여부·세부 요건은 최종 시행령 확정본으로 재확인 필요.",
+    "source": "출처: 노션 '내재화로직' 페이지 + 대한민국 정책브리핑 등 공개자료(2026년 다주택자 양도세 중과 유예 종료 및 보완방안) — https://www.korea.kr/news/policyNewsView.do?newsId=148963387 , https://www.korea.kr/news/policyNewsView.do?newsId=148959488"
+  },
+  {
+    "id": "g50",
+    "term": "과세표준 (양도소득세)",
+    "category": "세액계산",
+    "tags": [
+      "과세표준",
+      "양도소득금액",
+      "장기보유특별공제",
+      "기본공제"
+    ],
+    "def": "양도소득세를 계산할 때 세율을 곱하는 기준 금액. 양도차익(양도가액-취득가액-필요경비)에서 장기보유특별공제를 차감하면 양도소득금액이 되고, 양도소득금액에서 기본공제(연 250만원)를 차감하면 과세표준이 됨. 과세표준에 세율을 곱해 산출세액을 계산함.",
+    "source": "출처: 노션 '내재화로직' 페이지(용어정리-과세표준)"
+  }
+]
+</script>
+<script type="application/json" id="data-meetings">
+[
+  {
+    "id": "meeting-20260721",
+    "date": "2026-07-21",
+    "title": "2026년 7월 21일 주간회의",
+    "tags": [
+      "종소세인수인계",
+      "로직2",
+      "마수동null",
+      "체크리스트개선",
+      "AX전환",
+      "간단로직",
+      "CS마인드셋",
+      "인용률개선"
+    ],
+    "snippet": "이번 주 안건: 간단 로직 검토 보류·환급불가 안내, 고객 라포 형성, 종소세 DB 잔여건 처리. 지난 주 로직2 컨택 프로세스 확정 및 내재화 인용률 개선 PJ 논의.",
+    "body": "[일자] 2026년 7월 21일 (화)\n\n[1. 지난 주 회고]\n\n① 종소세 인수인계\n- 잠정 보류 상태에서 시차를 두고 단계적으로 진행.\n- 처리 기한 원칙은 유지하되 시차를 반영해 재계획.\n\n② 신규 인입 · 알림톡 대응\n- 인입 흐름 관리 방안 검토 및 자원 배분 조정.\n- 알림톡 인입 감소 흐름에 맞춘 처리 체계 대응.\n\n③ 체크리스트 개선 (로직 + UI/UX)\n- 계약일·취득일 필수 입력화, 항목 간 로직 연결 명확화, 대상 주택 판단 로직 재점검.\n- 데이터 흐름 간소화 및 한 화면 내 단계별 진행이 가능하도록 접근성·버튼/링크 체계 개선.\n\n④ AX(AI) 전환 · 교육 계획\n- 파트 간 연계 강화 + 8월부터 교육 실시.\n- 교육 대상자·세부 일정 확정, 교육 자료 선제 배포, 위키/문서화 체계 정비.\n- 프론트/백엔드 교육 내용 구체화 및 개발·기획 문서화 가이드 마련.\n- AX 전환에 맞춘 데이터 흐름·DB 구조 설계 기본 방향 설정 (관련 교육 세션 포함).\n\n⑤ 운영 · 일정\n- Linear/To-do 운영 규칙 표준화 (이슈 등록·업데이트·의사결정 프로세스).\n- 회의 일정 재조정: 화요일 회의 제외, 수요일 오전 제외. 향후 2주 집중 관리.\n- 기획자/PM 역할과 교육 담당자 배분 정의.\n\n[2. 이번 주 안건]\n\n1. 간단 로직\n- 현 시점 간단 로직 선일에서 검토하지 않고 있음 → 고객이 검토 결과 요청 시에는 '환급불가'로 안내. (상세: 업무 매뉴얼 - 간단 로직 검토 보류 정책 참고)\n\n2. 고객 라포 형성\n- 체크리스트 외 문의 사항 및 서비스 안내도 시간에 구애 받지 않고 진행.\n\n3. 종소세 DB 잔여건 처리\n- 빠르게 처리.\n\n[지난 주 스파클 요약]\n\n▪ 재수집 진행 현황\n- 7/15 기준 아직 170만건 남음.\n- 하루 20만건 처리 목표이나 이슈 발생 시마다 하향·중단.\n- 종소세·비사업자 재수집은 완료되어, 스크래핑 이슈 없으면 일 20만건 재수집 예정.\n\n▪ 마수동 null값 고객 컨택 (로직2)\n- null = 마케팅 수신 동의 여부 확인 전 인입 고객(X는 고객이 직접 동의를 거부한 것이므로 컨택 대상 제외).\n- 리스크는 있으나 지금까지 문제 발생 이력 없어 컨택 진행하기로 함. 법적 리스크 고려해 인입 채널 언급 없이 해피콜 방식으로 접근.\n- 상세 처리 프로세스는 [업무 매뉴얼 - 로직2 컨택 후 처리 프로세스] 참고.\n\n▪ 내재화 인용률 개선 PJ\n- 체크리스트 성공률은 70% 수준으로 안정화. 성공률 유지하며 인용률(정확도) 향상 필요.\n- 일시적2주택·혼인합가·동거봉양 등은 등기부등본 등 검증 수단이 있으나, 단순비과세는 질문을 통한 검증 방법밖에 없음 → 질문을 단계별로 세분화하는 방식 검토 (예: 가족 동거 여부 확인 → 해당 가족 주택 보유 여부 확인 순으로 단계별 질문).\n- 담당자 지정 후 Linear TR-542를 in progress로 전환 예정.\n- 회의 중 코멘트: 고객이 상세 정보를 모르는 경우 3차 컨택까지 진행 후 종결 / 1주택 단순비과세는 추가 질문으로 정확도 강화 / 기존 스크립트는 유지하되 컨택 시 맥락만 추가 / 추가보유주택 0채·1채 분류가 가장 중요.\n\n▪ CS 마인드셋 관련 회사 지침 (대표님 지시)\n- 최근 인바운드 상담 강성 클레임 증가로, 고객 대응하는 모든 부서에 CS 마인드셋 교육·모니터링 강화 지시.\n- 우리 파트는 기본 마인드셋이 갖춰져 있다고 판단해 별도 교육은 예정하지 않음(필요 시 진행 예정).\n- 고객 대응 시 쿠션어 적극 사용, 고객과의 라포 형성에 최대한 신경 쓸 것(추후 결제 전환에도 영향을 줄 수 있음).",
+    "source": "출처: Notion \"2026년 7월 21일 주간회의\" — https://app.notion.com/p/3a42d1e13d1580379f7fcb10d5c16aeb",
+    "notionPageId": "3a42d1e1-3d15-8037-9f7f-cb10d5c16aeb"
+  }
+]
+</script>
+<script type="application/json" id="data-config">
+{
+  "adminPasswordHash": "25aedeebac1cbf16f9478694070a50177f98fc5a7a35f290e6a01341665a0da1"
+}
+</script>
+
+<script>
+/* =========================================================================
+   데이터 로드 (JSON data island 방식 — 관리자 모드 편집 시 이 island의
+   textContent를 갱신해 "업데이트된 HTML로 내보내기" 시 그대로 반영되게 함)
+   ========================================================================= */
+let MANUAL = JSON.parse(document.getElementById('data-manual').textContent);
+let GLOSSARY = JSON.parse(document.getElementById('data-glossary').textContent);
+let MEETINGS = JSON.parse(document.getElementById('data-meetings').textContent);
+let CONFIG = JSON.parse(document.getElementById('data-config').textContent);
+
+let isAdmin = false;
+let editingContext = null; // {listName: 'MANUAL'|'GLOSSARY', id: string|null}
+
+/* ---------- 유틸 ---------- */
+function escapeHtml(str) {
+  return (str || '').toString()
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;');
+}
+
+function matches(entry, query, fields) {
+  if (!query) return true;
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return fields.some(f => (entry[f] || '').toString().toLowerCase().includes(q))
+    || (entry.tags || []).some(t => t.toLowerCase().includes(q));
+}
+
+/* 검색 정확도용 스코어링 — 제목(또는 용어)에 매칭될수록 가중치를 높게 줘서
+   내용/태그에만 어쩌다 걸린 결과보다 위로 오게 정렬한다. */
+function scoreEntry(entry, query, titleField, bodyFields) {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return 0;
+  let score = 0;
+  const titleVal = (entry[titleField] || '').toString().toLowerCase();
+  if (titleVal === q) score += 100;
+  else if (titleVal.startsWith(q)) score += 80;
+  else if (titleVal.includes(q)) score += 50;
+
+  const tags = (entry.tags || []).map(t => t.toLowerCase());
+  if (tags.some(t => t === q)) score += 30;
+  else if (tags.some(t => t.includes(q))) score += 15;
+
+  const catVal = (entry.category || '').toString().toLowerCase();
+  if (catVal.includes(q)) score += 10;
+
+  bodyFields.forEach(f => {
+    const v = (entry[f] || '').toString().toLowerCase();
+    if (v.includes(q)) score += 5;
+  });
+
+  return score;
+}
+
+function sortByRelevance(list, query, titleField, bodyFields) {
+  const q = (query || '').trim();
+  if (!q) return list;
+  return list
+    .map((entry, idx) => ({ entry, idx, score: scoreEntry(entry, q, titleField, bodyFields) }))
+    .sort((a, b) => (b.score - a.score) || (a.idx - b.idx))
+    .map(x => x.entry);
+}
+
+function renderTableHtml(table) {
+  if (!table || !table.headers || !table.rows) return '';
+  let h = '<table class="data-table"><thead><tr>';
+  table.headers.forEach(hd => { h += `<th>${escapeHtml(hd)}</th>`; });
+  h += '</tr></thead><tbody>';
+  table.rows.forEach(row => {
+    h += '<tr>';
+    row.forEach(cell => { h += `<td>${escapeHtml(cell)}</td>`; });
+    h += '</tr>';
+  });
+  h += '</tbody></table>';
+  return h;
+}
+
+async function sha256Hex(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'admin-toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+/* ---------- 업무 매뉴얼 렌더 ---------- */
+function getManualCategories() {
+  return [...new Set(MANUAL.map(m => m.category))];
+}
+let manualActiveChip = null;
+function renderManualChips() {
+  const wrap = document.getElementById('manual-chips');
+  const cats = getManualCategories();
+  wrap.innerHTML = `<div class="chip ${!manualActiveChip ? 'active' : ''}" data-cat="">전체</div>` +
+    cats.map(c => `<div class="chip ${manualActiveChip === c ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</div>`).join('');
+  wrap.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      manualActiveChip = chip.dataset.cat || null;
+      renderManualChips();
+      renderManualList();
+    });
+  });
+}
+function renderManualList() {
+  const q = document.getElementById('manual-search').value;
+  let list = MANUAL.filter(m =>
+    (!manualActiveChip || m.category === manualActiveChip) &&
+    matches(m, q, ['title','category','snippet','body'])
+  );
+  list = sortByRelevance(list, q, 'title', ['snippet','body']);
+  document.getElementById('manual-count').textContent = `${list.length}건`;
+  const container = document.getElementById('manual-list');
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state">조건에 맞는 매뉴얼이 없습니다.</div>';
+    return;
+  }
+  container.innerHTML = list.map(m => `
+    <div class="card" data-id="${m.id}">
+      <div class="card-title-row">
+        <div class="card-title">${escapeHtml(m.title)}</div>
+        <div class="card-cat">${escapeHtml(m.category)}</div>
+      </div>
+      <div class="card-snippet">${escapeHtml(m.snippet)}</div>
+      <div class="card-body">${renderTableHtml(m.table)}${escapeHtml(m.body)}
+        <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
+        ${m.meetingDate
+          ? `<div class="source-note-meeting">🗓 ${escapeHtml(m.meetingDate)} 주간회의록 출처<span class="snm-link">${escapeHtml(m.source||'')}</span></div>`
+          : `<div class="source-note">${escapeHtml(m.source||'')}</div>`}
+      </div>
+    </div>
+  `).join('');
+  container.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+}
+
+/* ---------- 용어사전 렌더 ---------- */
+function getGlossaryCategories() {
+  return [...new Set(GLOSSARY.map(g => g.category))];
+}
+let glossaryActiveChip = null;
+function renderGlossaryChips() {
+  const wrap = document.getElementById('glossary-chips');
+  const cats = getGlossaryCategories();
+  wrap.innerHTML = `<div class="chip ${!glossaryActiveChip ? 'active' : ''}" data-cat="">전체</div>` +
+    cats.map(c => `<div class="chip ${glossaryActiveChip === c ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</div>`).join('');
+  wrap.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      glossaryActiveChip = chip.dataset.cat || null;
+      renderGlossaryChips();
+      renderGlossaryList();
+    });
+  });
+}
+function renderGlossaryList() {
+  const q = document.getElementById('glossary-search').value;
+  let list = GLOSSARY.filter(g =>
+    (!glossaryActiveChip || g.category === glossaryActiveChip) &&
+    matches(g, q, ['term','category','def'])
+  );
+  list = sortByRelevance(list, q, 'term', ['def']);
+  document.getElementById('glossary-count').textContent = `${list.length}건`;
+  const container = document.getElementById('glossary-list');
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state">조건에 맞는 용어가 없습니다.</div>';
+    return;
+  }
+  container.innerHTML = list.map(g => `
+    <div class="card" data-id="${g.id}">
+      <div class="card-title-row">
+        <div class="card-title">${escapeHtml(g.term)}</div>
+        <div class="card-cat">${escapeHtml(g.category)}</div>
+      </div>
+      <div class="card-snippet">${escapeHtml(g.def)}</div>
+      <div class="card-body">${escapeHtml(g.def)}
+        <div class="card-tags">${(g.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
+        <div class="source-note">${escapeHtml(g.source||'')}</div>
+      </div>
+    </div>
+  `).join('');
+  container.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+}
+
+/* ---------- 주간회의 렌더 ---------- */
+function renderMeetingList() {
+  const q = document.getElementById('meeting-search').value;
+  const dateVal = document.getElementById('meeting-date-search').value;
+  let list = MEETINGS.filter(m =>
+    (!dateVal || m.date === dateVal) &&
+    matches(m, q, ['title','snippet','body'])
+  );
+  list = sortByRelevance(list, q, 'title', ['snippet','body']);
+  if (!q.trim() && !dateVal) {
+    list = list.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+  document.getElementById('meeting-count').textContent = `${list.length}건`;
+  const container = document.getElementById('meeting-list');
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state">조건에 맞는 회의록이 없습니다.</div>';
+    return;
+  }
+  container.innerHTML = list.map(m => `
+    <div class="card" data-id="${m.id}">
+      <div class="card-title-row">
+        <div class="card-title">${escapeHtml(m.title)}</div>
+        <div class="card-cat">${escapeHtml(m.date)}</div>
+      </div>
+      <div class="card-snippet">${escapeHtml(m.snippet)}</div>
+      <div class="card-body">${escapeHtml(m.body)}
+        <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
+        <div class="source-note">${escapeHtml(m.source||'')}</div>
+      </div>
+    </div>
+  `).join('');
+  container.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+}
+
+/* ---------- 헤더 안내 툴팁 ---------- */
+(function () {
+  const infoBtn = document.getElementById('header-info-btn');
+  const infoTip = document.getElementById('header-info-tooltip');
+  infoBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    infoTip.classList.toggle('show');
+  });
+  document.addEventListener('click', (e) => {
+    if (infoTip.classList.contains('show') && !infoTip.contains(e.target) && e.target !== infoBtn) {
+      infoTip.classList.remove('show');
+    }
+  });
+})();
+
+/* ---------- 탭 전환 ---------- */
+document.getElementById('main-tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+});
+
+document.getElementById('manual-search').addEventListener('input', renderManualList);
+document.getElementById('glossary-search').addEventListener('input', renderGlossaryList);
+document.getElementById('meeting-search').addEventListener('input', renderMeetingList);
+document.getElementById('meeting-date-search').addEventListener('change', renderMeetingList);
+document.getElementById('meeting-date-clear').addEventListener('click', () => {
+  document.getElementById('meeting-search').value = '';
+  document.getElementById('meeting-date-search').value = '';
+  renderMeetingList();
+});
+
+/* ---------- 부동산정보 (실시간 주소 조회) ----------
+   POST /api/search 백엔드를 호출한다. 이 위키와 백엔드가 같은 도메인에서
+   함께 서빙되는 경우(Vercel 배포, 또는 로컬 Express 서버로 접속한 경우)에는
+   상대경로("")를 쓰면 지금 열려있는 주소 그대로를 자동으로 따라간다.
+   파일을 file:// 로 직접 더블클릭해 연 경우에만 로컬 개발 서버(localhost:4000)를
+   기본값으로 사용한다. */
+const RE_API_BASE = location.protocol === 'file:' ? 'http://localhost:4000' : '';
+
+function reEscapeHtml(str) { return escapeHtml(str); }
+
+function reStatValue(label, value) {
+  return `<div><div class="re-stat-label">${label}</div><div class="re-stat-value${value ? '' : ' empty'}">${value ? reEscapeHtml(value) : '정보 없음'}</div></div>`;
+}
+
+function reEventRow(label, ev) {
+  if (!ev) {
+    return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span></span></div>`;
+  }
+  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span><a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
+}
+
+function reManagementDisposalRow(md) {
+  if (!md || !md.initial) {
+    return `<div class="re-event-row"><span class="re-event-label">관리처분인가일</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span></span></div>`;
+  }
+  let html = `<div class="re-event-row"><span class="re-event-label">관리처분인가일 (최초)</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(md.initial.date)}</span><a href="${reEscapeHtml(md.initial.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
+  if (md.changes && md.changes.length > 0) {
+    html += `<div class="re-event-row" style="border-bottom:none;padding-bottom:0;"><span class="re-event-label">변경 이력</span><span class="re-event-value"></span></div>`;
+    html += '<ul class="re-change-list">';
+    md.changes.forEach((c) => {
+      html += `<li>${reEscapeHtml(c.date)}<a href="${reEscapeHtml(c.link)}" target="_blank" rel="noopener">원문</a></li>`;
+    });
+    html += '</ul>';
+  }
+  return html;
+}
+
+function renderRealEstateResult(data) {
+  const { input: inputInfo, address, candidateCount, otherCandidates, building, redevelopment } = data;
+  const resultEl = document.getElementById('re-result');
+  let html = '';
+
+  // 1. 상단 히어로: 건물유형 + 사용승인일 (가장 크게 강조)
+  html += '<div class="re-hero">';
+  html += '<div class="re-hero-top">';
+  html += `<span class="re-badge">건축물대장</span>`;
+  if (building.isMock) html += `<span class="re-badge warn">임시 목데이터</span>`;
+  html += `<span class="re-hero-addr">${reEscapeHtml(address.buildingName || address.roadAddr)}</span>`;
+  html += '</div>';
+
+  if (building.found) {
+    html += '<div class="re-hero-stats">';
+    html += reStatValue('건물유형', building.buildingType);
+    html += reStatValue('사용승인일(준공일)', building.useAprDay);
+    html += '</div>';
+    if (building.totalFloorArea || building.groundFloors || building.undergroundFloors) {
+      html += '<div class="re-hero-sub">';
+      if (building.totalFloorArea) html += `<span class="re-hero-sub-item">연면적 <b>${reEscapeHtml(building.totalFloorArea)}㎡</b></span>`;
+      if (building.groundFloors || building.undergroundFloors) html += `<span class="re-hero-sub-item">층수 <b>지상 ${building.groundFloors || 0}층 / 지하 ${building.undergroundFloors || 0}층</b></span>`;
+      html += '</div>';
+    }
+    if (building.isMock) {
+      html += '<div class="re-disclaimer">공공데이터포털 건축물대장정보 API 키가 아직 승인 대기 중이라 실제 데이터가 아닌 임시 샘플값입니다. 키 발급 후 자동으로 실제 값으로 전환됩니다.</div>';
+    }
+  } else {
+    html += `<div class="empty-state" style="padding:20px 0;">${reEscapeHtml(building.buildingType || building.error || '건축물대장 정보를 찾을 수 없습니다.')}</div>`;
+  }
+  html += '</div>';
+
+  // 2. 재건축/재개발 관련 정보
+  html += '<div class="card" style="cursor:default;"><div class="card-title-row" style="margin-bottom:12px;"><span class="card-title">재건축/재개발 관련 정보</span><span class="card-cat">네이버 검색 기반</span></div>';
+  if (redevelopment.error) {
+    html += `<div class="empty-state" style="padding:20px 0;">${reEscapeHtml(redevelopment.error)}</div>`;
+  } else {
+    const ev = redevelopment.events || {};
+    html += reEventRow('사업시행인가일', ev.projectImplementationApproval);
+    html += reManagementDisposalRow(ev.managementDisposalApproval);
+    html += reEventRow('청약 당첨일(분양)', ev.subscriptionWin);
+    html += reEventRow('조합원 승계일', ev.memberSuccession);
+    html += '<div class="re-disclaimer">위 날짜는 뉴스/블로그 텍스트에서 키워드 주변 날짜를 자동 추출한 결과입니다. 정확도가 100%가 아니므로 반드시 아래 원문 링크로 교차 확인해주세요.</div>';
+  }
+  html += '</div>';
+
+  // 3. 정제된 주소 (최하단, 접힌 상태)
+  html += '<details class="re-addr-detail"><summary>정제된 주소 상세 보기</summary>';
+  html += '<dl class="re-kv-grid">';
+  html += `<dt>입력 원본</dt><dd>${reEscapeHtml(inputInfo.original)}</dd>`;
+  html += `<dt>도로명주소</dt><dd>${reEscapeHtml(address.roadAddr)}</dd>`;
+  html += `<dt>지번주소</dt><dd>${reEscapeHtml(address.jibunAddr)}</dd>`;
+  html += `<dt>건물명</dt><dd class="${address.buildingName ? '' : 'empty'}">${address.buildingName ? reEscapeHtml(address.buildingName) : '정보 없음'}</dd>`;
+  const dongHo = (inputInfo.dong || inputInfo.ho) ? `${inputInfo.dong ? inputInfo.dong + '동 ' : ''}${inputInfo.ho ? inputInfo.ho + '호' : ''}` : '';
+  html += `<dt>동/호</dt><dd class="${dongHo ? '' : 'empty'}">${dongHo || '정보 없음'}</dd>`;
+  html += '</dl>';
+  if (inputInfo.duplicateJibunRemoved) {
+    html += `<div class="re-disclaimer">입력하신 주소에서 중복 지번("${reEscapeHtml(inputInfo.duplicateJibunRemoved)}")을 제거하고 검색했습니다.</div>`;
+  }
+  if (candidateCount > 1) {
+    html += `<ul class="re-candidate-list"><li style="border-top:none;font-weight:600;color:var(--ink-soft);">이 외 유사 후보 ${candidateCount - 1}건</li>`;
+    (otherCandidates || []).forEach((c) => {
+      html += `<li>${reEscapeHtml(c.roadAddr)}${c.buildingName ? ' (' + reEscapeHtml(c.buildingName) + ')' : ''}</li>`;
+    });
+    html += '</ul>';
+  }
+  html += '</details>';
+
+  // 4. 참고 원문
+  if (redevelopment.articles && redevelopment.articles.length > 0) {
+    html += '<details class="re-addr-detail re-source-list"><summary>참고 원문 보기 (' + redevelopment.articles.length + '건)</summary><div>';
+    redevelopment.articles.forEach((a) => {
+      html += '<div class="re-source-item">';
+      html += `<div class="rs-title"><a href="${reEscapeHtml(a.link)}" target="_blank" rel="noopener">${reEscapeHtml(a.title)}</a></div>`;
+      html += `<div class="rs-desc">${reEscapeHtml(a.description)}</div>`;
+      html += `<div class="rs-meta">${a.source === 'news' ? '뉴스' : '블로그'}${a.pubDate ? ' · ' + reEscapeHtml(a.pubDate) : ''}</div>`;
+      html += '</div>';
+    });
+    html += '</div></details>';
+  }
+
+  resultEl.innerHTML = html;
+}
+
+async function runRealEstateSearch() {
+  const input = document.getElementById('re-address-input');
+  const address = input.value.trim();
+  const statusEl = document.getElementById('re-status');
+  const resultEl = document.getElementById('re-result');
+  const btn = document.getElementById('re-search-btn');
+
+  if (!address) {
+    statusEl.className = 're-status error';
+    statusEl.textContent = '주소를 입력해주세요.';
+    return;
+  }
+
+  btn.disabled = true;
+  resultEl.innerHTML = '';
+  statusEl.className = 're-status loading';
+  statusEl.textContent = '조회 중입니다... (건축물대장 + 네이버 검색 연동)';
+
+  try {
+    const res = await fetch(`${RE_API_BASE}/api/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      statusEl.className = 're-status error';
+      statusEl.textContent = data.error || '조회 중 오류가 발생했습니다.';
+      return;
+    }
+
+    statusEl.className = 're-status';
+    statusEl.textContent = '';
+    renderRealEstateResult(data);
+  } catch (err) {
+    statusEl.className = 're-status error';
+    statusEl.textContent = RE_API_BASE
+      ? '부동산정보 서버(localhost:4000)에 연결할 수 없습니다. real-estate-wiki 폴더에서 "npm start"로 서버를 먼저 실행해주세요.'
+      : '부동산정보 서버(/api/search)에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('re-search-btn').addEventListener('click', runRealEstateSearch);
+document.getElementById('re-address-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') runRealEstateSearch(); });
+
+/* ---------- 통합검색 렌더 ---------- */
+// 통합검색 전용 숨겨진 위키 항목 (이스터에그) — 매뉴얼/용어사전 데이터에는 포함되지 않고
+// "고양이"로 검색했을 때만 통합검색 결과에 등장한다.
+const SEARCH_EASTER_EGGS = [
+  {
+    keyword: '고양이',
+    title: '고양이',
+    category: '지식백과 (숨겨진 위키)',
+    snippet: '둥근 머리와 짧고 넓은 얼굴, 뛰어난 양안시 능력을 가진 그 동물 — 우연히 발견한 분께 드리는 숨겨진 위키입니다 🐾',
+    body: `머리가 둥글고 얼굴은 짧고 넓으며, 눈이 둥글고 커서 양안시(양쪽 눈의 망막에 맺힌 대상물을 각각이 아닌 하나로 보게 하고, 입체적으로 보게 하는 눈의 기능)의 능력이 뛰어나다. 귓바퀴는 작은 삼각형 모양으로 끝에 긴 털이 있으며 몸에는 다양한 무늬가 있다. 몸길이는 보통 30~60cm이며 몸무게는 2~3kg부터 7.5~8.5kg에 이르기까지 다양하다. 꼬리는 종류에 따라 길이가 다르며 보통은 22~38cm 정도이다. 발가락은 앞다리에 5개, 뒷다리에 4개가 있으며 발톱을 살 속에 감출 수 있다.
+
+야생의 고양이가 길들여져 가축화되었으며, 야생 고양이는 산림 속에서 산다. 1년에 2~3회 번식하며 한배에 4~6마리의 새끼를 낳는다. 쥐, 작은 조류, 개구리 등을 잡아먹는다.`,
+    source: '출처: 두산백과 (동물학 일반 상식) · 🥚 숨겨진 위키 이스터에그'
+  }
+];
+
+/* ---------- 이스터에그: 미니 사주풀이 (재미용, 간이 계산) ----------
+   검색창에 "0000년 0월 0일 [00시] 양력|음력 여자|남자" 형식을 입력하면
+   웹앱을 실제로 보는 "지금" 시점을 기준으로 이달의 미니 운세를 계산해 보여준다.
+   ⚠ 정식 만세력/명리학 프로그램이 아닌 간이 근사 계산이며, 특히 음력 입력은
+   실제 음양력 변환 없이 계산되므로 참고용/오락용으로만 사용한다. */
+const SAJU_STEMS = ['갑','을','병','정','무','기','경','신','임','계'];
+const SAJU_STEM_ELEMENTS = ['목','목','화','화','토','토','금','금','수','수'];
+const SAJU_BRANCHES = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+const SAJU_STEM_VIBE = {
+  '갑': '큰 나무처럼 곧고 리더십 있는', '을': '유연한 풀꽃처럼 부드럽고 적응력 있는',
+  '병': '태양처럼 밝고 열정적인', '정': '촛불처럼 섬세하고 따뜻한',
+  '무': '큰 산처럼 묵직하고 신뢰감 있는', '기': '기름진 땅처럼 포용력 있는',
+  '경': '무쇠처럼 단단하고 결단력 있는', '신': '보석처럼 예리하고 세련된',
+  '임': '바다처럼 스케일 크고 지혜로운', '계': '이슬비처럼 섬세하고 통찰력 있는'
+};
+// 절기 경계일 근사치(월/일) — 해마다 ±1일 정도 오차가 있을 수 있는 간이값
+const SAJU_TERM_BOUNDARIES = [
+  { m: 1, d: 6, branch: 1 },   // 소한 → 축월
+  { m: 2, d: 4, branch: 2 },   // 입춘 → 인월
+  { m: 3, d: 6, branch: 3 },   // 경칩 → 묘월
+  { m: 4, d: 5, branch: 4 },   // 청명 → 진월
+  { m: 5, d: 6, branch: 5 },   // 입하 → 사월
+  { m: 6, d: 6, branch: 6 },   // 망종 → 오월
+  { m: 7, d: 7, branch: 7 },   // 소서 → 미월
+  { m: 8, d: 8, branch: 8 },   // 입추 → 신월
+  { m: 9, d: 8, branch: 9 },   // 백로 → 유월
+  { m: 10, d: 8, branch: 10 }, // 한로 → 술월
+  { m: 11, d: 7, branch: 11 }, // 입동 → 해월
+  { m: 12, d: 7, branch: 0 }   // 대설 → 자월
+];
+
+function sajuPillar(stemIdx, branchIdx) {
+  return { stemIdx, branchIdx, stem: SAJU_STEMS[stemIdx], branch: SAJU_BRANCHES[branchIdx], ganji: SAJU_STEMS[stemIdx] + SAJU_BRANCHES[branchIdx] };
+}
+function sajuMonthBranchIndex(month, day) {
+  let result = 0;
+  SAJU_TERM_BOUNDARIES.forEach(b => {
+    if (month > b.m || (month === b.m && day >= b.d)) result = b.branch;
+  });
+  return result;
+}
+function sajuYearPillar(year, month, day) {
+  const y = (month < 2 || (month === 2 && day < 4)) ? year - 1 : year;
+  const stemIdx = ((y - 4) % 10 + 10) % 10;
+  const branchIdx = ((y - 4) % 12 + 12) % 12;
+  return { stemIdx, pillar: sajuPillar(stemIdx, branchIdx) };
+}
+function sajuMonthPillar(year, month, day) {
+  const yearStemIdx = sajuYearPillar(year, month, day).stemIdx;
+  const branchIdx = sajuMonthBranchIndex(month, day);
+  const startStemForYin = ((yearStemIdx % 5) * 2 + 2) % 10;
+  const offset = (branchIdx - 2 + 12) % 12;
+  const stemIdx = (startStemForYin + offset) % 10;
+  return { stemIdx, pillar: sajuPillar(stemIdx, branchIdx) };
+}
+// 1900-01-31 = 갑진일(甲辰日) 기준 (만세력 계산에 흔히 쓰이는 기준일)
+function sajuDayPillar(year, month, day) {
+  const target = Date.UTC(year, month - 1, day);
+  const ref = Date.UTC(1900, 0, 31);
+  const diffDays = Math.round((target - ref) / 86400000);
+  const stemIdx = ((diffDays % 10) + 10) % 10;
+  const branchIdx = (((diffDays + 4) % 12) + 12) % 12;
+  return { stemIdx, pillar: sajuPillar(stemIdx, branchIdx) };
+}
+function sajuHourPillar(dayStemIdx, hour) {
+  if (hour === null || hour === undefined || isNaN(hour)) return null;
+  const branchIdx = Math.floor(((hour + 1) % 24) / 2);
+  const startStemForZi = (dayStemIdx % 5) * 2;
+  const stemIdx = (startStemForZi + branchIdx) % 10;
+  return { pillar: sajuPillar(stemIdx, branchIdx) };
+}
+function sajuElementRelation(fromEl, toEl) {
+  const GEN = { '목':'화', '화':'토', '토':'금', '금':'수', '수':'목' };
+  const CTRL = { '목':'토', '토':'수', '수':'화', '화':'금', '금':'목' };
+  if (fromEl === toEl) return 'same';
+  if (GEN[fromEl] === toEl) return 'generates';
+  if (GEN[toEl] === fromEl) return 'generatedBy';
+  if (CTRL[fromEl] === toEl) return 'controls';
+  return 'controlledBy';
+}
+function tryParseSajuQuery(raw) {
+  const q = (raw || '').trim();
+  const m = q.match(/^(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일\s*(?:(\d{1,2})\s*시\s*)?(양력|음력)\s*(여자|남자|여|남)\s*$/);
+  if (!m) return null;
+  const year = parseInt(m[1], 10);
+  const month = parseInt(m[2], 10);
+  const day = parseInt(m[3], 10);
+  const hour = m[4] !== undefined ? parseInt(m[4], 10) : null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  if (hour !== null && (hour < 0 || hour > 23)) return null;
+  const gender = (m[6] === '여자' || m[6] === '여') ? '여자' : '남자';
+  return { year, month, day, hour, calendarType: m[5], gender };
+}
+function renderSajuEasterEgg(info) {
+  const yearP = sajuYearPillar(info.year, info.month, info.day);
+  const monthP = sajuMonthPillar(info.year, info.month, info.day);
+  const dayP = sajuDayPillar(info.year, info.month, info.day);
+  const hourP = sajuHourPillar(dayP.stemIdx, info.hour);
+
+  const dayStem = dayP.pillar.stem;
+  const dayElement = SAJU_STEM_ELEMENTS[dayP.stemIdx];
+  const vibe = SAJU_STEM_VIBE[dayStem];
+
+  const now = new Date(); // 웹앱을 실제로 열람하는 시점 기준
+  const curMonthP = sajuMonthPillar(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const curMonthElement = SAJU_STEM_ELEMENTS[curMonthP.stemIdx];
+  const relation = sajuElementRelation(dayElement, curMonthElement);
+
+  const FORTUNE_TEXT = {
+    same: '이번 달은 나와 같은 기운이 겹치는 "비화"의 달이에요. 동료·친구와의 협업운이 좋고, 내 페이스대로 밀고 나가면 무난하게 풀리는 시기예요.',
+    generates: '이번 달은 내가 에너지를 밖으로 쏟아내는 "설기"의 달이에요. 아이디어를 표현하고 사람들과 나누는 활동엔 좋지만, 체력·에너지 관리는 신경 써주세요.',
+    generatedBy: '이번 달은 주변의 도움과 기운을 받는 "인성"의 달이에요. 배움이나 휴식, 귀인의 조언이 크게 힘이 되는 시기이니 새로운 걸 배우기 좋아요.',
+    controls: '이번 달은 내가 상황을 주도하는 "재성"의 달이에요. 추진력이 붙고 성과와 관련된 움직임이 활발해지는 시기지만, 과욕은 금물이에요.',
+    controlledBy: '이번 달은 긴장과 책임이 따르는 "관성"의 달이에요. 다소 압박감이 느껴질 수 있지만, 차분히 원칙을 지키면 오히려 신뢰를 쌓는 시기예요.'
+  };
+
+  // 2026년 한 해 총운 — 검색 시점의 실제 연도와 무관하게 "2026년"을 고정으로 계산한다.
+  // 절기 경계(입춘) 영향을 피하기 위해 연중 중간 시점(6/15)을 기준일로 사용.
+  const YEAR_FORTUNE_TARGET = 2026;
+  const yearOverviewP = sajuYearPillar(YEAR_FORTUNE_TARGET, 6, 15);
+  const yearOverviewElement = SAJU_STEM_ELEMENTS[yearOverviewP.stemIdx];
+  const yearRelation = sajuElementRelation(dayElement, yearOverviewElement);
+  const YEAR_FORTUNE_TEXT = {
+    same: `${YEAR_FORTUNE_TARGET}년 한 해는 나와 같은 기운이 흐르는 해예요. 스스로의 색깔과 리듬을 지키면서 나아가면 힘 있게 밀어붙일 수 있는 시기이니, 협업보다는 내 페이스를 믿고 주도적으로 움직여보세요.`,
+    generates: `${YEAR_FORTUNE_TARGET}년 한 해는 내가 가진 에너지를 밖으로 표현하고 나누는 해예요. 성과를 드러내고 사람들과 교류하기엔 좋지만, 벌려놓은 일이 많아지기 쉬우니 체력과 우선순위 관리가 관건이에요.`,
+    generatedBy: `${YEAR_FORTUNE_TARGET}년 한 해는 주변의 도움과 기운을 크게 받는 해예요. 배움·휴식·귀인의 조언이 힘이 되어주는 시기라, 무리해서 밀어붙이기보다 도움을 받아들이고 내실을 다지기 좋은 타이밍이에요.`,
+    controls: `${YEAR_FORTUNE_TARGET}년 한 해는 내가 상황을 주도하며 결과를 만들어내는 해예요. 추진력과 실행력이 돋보이고 재물·성과 관련 움직임이 활발해지지만, 과속·과욕은 화를 부를 수 있으니 완급 조절이 필요해요.`,
+    controlledBy: `${YEAR_FORTUNE_TARGET}년 한 해는 크고 작은 책임과 긴장이 따르는 해예요. 도전이 많아 부담스러울 수 있지만, 원칙을 지키고 차분히 대응하면 신뢰와 성장을 크게 얻을 수 있는 단련의 해가 될 수 있어요.`
+  };
+
+  const calendarNote = info.calendarType === '음력'
+    ? '<div class="source-note">⚠️ 음력 생년월일은 실제 음양력 변환 없이 간소화된 방식으로 계산되어 정식 만세력과 차이가 있을 수 있어요 — 재미로만 봐주세요 🙈</div>'
+    : '';
+
+  return `
+    <div class="card egg-card saju-card" data-id="egg-saju">
+      <div class="card-title-row">
+        <div class="card-title">🔮 ${info.year}년 ${info.month}월 ${info.day}일생 ${escapeHtml(info.gender)} 미니 사주풀이</div>
+        <div class="card-cat">지식백과 (숨겨진 위키)</div>
+      </div>
+      <div class="card-snippet">${vibe} ${dayStem}${SAJU_BRANCHES[dayP.pillar.branchIdx]}일주 — 지금(${now.getFullYear()}.${now.getMonth() + 1}) 시점 기준 이달의 운세예요 🍀</div>
+      <div class="card-body">
+        <div class="saju-pillars">
+          <span class="saju-pillar-chip">년주 ${yearP.pillar.ganji}</span>
+          <span class="saju-pillar-chip">월주 ${monthP.pillar.ganji}</span>
+          <span class="saju-pillar-chip saju-pillar-main">일주 ${dayP.pillar.ganji}</span>
+          ${hourP ? `<span class="saju-pillar-chip">시주 ${hourP.pillar.ganji}</span>` : `<span class="saju-pillar-chip saju-pillar-empty">시주 미입력</span>`}
+        </div>
+        <p>일간(나를 상징하는 기운)은 <strong>${dayStem}(${dayElement})</strong> — ${vibe} 성향이 강해요.</p>
+        <p>${FORTUNE_TEXT[relation]}</p>
+        ${calendarNote}
+        <div class="saju-year-block">
+          <div class="saju-year-title">🗓 ${YEAR_FORTUNE_TARGET}년(${yearOverviewP.pillar.ganji}년) 총운</div>
+          <span class="saju-pillar-chip saju-pillar-year">${yearOverviewP.pillar.ganji}</span>
+          <p>${YEAR_FORTUNE_TEXT[yearRelation]}</p>
+        </div>
+        <div class="card-tags"><span class="tag">#이스터에그</span><span class="tag">#숨겨진위키</span><span class="tag">#미니사주풀이</span><span class="tag">#${YEAR_FORTUNE_TARGET}년총운</span></div>
+        <div class="source-note">🥚 숨겨진 위키 이스터에그 · 간이 계산으로 재미로만 참고해 주세요 (전문 상담을 대체하지 않습니다).</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSearchResults() {
+  const q = document.getElementById('search-search').value;
+  const container = document.getElementById('search-results');
+  const countEl = document.getElementById('search-count');
+  if (!q.trim()) {
+    countEl.textContent = '';
+    container.innerHTML = '<div class="empty-state">검색어를 입력하면 업무 매뉴얼·용어사전·주간회의를 한 번에 검색합니다.</div>';
+    return;
+  }
+
+  let manualList = MANUAL.filter(m => matches(m, q, ['title','category','snippet','body']));
+  manualList = sortByRelevance(manualList, q, 'title', ['snippet','body']);
+
+  let glossaryList = GLOSSARY.filter(g => matches(g, q, ['term','category','def']));
+  glossaryList = sortByRelevance(glossaryList, q, 'term', ['def']);
+
+  // 주간회의는 사용자 요청에 따라 제목 우선순위 없이 최신순으로만 정렬한다.
+  let meetingList = MEETINGS.filter(m => matches(m, q, ['title','snippet','body']));
+  meetingList = meetingList.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const qNorm = q.trim().toLowerCase();
+  const eggList = SEARCH_EASTER_EGGS.filter(e => qNorm.includes(e.keyword.toLowerCase()));
+  const sajuInfo = tryParseSajuQuery(q);
+
+  const eggCount = eggList.length + (sajuInfo ? 1 : 0);
+  const total = manualList.length + glossaryList.length + meetingList.length + eggCount;
+  countEl.textContent = `총 ${total}건 (매뉴얼 ${manualList.length} · 용어 ${glossaryList.length} · 회의록 ${meetingList.length}${eggCount ? ' · 🐾 숨겨진 위키 ' + eggCount : ''})`;
+
+  if (total === 0) {
+    container.innerHTML = '<div class="empty-state">검색 결과가 없습니다.</div>';
+    return;
+  }
+
+  const sectionHead = (title, badge, count) =>
+    `<div class="search-section-title">${title} <span class="search-type-badge">${badge}</span><span class="search-section-count">${count}건</span></div>`;
+
+  let html = '';
+  if (sajuInfo) {
+    html += sectionHead('숨겨진 위키', '🔮 EASTER EGG', 1);
+    html += renderSajuEasterEgg(sajuInfo);
+  }
+  if (eggList.length) {
+    html += sectionHead('숨겨진 위키', '🥚 EASTER EGG', eggList.length);
+    html += eggList.map(e => `
+      <div class="card egg-card" data-id="egg-${escapeHtml(e.keyword)}">
+        <div class="card-title-row">
+          <div class="card-title">🐱 ${escapeHtml(e.title)}</div>
+          <div class="card-cat">${escapeHtml(e.category)}</div>
+        </div>
+        <div class="card-snippet">${escapeHtml(e.snippet)}</div>
+        <div class="card-body">${escapeHtml(e.body).replace(/\n/g, '<br>')}
+          <div class="card-tags"><span class="tag">#이스터에그</span><span class="tag">#숨겨진위키</span><span class="tag">#${escapeHtml(e.keyword)}</span></div>
+          <div class="source-note">${escapeHtml(e.source)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  if (manualList.length) {
+    html += sectionHead('업무 매뉴얼', 'MANUAL', manualList.length);
+    html += manualList.map(m => `
+      <div class="card" data-id="${m.id}">
+        <div class="card-title-row">
+          <div class="card-title">${escapeHtml(m.title)}</div>
+          <div class="card-cat">${escapeHtml(m.category)}</div>
+        </div>
+        <div class="card-snippet">${escapeHtml(m.snippet)}</div>
+        <div class="card-body">${renderTableHtml(m.table)}${escapeHtml(m.body)}
+          <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
+          ${m.meetingDate
+            ? `<div class="source-note-meeting">🗓 ${escapeHtml(m.meetingDate)} 주간회의록 출처<span class="snm-link">${escapeHtml(m.source||'')}</span></div>`
+            : `<div class="source-note">${escapeHtml(m.source||'')}</div>`}
+        </div>
+      </div>
+    `).join('');
+  }
+  if (glossaryList.length) {
+    html += sectionHead('용어사전', 'GLOSSARY', glossaryList.length);
+    html += glossaryList.map(g => `
+      <div class="card" data-id="${g.id}">
+        <div class="card-title-row">
+          <div class="card-title">${escapeHtml(g.term)}</div>
+          <div class="card-cat">${escapeHtml(g.category)}</div>
+        </div>
+        <div class="card-snippet">${escapeHtml(g.def)}</div>
+        <div class="card-body">${escapeHtml(g.def)}
+          <div class="card-tags">${(g.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
+          <div class="source-note">${escapeHtml(g.source||'')}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+  if (meetingList.length) {
+    html += sectionHead('주간회의', 'MEETING', meetingList.length);
+    html += meetingList.map(m => `
+      <div class="card" data-id="${m.id}">
+        <div class="card-title-row">
+          <div class="card-title">${escapeHtml(m.title)}</div>
+          <div class="card-cat">${escapeHtml(m.date)}</div>
+        </div>
+        <div class="card-snippet">${escapeHtml(m.snippet)}</div>
+        <div class="card-body">${escapeHtml(m.body)}
+          <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
+          <div class="source-note">${escapeHtml(m.source||'')}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  container.innerHTML = html;
+  container.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+}
+document.getElementById('search-search').addEventListener('input', renderSearchResults);
+
+/* =========================================================================
+   관리자 모드
+   ========================================================================= */
+function openLoginModal(onSuccess) {
+  const doOnSuccess = typeof onSuccess === 'function' ? onSuccess : enterAdminMode;
+  const slot = document.getElementById('modal-slot');
+  slot.innerHTML = `
+    <div class="modal-overlay" id="login-overlay">
+      <div class="modal-box">
+        <h2>관리자 모드 로그인</h2>
+        <p class="hint">비밀번호를 입력하면 위키 내용을 직접 추가·수정·삭제할 수 있습니다.</p>
+        <div class="modal-error" id="login-error">비밀번호가 올바르지 않습니다.</div>
+        <input type="password" id="login-pw" placeholder="비밀번호" autofocus>
+        <div class="modal-actions">
+          <button class="btn" id="login-cancel">취소</button>
+          <button class="btn btn-primary" id="login-submit">로그인</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const overlay = document.getElementById('login-overlay');
+  const pwInput = document.getElementById('login-pw');
+  const close = () => { slot.innerHTML = ''; };
+  document.getElementById('login-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  const submit = async () => {
+    const hash = await sha256Hex(pwInput.value);
+    if (hash === CONFIG.adminPasswordHash) {
+      isAdmin = true;
+      close();
+      doOnSuccess();
+    } else {
+      document.getElementById('login-error').style.display = 'block';
+    }
+  };
+  document.getElementById('login-submit').addEventListener('click', submit);
+  pwInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+}
+
+function enterAdminMode() {
+  document.getElementById('admin-toggle-btn').textContent = '🔓 관리자 모드 켜짐';
+  document.getElementById('admin-toggle-btn').classList.add('on');
+  document.getElementById('admin-tab-btn').style.display = '';
+  document.getElementById('admin-bar-slot').innerHTML = `
+    <div class="admin-bar">
+      <span><strong>관리자 모드</strong>가 활성화되었습니다. 상단 "관리자 모드" 탭에서 항목을 추가·수정·삭제하고, 변경사항을 파일로 내보낼 수 있습니다.</span>
+      <div class="admin-bar-actions">
+        <button class="btn" id="admin-logout-btn">로그아웃</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('admin-logout-btn').addEventListener('click', exitAdminMode);
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('admin-tab-btn').classList.add('active');
+  document.getElementById('panel-admin').classList.add('active');
+  renderAdminPanel();
+}
+
+function exitAdminMode() {
+  isAdmin = false;
+  document.getElementById('admin-toggle-btn').textContent = '🔐 관리자 모드';
+  document.getElementById('admin-toggle-btn').classList.remove('on');
+  document.getElementById('admin-tab-btn').style.display = 'none';
+  document.getElementById('admin-bar-slot').innerHTML = '';
+  document.querySelector('.tab-btn[data-tab="manual"]').click();
+}
+
+document.getElementById('admin-toggle-btn').addEventListener('click', () => {
+  if (isAdmin) {
+    document.querySelector('.tab-btn[data-tab="admin"]').click();
+  } else {
+    openLoginModal();
+  }
+});
+
+document.getElementById('bulk-upload-btn').addEventListener('click', () => {
+  if (isAdmin) {
+    openBulkUploadModal();
+  } else {
+    openLoginModal(openBulkUploadModal);
+  }
+});
+
+/* ---------- CSV 일괄 업로드 ---------- */
+// RFC4180 형태의 간단한 CSV 파서 (따옴표로 묶인 필드, 필드 내 쉼표/줄바꿈, "" 이스케이프 지원)
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+  const norm = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  for (let i = 0; i < norm.length; i++) {
+    const c = norm[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (norm[i + 1] === '"') { field += '"'; i++; }
+        else { inQuotes = false; }
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      row.push(field); field = '';
+    } else if (c === '\n') {
+      row.push(field); rows.push(row); row = []; field = '';
+    } else {
+      field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+function parseCSVToObjects(text) {
+  const rows = parseCSV(text).filter(r => r.some(c => (c || '').trim() !== ''));
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.trim().replace(/^﻿/, ''));
+  return rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (r[idx] !== undefined ? r[idx] : '').trim(); });
+    return obj;
+  });
+}
+
+function meetingIdFor(dateStr) {
+  const ymd = (dateStr || '').replace(/-/g, '');
+  return `meeting-${ymd}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function openBulkUploadModal() {
+  const slot = document.getElementById('modal-slot');
+  slot.innerHTML = `
+    <div class="modal-overlay" id="bulk-overlay">
+      <div class="modal-box modal-box-wide">
+        <h2>업로드</h2>
+        <div class="bulk-hint-box">
+          CSV 파일을 선택하면 <strong>업무 매뉴얼 · 용어사전 · 주간회의</strong> 항목을 한 번에 추가합니다.<br>
+          ※ 압축(zip) 폴더 업로드는 아티팩트 실행 환경 제약상 지원되지 않아, <strong>CSV 파일을 여러 개 한 번에 선택</strong>하는 방식으로 대체했습니다 (아래 입력창에서 Ctrl/Cmd 클릭으로 다중 선택 가능).<br><br>
+          <strong>필수 헤더(1행)</strong>: <code>type,title,category,tags,snippet,body,source,date</code><br>
+          · <code>type</code>: <code>manual</code> / <code>glossary</code> / <code>meeting</code> 중 하나 (필수)<br>
+          · <code>title</code>: 매뉴얼 제목 · 용어 · 회의록 제목 (필수)<br>
+          · <code>category</code>: 매뉴얼·용어사전 분류 (회의록은 미사용)<br>
+          · <code>tags</code>: 여러 개면 세미콜론(;)으로 구분, 예) <code>중과세;다주택자</code><br>
+          · <code>snippet</code>: 매뉴얼·회의록 요약 (비우면 본문 앞부분을 자동 사용)<br>
+          · <code>body</code>: 본문 / 정의 / 회의 내용 (필수)<br>
+          · <code>source</code>: 출처 (선택)<br>
+          · <code>date</code>: 회의록 날짜 YYYY-MM-DD (회의록만 필수)<br>
+          ※ 표(table) 형식 항목은 일괄 업로드로 지원되지 않습니다 — 업로드 후 관리자 모드에서 개별 수정해 주세요.
+        </div>
+        <input type="file" class="bulk-file-input" id="bulk-file-input" multiple accept=".csv,text/csv">
+        <div id="bulk-preview"></div>
+        <div class="modal-actions">
+          <button class="btn" id="bulk-cancel">취소</button>
+          <button class="btn btn-primary" id="bulk-apply" disabled>적용</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const overlay = document.getElementById('bulk-overlay');
+  const close = () => { slot.innerHTML = ''; };
+  document.getElementById('bulk-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  let pendingRows = [];
+
+  document.getElementById('bulk-file-input').addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files || []);
+    pendingRows = [];
+    const errors = [];
+    for (const file of files) {
+      try {
+        const text = await file.text();
+        const objs = parseCSVToObjects(text);
+        objs.forEach((obj, idx) => {
+          const rowNum = idx + 2;
+          const type = (obj.type || '').trim().toLowerCase();
+          if (!['manual', 'glossary', 'meeting'].includes(type)) {
+            errors.push(`${file.name} ${rowNum}행: type 값이 올바르지 않습니다 ("${obj.type || ''}").`);
+            return;
+          }
+          if (!obj.title || !obj.title.trim()) {
+            errors.push(`${file.name} ${rowNum}행: title이 비어 있습니다.`);
+            return;
+          }
+          if (!obj.body || !obj.body.trim()) {
+            errors.push(`${file.name} ${rowNum}행: body가 비어 있습니다.`);
+            return;
+          }
+          if (type === 'meeting' && (!obj.date || !/^\d{4}-\d{2}-\d{2}$/.test(obj.date.trim()))) {
+            errors.push(`${file.name} ${rowNum}행: 회의록 date는 YYYY-MM-DD 형식이어야 합니다.`);
+            return;
+          }
+          pendingRows.push(Object.assign({}, obj, { type, __file: file.name }));
+        });
+      } catch (err) {
+        errors.push(`${file.name}: 파일을 읽는 중 오류가 발생했습니다 (${(err && err.message) || err}).`);
+      }
+    }
+    const counts = { manual: 0, glossary: 0, meeting: 0 };
+    pendingRows.forEach(r => counts[r.type]++);
+    const preview = document.getElementById('bulk-preview');
+    preview.innerHTML = `
+      <div class="bulk-summary">선택한 파일 ${files.length}개 · 적용 가능 <strong>${pendingRows.length}건</strong>
+        (매뉴얼 ${counts.manual} · 용어 ${counts.glossary} · 회의록 ${counts.meeting})</div>
+      ${errors.length ? `<ul class="bulk-error-list">${errors.map(er => `<li>${escapeHtml(er)}</li>`).join('')}</ul>` : ''}
+    `;
+    document.getElementById('bulk-apply').disabled = pendingRows.length === 0;
+  });
+
+  document.getElementById('bulk-apply').addEventListener('click', () => {
+    if (pendingRows.length === 0) return;
+    applyBulkRows(pendingRows);
+    close();
+  });
+}
+
+function applyBulkRows(rows) {
+  const counts = { manual: 0, glossary: 0, meeting: 0 };
+  rows.forEach(r => {
+    const tags = (r.tags || '').split(';').map(t => t.trim()).filter(Boolean);
+    const source = (r.source || '').trim();
+    const body = r.body || '';
+    if (r.type === 'manual') {
+      const snippet = (r.snippet || '').trim() || body.slice(0, 60);
+      MANUAL.push({ id: slugify(), title: r.title.trim(), category: (r.category || '').trim() || '기타', tags, snippet, body, source });
+      counts.manual++;
+    } else if (r.type === 'glossary') {
+      GLOSSARY.push({ id: slugify(), term: r.title.trim(), category: (r.category || '').trim() || '기타', tags, def: body, source });
+      counts.glossary++;
+    } else if (r.type === 'meeting') {
+      const snippet = (r.snippet || '').trim() || body.slice(0, 60);
+      MEETINGS.push({ id: meetingIdFor(r.date.trim()), date: r.date.trim(), title: r.title.trim(), tags, snippet, body, source });
+      counts.meeting++;
+    }
+  });
+
+  syncDataIsland('data-manual', MANUAL);
+  syncDataIsland('data-glossary', GLOSSARY);
+  syncDataIsland('data-meetings', MEETINGS);
+
+  renderManualChips(); renderManualList();
+  renderGlossaryChips(); renderGlossaryList();
+  renderMeetingList();
+  renderSearchResults();
+  if (isAdmin) renderAdminPanel();
+  toast(`업로드 완료: 매뉴얼 ${counts.manual}건 · 용어 ${counts.glossary}건 · 회의록 ${counts.meeting}건 추가됨`);
+}
+
+function parseTableInput(raw) {
+  if (!raw || !raw.trim()) return null;
+  const lines = raw.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length < 1) return null;
+  const headers = lines[0].split('|').map(s => s.trim());
+  const rows = lines.slice(1).map(l => l.split('|').map(s => s.trim()));
+  return { headers, rows };
+}
+function tableToInput(table) {
+  if (!table) return '';
+  const lines = [table.headers.join(' | ')];
+  table.rows.forEach(r => lines.push(r.join(' | ')));
+  return lines.join('\n');
+}
+
+function renderAdminPanel() {
+  const panel = document.getElementById('panel-admin');
+  panel.innerHTML = `
+    <div class="admin-section">
+      <h3>${editingContext ? '항목 수정' : '새 항목 추가'}</h3>
+      <div class="admin-form-row">
+        <label>구분</label>
+        <select id="af-type" ${editingContext ? 'disabled' : ''}>
+          <option value="manual">업무 매뉴얼</option>
+          <option value="glossary">용어사전</option>
+        </select>
+      </div>
+      <div class="admin-form-row">
+        <label id="af-title-label">제목 / 용어</label>
+        <input type="text" id="af-title" placeholder="예: CASE4. 신규 특례 판단 매뉴얼">
+      </div>
+      <div class="admin-form-row">
+        <label>카테고리</label>
+        <input type="text" id="af-category" placeholder="예: 환급심사">
+      </div>
+      <div class="admin-form-row">
+        <label>태그 (쉼표로 구분)</label>
+        <input type="text" id="af-tags" placeholder="예: CASE4, 특례, 환급심사">
+      </div>
+      <div class="admin-form-row" id="af-snippet-row">
+        <label>요약 (목록에 표시될 짧은 설명)</label>
+        <input type="text" id="af-snippet" placeholder="한 줄 요약">
+      </div>
+      <div class="admin-form-row" id="af-body-row">
+        <label>본문</label>
+        <textarea id="af-body" rows="8" placeholder="상세 내용을 입력하세요."></textarea>
+      </div>
+      <div class="admin-form-row" id="af-table-row">
+        <label>표 (선택 — 첫 줄은 헤더, 이후 줄은 데이터 행. 열 구분은 | 기호)</label>
+        <textarea id="af-table" rows="4" placeholder="구조 | 내용&#10;양도가액 | 부동산 등의 양도당시 실지 거래가액"></textarea>
+        <div class="field-hint">비워두면 표 없이 텍스트만 표시됩니다.</div>
+      </div>
+      <div class="admin-form-row">
+        <label>출처</label>
+        <input type="text" id="af-source" placeholder="예: 출처: 양도세 기본이론 PPT 6p">
+      </div>
+      <div class="modal-actions">
+        ${editingContext ? '<button class="btn" id="af-cancel">취소</button>' : ''}
+        <button class="btn btn-primary" id="af-save">${editingContext ? '저장' : '추가'}</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>업무 매뉴얼 항목 (${MANUAL.length}건)</h3>
+      <div id="admin-manual-rows"></div>
+    </div>
+
+    <div class="admin-section">
+      <h3>용어사전 항목 (${GLOSSARY.length}건)</h3>
+      <div id="admin-glossary-rows"></div>
+    </div>
+
+    <div class="admin-section">
+      <h3>업로드 (업무 매뉴얼 · 용어사전 · 주간회의)</h3>
+      <p class="hint" style="margin-bottom:10px;">CSV 파일 하나 또는 여러 개를 한 번에 올려 업무 매뉴얼·용어사전·주간회의 항목을 자동으로 추가합니다. 상단 헤더의 "업로드" 버튼과 동일한 기능입니다.</p>
+      <button class="btn btn-primary" id="af-bulk-open">업로드 열기</button>
+    </div>
+
+    <div class="admin-section">
+      <h3>관리자 비밀번호 변경</h3>
+      <div class="admin-form-row">
+        <label>새 비밀번호</label>
+        <input type="password" id="af-newpw" placeholder="새 비밀번호 입력">
+      </div>
+      <button class="btn" id="af-changepw">비밀번호 변경</button>
+      <div class="field-hint" style="margin-top:8px;">
+        ※ 이 보호는 파일 내부에서 비밀번호의 해시값만 비교하는 간단한 방식으로, 실제 서버 인증만큼 안전하지는 않습니다.
+        내부 인트라넷에서 casual하게 편집 권한을 구분하는 용도로 사용해 주세요.
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>변경사항 내보내기</h3>
+      <p class="hint" style="margin-bottom:10px;">지금까지의 추가·수정·삭제·비밀번호 변경 내용을 반영한 새 HTML 파일을 다운로드합니다. 다운로드한 파일로 기존 인트라넷 파일을 교체하면 모든 팀원이 최신 내용을 보게 됩니다.</p>
+      <button class="btn btn-primary" id="af-export">업데이트된 HTML로 내보내기</button>
+    </div>
+  `;
+
+  const typeSelect = document.getElementById('af-type');
+  const titleLabel = document.getElementById('af-title-label');
+  function syncLabels() {
+    const isGlossary = typeSelect.value === 'glossary';
+    titleLabel.textContent = isGlossary ? '용어' : '제목';
+    document.getElementById('af-snippet-row').style.display = isGlossary ? 'none' : '';
+    document.getElementById('af-table-row').style.display = isGlossary ? 'none' : '';
+  }
+  typeSelect.addEventListener('change', syncLabels);
+  syncLabels();
+
+  if (editingContext) {
+    const src = editingContext.listName === 'MANUAL' ? MANUAL : GLOSSARY;
+    const entry = src.find(e => e.id === editingContext.id);
+    if (entry) {
+      typeSelect.value = editingContext.listName === 'MANUAL' ? 'manual' : 'glossary';
+      document.getElementById('af-title').value = entry.title || entry.term || '';
+      document.getElementById('af-category').value = entry.category || '';
+      document.getElementById('af-tags').value = (entry.tags || []).join(', ');
+      document.getElementById('af-source').value = entry.source || '';
+      if (editingContext.listName === 'MANUAL') {
+        document.getElementById('af-snippet').value = entry.snippet || '';
+        document.getElementById('af-body').value = entry.body || '';
+        document.getElementById('af-table').value = tableToInput(entry.table);
+      } else {
+        document.getElementById('af-body').value = entry.def || '';
+      }
+      syncLabels();
+    }
+  }
+
+  document.getElementById('af-save').addEventListener('click', saveEntryFromForm);
+  const cancelBtn = document.getElementById('af-cancel');
+  if (cancelBtn) cancelBtn.addEventListener('click', () => { editingContext = null; renderAdminPanel(); });
+  document.getElementById('af-changepw').addEventListener('click', changePassword);
+  document.getElementById('af-export').addEventListener('click', exportHtml);
+  document.getElementById('af-bulk-open').addEventListener('click', openBulkUploadModal);
+
+  renderAdminEntryRows();
+}
+
+function renderAdminEntryRows() {
+  const manualRows = document.getElementById('admin-manual-rows');
+  manualRows.innerHTML = MANUAL.map(m => `
+    <div class="admin-entry-row">
+      <div>
+        <div class="aer-title">${escapeHtml(m.title)}</div>
+        <div class="aer-meta">${escapeHtml(m.category)} · ${m.id}</div>
+      </div>
+      <div class="aer-actions">
+        <button class="btn" data-edit="MANUAL:${m.id}">수정</button>
+        <button class="btn btn-danger" data-del="MANUAL:${m.id}">삭제</button>
+      </div>
+    </div>
+  `).join('') || '<div class="field-hint">등록된 항목이 없습니다.</div>';
+
+  const glossaryRows = document.getElementById('admin-glossary-rows');
+  glossaryRows.innerHTML = GLOSSARY.map(g => `
+    <div class="admin-entry-row">
+      <div>
+        <div class="aer-title">${escapeHtml(g.term)}</div>
+        <div class="aer-meta">${escapeHtml(g.category)} · ${g.id}</div>
+      </div>
+      <div class="aer-actions">
+        <button class="btn" data-edit="GLOSSARY:${g.id}">수정</button>
+        <button class="btn btn-danger" data-del="GLOSSARY:${g.id}">삭제</button>
+      </div>
+    </div>
+  `).join('') || '<div class="field-hint">등록된 항목이 없습니다.</div>';
+
+  document.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const [listName, id] = btn.dataset.edit.split(':');
+      editingContext = { listName, id };
+      renderAdminPanel();
+      panel_scrollTop();
+    });
+  });
+  document.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const [listName, id] = btn.dataset.del.split(':');
+      if (!confirm('이 항목을 삭제할까요? 되돌릴 수 없습니다.')) return;
+      if (listName === 'MANUAL') {
+        MANUAL = MANUAL.filter(e => e.id !== id);
+        syncDataIsland('data-manual', MANUAL);
+      } else {
+        GLOSSARY = GLOSSARY.filter(e => e.id !== id);
+        syncDataIsland('data-glossary', GLOSSARY);
+      }
+      if (editingContext && editingContext.id === id) editingContext = null;
+      renderAdminPanel();
+      renderManualChips(); renderManualList();
+      renderGlossaryChips(); renderGlossaryList();
+      toast('항목을 삭제했습니다.');
+    });
+  });
+}
+
+function panel_scrollTop() {
+  document.getElementById('panel-admin').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function slugify(str) {
+  return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+function saveEntryFromForm() {
+  const type = document.getElementById('af-type').value;
+  const title = document.getElementById('af-title').value.trim();
+  const category = document.getElementById('af-category').value.trim();
+  const tags = document.getElementById('af-tags').value.split(',').map(s => s.trim()).filter(Boolean);
+  const source = document.getElementById('af-source').value.trim();
+  const body = document.getElementById('af-body').value;
+
+  if (!title) { alert('제목/용어를 입력해 주세요.'); return; }
+  if (!body.trim()) { alert('본문 내용을 입력해 주세요.'); return; }
+
+  if (type === 'manual') {
+    const snippet = document.getElementById('af-snippet').value.trim() || body.slice(0, 60);
+    const table = parseTableInput(document.getElementById('af-table').value);
+    if (editingContext && editingContext.listName === 'MANUAL') {
+      const entry = MANUAL.find(e => e.id === editingContext.id);
+      Object.assign(entry, { title, category, tags, snippet, body, source, table: table || undefined });
+      if (!table) delete entry.table;
+    } else {
+      MANUAL.push({ id: slugify(), title, category, tags, snippet, body, source, ...(table ? {table} : {}) });
+    }
+    syncDataIsland('data-manual', MANUAL);
+    renderManualChips(); renderManualList();
+  } else {
+    if (editingContext && editingContext.listName === 'GLOSSARY') {
+      const entry = GLOSSARY.find(e => e.id === editingContext.id);
+      Object.assign(entry, { term: title, category, tags, def: body, source });
+    } else {
+      GLOSSARY.push({ id: slugify(), term: title, category, tags, def: body, source });
+    }
+    syncDataIsland('data-glossary', GLOSSARY);
+    renderGlossaryChips(); renderGlossaryList();
+  }
+
+  editingContext = null;
+  renderAdminPanel();
+  toast('저장되었습니다.');
+}
+
+async function changePassword() {
+  const pw = document.getElementById('af-newpw').value;
+  if (!pw || pw.length < 4) { alert('4자 이상의 비밀번호를 입력해 주세요.'); return; }
+  CONFIG.adminPasswordHash = await sha256Hex(pw);
+  syncDataIsland('data-config', CONFIG);
+  document.getElementById('af-newpw').value = '';
+  toast('비밀번호가 변경되었습니다. 내보내기한 파일에도 반영됩니다.');
+}
+
+function syncDataIsland(elId, data) {
+  document.getElementById(elId).textContent = JSON.stringify(data, null, 2);
+}
+
+function exportHtml() {
+  let out = window.__ORIGINAL_HTML__;
+  const replaceIsland = (id, data) => {
+    const json = JSON.stringify(data, null, 2);
+    const re = new RegExp(`(<scr` + `ipt type="application/json" id="${id}">)[\\s\\S]*?(<\\/scr` + `ipt>)`);
+    out = out.replace(re, (whole, open, close) => open + '\n' + json + '\n' + close);
+  };
+  replaceIsland('data-manual', MANUAL);
+  replaceIsland('data-glossary', GLOSSARY);
+  replaceIsland('data-meetings', MEETINGS);
+  replaceIsland('data-config', CONFIG);
+
+  const blob = new Blob([out], {type: 'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `유닛블랙_CX운영지원팀_고객지원파트_WIKI_${ts}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  toast('HTML 파일을 다운로드했습니다.');
+}
+
+/* ---------- 초기 렌더 ---------- */
+renderManualChips();
+renderManualList();
+renderGlossaryChips();
+renderGlossaryList();
+renderMeetingList();
+renderSearchResults();
+</script>
+</body>
+</html>

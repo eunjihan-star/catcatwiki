@@ -1,0 +1,167 @@
+'use strict';
+
+const axios = require('axios');
+const xml2js = require('xml2js');
+
+// 국토교통부 건축물대장정보 서비스 (공공데이터포털)
+// https://www.data.go.kr/data/15057200/openapi.do
+const BASE_URL = 'https://apis.data.go.kr/1613000/BldRgstHubService';
+
+// 표제부(건물 전체 개요) - 건물유형/사용승인일 확인용
+const TITLE_INFO_PATH = '/getBrTitleInfo';
+
+/**
+ * 건축물대장 표제부 API를 호출한다.
+ * platGbCd: 0(대지) / 1(산)
+ */
+async function fetchTitleInfo({ sigunguCd, bjdongCd, platGbCd = '0', bun, ji }) {
+  const apiKey = process.env.BUILDING_REGISTER_API_KEY;
+  if (!apiKey) {
+    const err = new Error('BUILDING_REGISTER_API_KEY가 설정되지 않았습니다. .env 파일을 확인해주세요.');
+    err.code = 'MISSING_API_KEY';
+    throw err;
+  }
+
+  const params = {
+    serviceKey: apiKey,
+    sigunguCd,
+    bjdongCd,
+    platGbCd,
+    bun: (bun || '0000').padStart(4, '0'),
+    ji: (ji || '0000').padStart(4, '0'),
+    numOfRows: 10,
+    pageNo: 1,
+    _type: 'json',
+  };
+
+  const { data } = await axios.get(`${BASE_URL}${TITLE_INFO_PATH}`, { params, timeout: 8000 });
+
+  // 일부 오류 응답은 _type=json 을 무시하고 XML로 내려오므로 방어적으로 처리
+  if (typeof data === 'string') {
+    return parseXmlResponse(data);
+  }
+
+  const header = data?.response?.header;
+  if (!header || header.resultCode !== '00') {
+    const err = new Error(`건축물대장 API 오류: ${header?.resultMsg || '알 수 없는 오류'} (${header?.resultCode})`);
+    err.code = header?.resultCode;
+    throw err;
+  }
+
+  const items = data?.response?.body?.items?.item;
+  if (!items) return [];
+  return Array.isArray(items) ? items : [items];
+}
+
+async function parseXmlResponse(xml) {
+  const parsed = await xml2js.parseStringPromise(xml, { explicitArray: false, trim: true });
+  const header = parsed?.response?.header;
+  if (!header || header.resultCode !== '00') {
+    const err = new Error(`건축물대장 API 오류: ${header?.resultMsg || '알 수 없는 오류'} (${header?.resultCode})`);
+    err.code = header?.resultCode;
+    throw err;
+  }
+  const items = parsed?.response?.body?.items?.item;
+  if (!items) return [];
+  return Array.isArray(items) ? items : [items];
+}
+
+// 건축법 시행령 별표1 기준 주용도명 -> 화면에 표시할 유형 라벨 정리
+const BUILDING_TYPE_KEYWORDS = [
+  { match: ['아파트'], label: '아파트' },
+  { match: ['연립주택'], label: '연립주택(빌라)' },
+  { match: ['다세대주택'], label: '다세대주택(빌라)' },
+  { match: ['다가구주택'], label: '다가구주택' },
+  { match: ['단독주택'], label: '단독주택' },
+  { match: ['기숙사'], label: '기숙사' },
+  { match: ['오피스텔'], label: '오피스텔' },
+  { match: ['근린생활시설'], label: '상가(근린생활시설)' },
+  { match: ['업무시설'], label: '업무시설' },
+];
+
+function classifyBuildingType(mainPurpsCdNm, etcPurps, buildingName) {
+  const haystack = [mainPurpsCdNm, etcPurps, buildingName].filter(Boolean).join(' ');
+  for (const rule of BUILDING_TYPE_KEYWORDS) {
+    if (rule.match.some((kw) => haystack.includes(kw))) return rule.label;
+  }
+  return mainPurpsCdNm || '확인 불가';
+}
+
+function formatDate(yyyymmdd) {
+  if (!yyyymmdd || yyyymmdd.length !== 8) return null;
+  return `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}`;
+}
+
+/**
+ * BUILDING_REGISTER_API_KEY 발급(공공데이터포털 승인) 전까지 사용하는 임시 목데이터.
+ * 실제 건축물대장 값이 아니므로 isMock: true 로 명시하고, 프론트엔드에서 반드시
+ * 별도 배지로 구분 표시한다. 키가 채워지는 즉시 이 분기는 타지 않고 실제 API로 전환된다.
+ */
+function buildMockInfo(buildingNameHint) {
+  let buildingType = '단독주택';
+  if (buildingNameHint) {
+    if (buildingNameHint.includes('오피스텔')) buildingType = '오피스텔';
+    else if (buildingNameHint.includes('아파트')) buildingType = '아파트';
+    else buildingType = '다세대주택(빌라)';
+  }
+
+  return {
+    found: true,
+    isMock: true,
+    buildingType,
+    buildingName: buildingNameHint || '(목데이터) 건물명 미상',
+    dongName: null,
+    useAprDay: '1998-05-14',
+    totalFloorArea: '84.97',
+    groundFloors: '15',
+    undergroundFloors: '2',
+    raw: null,
+  };
+}
+
+/**
+ * 도로명주소 API 결과(sigunguCd/bjdongCd/지번)로 건축물대장 표제부를 조회해
+ * 화면에 필요한 형태로 가공한다.
+ */
+async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, buildingName }) {
+  if (!process.env.BUILDING_REGISTER_API_KEY) {
+    return buildMockInfo(buildingName);
+  }
+
+  const items = await fetchTitleInfo({
+    sigunguCd,
+    bjdongCd,
+    platGbCd: mtYn === '1' ? '1' : '0',
+    bun: lnbrMnnm,
+    ji: lnbrSlno,
+  });
+
+  if (items.length === 0) {
+    return {
+      found: false,
+      buildingType: '건축물대장 정보 없음 (나대지·상가·미등재 건물 등의 가능성)',
+      buildingName: null,
+      useAprDay: null,
+      raw: null,
+    };
+  }
+
+  // 동이 여러 개인 경우 첫 항목을 대표로 사용(표제부는 동별로 동일한 사용승인일을 갖는 경우가 대부분)
+  const item = items[0];
+
+  return {
+    found: true,
+    buildingType: classifyBuildingType(item.mainPurpsCdNm, item.etcPurps, item.bldNm),
+    buildingName: item.bldNm || null,
+    dongName: item.dongNm || null,
+    useAprDay: formatDate(item.useAprDay),
+    totalFloorArea: item.totArea || null,
+    groundFloors: item.grndFlrCnt || null,
+    undergroundFloors: item.ugrndFlrCnt || null,
+    raw: item,
+  };
+}
+
+module.exports = {
+  getBuildingInfo,
+};
