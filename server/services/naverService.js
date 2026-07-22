@@ -233,14 +233,53 @@ function extractRegionTokens(jibunAddr) {
 
 /**
  * 검색 결과 텍스트가 다른 지역(우리 지역명은 전혀 언급 없이, 다른 시/도명만 언급)에
- * 관한 글로 보이면 true. 지역명이 아예 없는 글(순수 단지명만 언급)은 걸러내지 않는다 —
- * 오탐(잘못 걸러냄)보다 미탐(못 걸러냄)이 낫다는 판단.
+ * 관한 글로 보이면 true.
  */
 function isLikelyWrongRegion(text, region) {
   if (!region.sido) return false;
   const mentionsOwnRegion = text.includes(region.sido) || (region.sigungu && text.includes(region.sigungu));
   if (mentionsOwnRegion) return false;
   return ALL_SIDO_SHORT_NAMES.some((name) => name !== region.sido && text.includes(name));
+}
+
+// 검색어에서 "지역명이 아닌, 이 단지를 특정 짓는 키워드"만 뽑아낸다.
+// "재개발/재건축/아파트/빌라" 같은 범용 단어와 순수 숫자(번지)는 제외 — 이런 단어만으로는
+// 다른 정비구역 글까지 다 걸리므로 실제로 변별력 있는 토큰(예: "아이파크")만 남긴다.
+const GENERIC_WORDS = new Set([
+  '아파트', '빌라', '연립주택', '다세대주택', '오피스텔', '단독주택', '다가구주택',
+  '재건축', '재개발', '주택', '동', '단지',
+]);
+
+function extractDistinctiveTokens(keyword, region) {
+  if (!keyword) return [];
+  const regionTokens = new Set([region.sido, region.sigungu, region.dong].filter(Boolean));
+  return keyword
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2 && !/^\d+(-\d+)?$/.test(t)) // 순수 숫자(번지) 제외
+    .filter((t) => !regionTokens.has(t) && !GENERIC_WORDS.has(t));
+}
+
+/**
+ * 이 글이 "우리가 찾는 그 건물"에 관한 글인지 판단한다.
+ * 1) 다른 지역(시/도) 얘기면 탈락
+ * 2) 동(읍/면) 이름이 있는데 언급이 전혀 없으면 탈락 — 같은 구라도 다른 동/다른 정비구역
+ *    (예: "봉천4-1-3구역")의 관리처분인가 소식이 엉뚱하게 섞이는 걸 막기 위함
+ * 3) 단지명에서 뽑은 변별력 있는 토큰(예: "아이파크")이 하나도 안 나오면 탈락 —
+ *    같은 동이어도 "종암동 3-10 일대" 같은 별개 정비사업과 헷갈리지 않도록
+ * 위 기준으로 걸러낼 게 아무것도 없으면(지역/단지명 정보 부족) 그냥 통과시킨다.
+ */
+function isRelevantArticle(text, region, distinctiveTokens) {
+  if (isLikelyWrongRegion(text, region)) return false;
+
+  if (region.dong) {
+    const dongRoot = region.dong.replace(/(동|읍|면|가)$/, '');
+    if (dongRoot && !text.includes(dongRoot)) return false;
+  }
+
+  if (distinctiveTokens.length > 0 && !distinctiveTokens.some((t) => text.includes(t))) return false;
+
+  return true;
 }
 
 /**
@@ -259,10 +298,9 @@ async function searchRedevelopmentInfo(keyword, jibunAddr) {
     searchNaver('blog', query, 20).catch(() => []),
   ]);
 
+  const distinctiveTokens = extractDistinctiveTokens(keyword, region);
   let articles = [...news, ...blog];
-  if (region.sido) {
-    articles = articles.filter((a) => !isLikelyWrongRegion(`${a.title} ${a.description}`, region));
-  }
+  articles = articles.filter((a) => isRelevantArticle(`${a.title} ${a.description}`, region, distinctiveTokens));
 
   const events = extractRedevelopmentEvents(articles);
 
