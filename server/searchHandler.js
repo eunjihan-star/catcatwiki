@@ -35,9 +35,11 @@ async function handleSearch(address) {
     error: err.message,
   }));
 
-  // 네이버 검색은 단지명이 있으면 단지명 위주로, 없으면 지번주소 기준으로 검색
+  // 네이버 검색은 단지명이 있으면 단지명 위주로, 없으면 지번주소 기준으로 검색.
+  // 지번주소는 검색어에 지역명(시/군/구/동)을 강제로 붙이는 데 별도로 사용된다 —
+  // 그래야 "종암아이파크"처럼 흔한 브랜드명이 다른 지역 결과와 섞이지 않는다.
   const searchKeyword = best.buildingName || parsed.complexNameHint || best.jibunAddr;
-  const naverInfoPromise = searchRedevelopmentInfo(searchKeyword).catch((err) => ({
+  const naverInfoPromise = searchRedevelopmentInfo(searchKeyword, best.jibunAddr).catch((err) => ({
     error: err.message,
     events: null,
     articles: [],

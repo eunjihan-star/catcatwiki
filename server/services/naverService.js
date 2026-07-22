@@ -203,20 +203,67 @@ function extractRedevelopmentEvents(articles) {
   };
 }
 
+// 검색어에 지역명을 붙이기 위한 시/도 축약 표기 (뉴스·블로그에서 흔히 쓰는 표현에 맞춤)
+const SIDO_SHORT_MAP = {
+  '서울특별시': '서울', '부산광역시': '부산', '대구광역시': '대구', '인천광역시': '인천',
+  '광주광역시': '광주', '대전광역시': '대전', '울산광역시': '울산', '세종특별자치시': '세종',
+  '경기도': '경기', '강원특별자치도': '강원', '강원도': '강원',
+  '충청북도': '충북', '충청남도': '충남',
+  '전북특별자치도': '전북', '전라북도': '전북', '전라남도': '전남',
+  '경상북도': '경북', '경상남도': '경남', '제주특별자치도': '제주',
+};
+const ALL_SIDO_SHORT_NAMES = [...new Set(Object.values(SIDO_SHORT_MAP))];
+
+/**
+ * 지번주소(예: "서울특별시 성북구 종암동 123-4")에서 시/도·시군구·읍면동을 뽑아
+ * 검색어에 붙일 지역 문자열("서울 성북구 종암동")을 만든다.
+ * "종암아이파크"처럼 전국에 같은/유사한 이름의 단지가 있는 경우, 지역명 없이
+ * 단지명만으로 검색하면 엉뚱한 지역의 글이 섞여 들어오기 때문에 반드시 붙인다.
+ */
+function extractRegionTokens(jibunAddr) {
+  if (!jibunAddr) return { sido: '', sigungu: '', dong: '', queryRegion: '' };
+  const tokens = jibunAddr.trim().split(/\s+/);
+  const sidoRaw = tokens[0] || '';
+  const sido = SIDO_SHORT_MAP[sidoRaw] || sidoRaw;
+  const sigungu = tokens[1] || '';
+  const dong = tokens[2] && /(동|읍|면|가)$/.test(tokens[2]) ? tokens[2] : '';
+  const queryRegion = [sido, sigungu, dong].filter(Boolean).join(' ');
+  return { sido, sigungu, dong, queryRegion };
+}
+
+/**
+ * 검색 결과 텍스트가 다른 지역(우리 지역명은 전혀 언급 없이, 다른 시/도명만 언급)에
+ * 관한 글로 보이면 true. 지역명이 아예 없는 글(순수 단지명만 언급)은 걸러내지 않는다 —
+ * 오탐(잘못 걸러냄)보다 미탐(못 걸러냄)이 낫다는 판단.
+ */
+function isLikelyWrongRegion(text, region) {
+  if (!region.sido) return false;
+  const mentionsOwnRegion = text.includes(region.sido) || (region.sigungu && text.includes(region.sigungu));
+  if (mentionsOwnRegion) return false;
+  return ALL_SIDO_SHORT_NAMES.some((name) => name !== region.sido && text.includes(name));
+}
+
 /**
  * 주소(단지명 포함 가능) 기준으로 재건축/재개발 관련 뉴스+블로그를 검색하고
  * 이벤트를 추출한다.
- * @param {string} keyword 예: "부산 센텀 푸르지오" 또는 정제된 도로명주소
+ * @param {string} keyword 단지명 또는 지번주소 (예: "종암아이파크")
+ * @param {string} [jibunAddr] 지번주소 — 지역명을 뽑아 검색어에 강제로 포함시키기 위해 사용
  */
-async function searchRedevelopmentInfo(keyword) {
-  const query = `${keyword} 재건축 OR 재개발 OR 관리처분인가 OR 사업시행인가`;
+async function searchRedevelopmentInfo(keyword, jibunAddr) {
+  const region = extractRegionTokens(jibunAddr);
+  const queryPrefix = region.queryRegion ? `${region.queryRegion} ` : '';
+  const query = `${queryPrefix}${keyword} 재건축 OR 재개발 OR 관리처분인가 OR 사업시행인가`;
 
   const [news, blog] = await Promise.all([
     searchNaver('news', query, 20).catch(() => []),
     searchNaver('blog', query, 20).catch(() => []),
   ]);
 
-  const articles = [...news, ...blog];
+  let articles = [...news, ...blog];
+  if (region.sido) {
+    articles = articles.filter((a) => !isLikelyWrongRegion(`${a.title} ${a.description}`, region));
+  }
+
   const events = extractRedevelopmentEvents(articles);
 
   return {

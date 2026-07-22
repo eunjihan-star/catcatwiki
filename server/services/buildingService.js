@@ -10,14 +10,33 @@ const BASE_URL = 'https://apis.data.go.kr/1613000/BldRgstHubService';
 // 표제부(건물 전체 개요) - 건물유형/사용승인일 확인용
 const TITLE_INFO_PATH = '/getBrTitleInfo';
 
+// 사람마다 .env / Vercel 환경변수에 다른 이름으로 등록하는 경우가 많아
+// (예: "공공데이터 API 키" -> PUBLIC_DATA_API_KEY), 흔히 쓰는 이름들을
+// 모두 인식하도록 방어적으로 처리한다. 가장 먼저 값이 있는 것을 사용.
+const API_KEY_ENV_ALIASES = [
+  'BUILDING_REGISTER_API_KEY',
+  'PUBLIC_DATA_API_KEY',
+  'DATA_GO_KR_API_KEY',
+  'BUILDING_LEDGER_API_KEY',
+];
+
+function resolveApiKey() {
+  for (const name of API_KEY_ENV_ALIASES) {
+    if (process.env[name]) return process.env[name];
+  }
+  return null;
+}
+
 /**
  * 건축물대장 표제부 API를 호출한다.
  * platGbCd: 0(대지) / 1(산)
  */
 async function fetchTitleInfo({ sigunguCd, bjdongCd, platGbCd = '0', bun, ji }) {
-  const apiKey = process.env.BUILDING_REGISTER_API_KEY;
+  const apiKey = resolveApiKey();
   if (!apiKey) {
-    const err = new Error('BUILDING_REGISTER_API_KEY가 설정되지 않았습니다. .env 파일을 확인해주세요.');
+    const err = new Error(
+      `건축물대장 API 키가 설정되지 않았습니다. .env(로컬) 또는 Vercel 환경변수에 다음 중 하나로 등록해주세요: ${API_KEY_ENV_ALIASES.join(', ')}`
+    );
     err.code = 'MISSING_API_KEY';
     throw err;
   }
@@ -124,7 +143,7 @@ function buildMockInfo(buildingNameHint) {
  * 화면에 필요한 형태로 가공한다.
  */
 async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, buildingName }) {
-  if (!process.env.BUILDING_REGISTER_API_KEY) {
+  if (!resolveApiKey()) {
     return buildMockInfo(buildingName);
   }
 
