@@ -4,6 +4,35 @@ const { resolveAddress } = require('./services/addressService');
 const { getBuildingInfo } = require('./services/buildingService');
 const { searchRedevelopmentInfo } = require('./services/naverService');
 
+// 도로명주소 API가 같은 단지명으로 여러 후보(동별로 별개 지번)를 돌려줄 때,
+// 그중 상가/관리동 등 비주거 건물이 1번 후보로 잡히는 경우가 있다
+// (예: "압구정 현대아파트" 1번 후보가 "현대상가제2동"). 이런 유형이 나오면
+// 실제 주거용 건물이 나올 때까지 다음 후보를 순서대로 시도한다.
+const RESIDENTIAL_BUILDING_TYPES = new Set([
+  '아파트', '연립주택(빌라)', '다세대주택(빌라)', '다가구주택', '단독주택', '기숙사', '오피스텔', '공동주택',
+]);
+const MAX_CANDIDATES_TO_PROBE = 6; // 건축물대장 API 호출 횟수를 제한하기 위한 상한
+
+/**
+ * 상위 후보들을 순서대로 건축물대장에 조회해서, 주거용 건물유형이 나오는
+ * 첫 후보를 채택한다. 전부 비주거로 나오면(진짜 상가 주소를 검색한 경우 등)
+ * 첫 번째 후보 결과를 그대로 사용한다.
+ */
+async function pickResidentialCandidate(candidates) {
+  const pool = candidates.slice(0, MAX_CANDIDATES_TO_PROBE);
+  let fallback = null;
+
+  for (const candidate of pool) {
+    const info = await getBuildingInfo(candidate).catch((err) => ({ found: false, error: err.message }));
+    if (!fallback) fallback = { candidate, info };
+    if (info.found && RESIDENTIAL_BUILDING_TYPES.has(info.buildingType)) {
+      return { candidate, info };
+    }
+  }
+
+  return fallback;
+}
+
 /**
  * 주소 검색 오케스트레이션 로직 — Express 라우트(로컬 개발)와 Vercel 서버리스
  * 함수(배포)가 이 함수 하나를 공유한다. HTTP 프레임워크에 대한 의존이 없어야
@@ -20,32 +49,28 @@ async function handleSearch(address) {
     throw err;
   }
 
-  const { parsed, candidates, best } = await resolveAddress(address);
+  const { parsed, candidates, best: firstCandidate } = await resolveAddress(address);
 
-  if (!best) {
+  if (!firstCandidate) {
     const err = new Error('입력한 주소와 일치하는 결과를 찾지 못했습니다. 주소를 다시 확인해주세요.');
     err.status = 404;
     err.parsed = parsed;
     throw err;
   }
 
-  // 건축물대장은 지번 기준 조회이므로 candidate 정보만으로 바로 진행 가능
-  const buildingInfoPromise = getBuildingInfo(best).catch((err) => ({
-    found: false,
-    error: err.message,
-  }));
+  // 건축물대장은 지번 기준 조회. 대단지는 후보가 여러 개일 수 있어 주거용 건물이
+  // 나올 때까지 순회한 뒤, 그 후보를 이후 응답(주소 표시, 네이버 검색어)에도 일관되게 사용한다.
+  const { candidate: best, info: buildingInfo } = await pickResidentialCandidate(candidates);
 
   // 네이버 검색은 단지명이 있으면 단지명 위주로, 없으면 지번주소 기준으로 검색.
   // 지번주소는 검색어에 지역명(시/군/구/동)을 강제로 붙이는 데 별도로 사용된다 —
   // 그래야 "종암아이파크"처럼 흔한 브랜드명이 다른 지역 결과와 섞이지 않는다.
   const searchKeyword = best.buildingName || parsed.complexNameHint || best.jibunAddr;
-  const naverInfoPromise = searchRedevelopmentInfo(searchKeyword, best.jibunAddr).catch((err) => ({
+  const naverInfo = await searchRedevelopmentInfo(searchKeyword, best.jibunAddr).catch((err) => ({
     error: err.message,
     events: null,
     articles: [],
   }));
-
-  const [buildingInfo, naverInfo] = await Promise.all([buildingInfoPromise, naverInfoPromise]);
 
   return {
     input: {
@@ -62,11 +87,14 @@ async function handleSearch(address) {
       zipNo: best.zipNo,
     },
     candidateCount: candidates.length,
-    otherCandidates: candidates.slice(1, 5).map((c) => ({
-      roadAddr: c.roadAddr,
-      jibunAddr: c.jibunAddr,
-      buildingName: c.buildingName,
-    })),
+    otherCandidates: candidates
+      .filter((c) => c !== best)
+      .slice(0, 4)
+      .map((c) => ({
+        roadAddr: c.roadAddr,
+        jibunAddr: c.jibunAddr,
+        buildingName: c.buildingName,
+      })),
     building: buildingInfo,
     redevelopment: naverInfo,
   };
