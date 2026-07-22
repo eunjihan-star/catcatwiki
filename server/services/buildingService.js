@@ -85,24 +85,40 @@ async function parseXmlResponse(xml) {
   return Array.isArray(items) ? items : [items];
 }
 
-// 건축법 시행령 별표1 기준 주용도명 -> 화면에 표시할 유형 라벨 정리
-const BUILDING_TYPE_KEYWORDS = [
-  { match: ['아파트'], label: '아파트' },
-  { match: ['연립주택'], label: '연립주택(빌라)' },
-  { match: ['다세대주택'], label: '다세대주택(빌라)' },
-  { match: ['다가구주택'], label: '다가구주택' },
-  { match: ['단독주택'], label: '단독주택' },
-  { match: ['기숙사'], label: '기숙사' },
-  { match: ['오피스텔'], label: '오피스텔' },
-  { match: ['근린생활시설'], label: '상가(근린생활시설)' },
-  { match: ['업무시설'], label: '업무시설' },
-];
+/**
+ * 건축물대장 표제부(getBrTitleInfo)의 mainPurpsCdNm 은 "공동주택"/"단독주택"처럼
+ * 건축법상 대분류만 내려주고, 실생활에서 쓰는 "아파트/연립주택/다세대주택" 구분은
+ * 별도 필드로 주지 않는다 (예: "은마아파트"조차 mainPurpsCdNm="공동주택").
+ * 따라서 건축법 시행령 별표1 기준(층수·면적)으로 직접 분류한다:
+ *   - 아파트: 주택으로 쓰는 층수 5개 층 이상
+ *   - 연립주택: 4개 층 이하 + 1개 동 바닥면적 합계(연면적) 660㎡ 초과
+ *   - 다세대주택: 4개 층 이하 + 1개 동 바닥면적 합계 660㎡ 이하
+ * 오피스텔은 mainPurpsCdNm 이 "업무시설"로 잡히므로 etcPurps/건물명에서 별도 확인.
+ */
+function classifyBuildingType(item) {
+  const mainPurpsCdNm = item.mainPurpsCdNm || '';
+  const etcPurps = item.etcPurps || '';
+  const buildingName = item.bldNm || '';
+  const haystack = [mainPurpsCdNm, etcPurps, buildingName].join(' ');
+  const grndFlrCnt = Number(item.grndFlrCnt) || 0;
+  const totArea = Number(item.totArea) || 0;
 
-function classifyBuildingType(mainPurpsCdNm, etcPurps, buildingName) {
-  const haystack = [mainPurpsCdNm, etcPurps, buildingName].filter(Boolean).join(' ');
-  for (const rule of BUILDING_TYPE_KEYWORDS) {
-    if (rule.match.some((kw) => haystack.includes(kw))) return rule.label;
+  if (haystack.includes('오피스텔')) return '오피스텔';
+
+  if (mainPurpsCdNm.includes('단독주택')) {
+    return haystack.includes('다가구') ? '다가구주택' : '단독주택';
   }
+
+  if (mainPurpsCdNm.includes('공동주택')) {
+    if (haystack.includes('기숙사')) return '기숙사';
+    if (grndFlrCnt >= 5) return '아파트';
+    if (grndFlrCnt >= 1) return totArea > 660 ? '연립주택(빌라)' : '다세대주택(빌라)';
+    return '공동주택'; // 층수 정보가 없어 세부 구분 불가
+  }
+
+  if (mainPurpsCdNm.includes('근린생활시설')) return '상가(근린생활시설)';
+  if (mainPurpsCdNm.includes('업무시설')) return '업무시설';
+
   return mainPurpsCdNm || '확인 불가';
 }
 
@@ -170,7 +186,7 @@ async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, 
 
   return {
     found: true,
-    buildingType: classifyBuildingType(item.mainPurpsCdNm, item.etcPurps, item.bldNm),
+    buildingType: classifyBuildingType(item),
     buildingName: item.bldNm || null,
     dongName: item.dongNm || null,
     useAprDay: formatDate(item.useAprDay),
