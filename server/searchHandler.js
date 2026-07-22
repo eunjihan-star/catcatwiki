@@ -4,33 +4,46 @@ const { resolveAddress } = require('./services/addressService');
 const { getBuildingInfo } = require('./services/buildingService');
 const { searchRedevelopmentInfo } = require('./services/naverService');
 
-// 도로명주소 API가 같은 단지명으로 여러 후보(동별로 별개 지번)를 돌려줄 때,
-// 그중 상가/관리동 등 비주거 건물이 1번 후보로 잡히는 경우가 있다
-// (예: "압구정 현대아파트" 1번 후보가 "현대상가제2동"). 이런 유형이 나오면
-// 실제 주거용 건물이 나올 때까지 다음 후보를 순서대로 시도한다.
+// 이 위키는 "거주용 건물" 정보만 다룬다. 상가/업무시설 등 비주거 건물의 사용승인일·면적을
+// 정확히 알려주는 건 애초에 목적이 아니므로, 그런 건물이 걸리면 상세 정보를 보여주는 대신
+// "찾으시는 게 맞는지" 정도만 알려주면 된다 — 정확한 상가 정보 재현은 불필요.
 const RESIDENTIAL_BUILDING_TYPES = new Set([
   '아파트', '연립주택(빌라)', '다세대주택(빌라)', '다가구주택', '단독주택', '기숙사', '오피스텔', '공동주택',
 ]);
 const MAX_CANDIDATES_TO_PROBE = 6; // 건축물대장 API 호출 횟수를 제한하기 위한 상한
 
 /**
- * 상위 후보들을 순서대로 건축물대장에 조회해서, 주거용 건물유형이 나오는
- * 첫 후보를 채택한다. 전부 비주거로 나오면(진짜 상가 주소를 검색한 경우 등)
- * 첫 번째 후보 결과를 그대로 사용한다.
+ * 도로명주소 API가 같은 단지명으로 여러 후보(동별로 별개 지번)를 돌려줄 때,
+ * 그중 상가/관리동 등 비주거 건물이 1번 후보로 잡히는 경우가 있다
+ * (예: "압구정 현대아파트" 1번 후보가 "현대상가제2동"). 실제 주거용 건물이
+ * 나올 때까지 상위 후보를 순서대로 시도한다.
+ *
+ * 끝까지 주거용을 못 찾으면, 비주거 건물의 상세 정보를 정확히 보여주는 대신
+ * "주거용 건물을 찾지 못함" 상태로 응답한다 — 상가 정보를 정밀하게 재현할 필요는
+ * 없고, 찾는 주소가 주거용이 맞는지만 알려주면 충분하기 때문.
  */
 async function pickResidentialCandidate(candidates) {
   const pool = candidates.slice(0, MAX_CANDIDATES_TO_PROBE);
-  let fallback = null;
+  let firstCandidate = null;
 
   for (const candidate of pool) {
     const info = await getBuildingInfo(candidate).catch((err) => ({ found: false, error: err.message }));
-    if (!fallback) fallback = { candidate, info };
+    if (!firstCandidate) firstCandidate = candidate;
     if (info.found && RESIDENTIAL_BUILDING_TYPES.has(info.buildingType)) {
       return { candidate, info };
     }
   }
 
-  return fallback;
+  return {
+    candidate: firstCandidate,
+    info: {
+      found: false,
+      buildingType: '이 주소 주변에서 거주용 건물을 찾지 못했습니다 (상가·업무시설 등 비주거 건물만 확인됨). 주소를 다시 확인해주세요.',
+      buildingName: null,
+      useAprDay: null,
+      raw: null,
+    },
+  };
 }
 
 /**
