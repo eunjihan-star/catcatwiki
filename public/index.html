@@ -243,6 +243,20 @@
 
   /* ---- 부동산정보 탭 ---- */
   .search-hint { font-size:12px; color:var(--ink-soft); margin:0 0 18px; }
+  .re-type-filter {
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:12px 0 6px;
+  }
+  .re-type-filter-label { font-size:12px; font-weight:700; color:var(--ink-soft); margin-right:2px; }
+  .re-type-chip {
+    display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border-radius:999px;
+    border:1px solid var(--line); background:#fff; font-size:12.5px; font-weight:500;
+    color:var(--ink-soft); cursor:pointer; user-select:none; transition:background .15s, color .15s, border-color .15s;
+  }
+  .re-type-chip input { accent-color:var(--teal-700); cursor:pointer; }
+  .re-type-chip.active {
+    background:var(--teal-700); border-color:var(--teal-700); color:#fff; font-weight:600;
+  }
+  .re-type-hint { margin:0 0 16px; }
   .re-status {
     display:none; padding:12px 15px; border-radius:11px; font-size:13px; margin-bottom:16px;
   }
@@ -365,6 +379,15 @@
       <button class="btn btn-primary" id="re-search-btn" type="button">조회</button>
     </div>
     <p class="search-hint">도로명/지번 혼용 입력, 단지명 생략·순서 상이, 동/호 포함 입력 모두 가능합니다. (건축물대장·네이버 검색 연동)</p>
+    <div class="re-type-filter" id="re-type-filter">
+      <span class="re-type-filter-label">건물유형 체크(선택)</span>
+      <label class="re-type-chip"><input type="checkbox" value="all" checked> 전체</label>
+      <label class="re-type-chip"><input type="checkbox" value="apartment"> 아파트</label>
+      <label class="re-type-chip"><input type="checkbox" value="villa"> 빌라(연립·다세대)</label>
+      <label class="re-type-chip"><input type="checkbox" value="officetel"> 오피스텔</label>
+      <label class="re-type-chip"><input type="checkbox" value="house"> 단독·다가구주택</label>
+    </div>
+    <p class="search-hint re-type-hint">양도세 신고서상 건물유형을 체크하면, 실제 건물유형이 다를 때 바로 알려드립니다 (주소 오기재·건물유형 오분류 확인용).</p>
     <div class="re-status" id="re-status"></div>
     <div id="re-result"></div>
   </div>
@@ -2556,6 +2579,9 @@ function renderRealEstateResult(data) {
     if (building.isMock) {
       html += '<div class="re-disclaimer">공공데이터포털 건축물대장정보 API 키가 아직 승인 대기 중이라 실제 데이터가 아닌 임시 샘플값입니다. 키 발급 후 자동으로 실제 값으로 전환됩니다.</div>';
     }
+  } else if (building.actualType) {
+    // 체크박스로 기대한 유형과 실제 확인된 유형이 다른 경우 - 눈에 띄게 경고로 표시
+    html += `<div class="re-disclaimer" style="font-size:13px;">⚠️ ${reEscapeHtml(building.buildingType)}</div>`;
   } else {
     html += `<div class="empty-state" style="padding:20px 0;">${reEscapeHtml(building.buildingType || building.error || '건축물대장 정보를 찾을 수 없습니다.')}</div>`;
   }
@@ -2613,6 +2639,43 @@ function renderRealEstateResult(data) {
   resultEl.innerHTML = html;
 }
 
+// ---- 건물유형 체크박스 ("전체" <-> 개별 항목 상호 동기화) ----
+(function initTypeFilter() {
+  const container = document.getElementById('re-type-filter');
+  const allBox = container.querySelector('input[value="all"]');
+  const typeBoxes = Array.from(container.querySelectorAll('input[type="checkbox"]:not([value="all"])'));
+
+  function syncActiveClasses() {
+    container.querySelectorAll('input[type="checkbox"]').forEach((box) => {
+      box.closest('.re-type-chip').classList.toggle('active', box.checked);
+    });
+  }
+
+  allBox.addEventListener('change', () => {
+    typeBoxes.forEach((box) => { box.checked = allBox.checked; });
+    syncActiveClasses();
+  });
+
+  typeBoxes.forEach((box) => {
+    box.addEventListener('change', () => {
+      allBox.checked = typeBoxes.every((b) => b.checked);
+      syncActiveClasses();
+    });
+  });
+
+  syncActiveClasses();
+})();
+
+// "전체"가 체크돼 있으면 필터 없음(null). 일부만 체크돼 있으면 그 유형들만 넘긴다.
+function getSelectedBuildingTypes() {
+  const container = document.getElementById('re-type-filter');
+  const allBox = container.querySelector('input[value="all"]');
+  if (allBox.checked) return null;
+  const selected = Array.from(container.querySelectorAll('input[type="checkbox"]:not([value="all"]):checked'))
+    .map((b) => b.value);
+  return selected.length > 0 ? selected : null;
+}
+
 async function runRealEstateSearch() {
   const input = document.getElementById('re-address-input');
   const address = input.value.trim();
@@ -2635,7 +2698,7 @@ async function runRealEstateSearch() {
     const res = await fetch(`${RE_API_BASE}/api/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address }),
+      body: JSON.stringify({ address, buildingTypes: getSelectedBuildingTypes() }),
     });
     const data = await res.json();
 

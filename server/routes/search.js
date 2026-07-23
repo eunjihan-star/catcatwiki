@@ -7,7 +7,8 @@ const router = express.Router();
 
 router.post('/search', async (req, res) => {
   try {
-    const result = await handleSearch((req.body || {}).address);
+    const body0 = req.body || {};
+    const result = await handleSearch(body0.address, body0.buildingTypes);
     res.json(result);
   } catch (err) {
     const status = err.status || (err.code === 'MISSING_API_KEY' ? 500 : 502);

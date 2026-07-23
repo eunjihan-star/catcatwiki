@@ -12,19 +12,40 @@ const RESIDENTIAL_BUILDING_TYPES = new Set([
 ]);
 const MAX_CANDIDATES_TO_PROBE = 6; // 건축물대장 API 호출 횟수를 제한하기 위한 상한
 
+// 검색창 하단 "건물유형 체크박스"가 보내는 그룹 키 -> 실제 classifyBuildingType() 라벨.
+// 양도세 신고서상 코드는 맞는데 실제로는 집이 아니거나 다른 유형인 극소수 사례를 걸러내기
+// 위해, 사용자가 미리 기대하는 유형을 체크하면 그 유형에 맞는 후보만 채택한다.
+const BUILDING_TYPE_GROUPS = {
+  apartment: ['아파트'],
+  villa: ['연립주택(빌라)', '다세대주택(빌라)'],
+  officetel: ['오피스텔'],
+  house: ['단독주택', '다가구주택'],
+};
+
+function expandExpectedTypes(groupKeys) {
+  if (!Array.isArray(groupKeys) || groupKeys.length === 0) return null;
+  const labels = new Set();
+  for (const key of groupKeys) {
+    (BUILDING_TYPE_GROUPS[key] || []).forEach((label) => labels.add(label));
+  }
+  return labels.size > 0 ? labels : null;
+}
+
 /**
  * 도로명주소 API가 같은 단지명으로 여러 후보(동별로 별개 지번)를 돌려줄 때,
  * 그중 상가/관리동 등 비주거 건물이 1번 후보로 잡히는 경우가 있다
- * (예: "압구정 현대아파트" 1번 후보가 "현대상가제2동"). 실제 주거용 건물이
+ * (예: "압구정 현대아파트" 1번 후보가 "현대상가제2동"). 사용자가 기대하는 건물유형이
+ * (체크박스로) 지정되어 있으면 그 유형에 맞는 후보가, 없으면 아무 주거용 건물이나
  * 나올 때까지 상위 후보를 순서대로 시도한다.
  *
- * 끝까지 주거용을 못 찾으면, 비주거 건물의 상세 정보를 정확히 보여주는 대신
- * "주거용 건물을 찾지 못함" 상태로 응답한다 — 상가 정보를 정밀하게 재현할 필요는
- * 없고, 찾는 주소가 주거용이 맞는지만 알려주면 충분하기 때문.
+ * @param {Set<string>|null} wantedTypes 체크박스로 지정된 기대 유형 (null이면 "전체"/제한 없음)
  */
-async function pickResidentialCandidate(candidates) {
+async function pickResidentialCandidate(candidates, wantedTypes) {
   const pool = candidates.slice(0, MAX_CANDIDATES_TO_PROBE);
-  let firstNonResidential = null; // API 호출은 성공했지만 주거용이 아니었던 첫 후보
+  const acceptTypes = wantedTypes || RESIDENTIAL_BUILDING_TYPES;
+
+  let firstWrongType = null; // 주거용은 맞는데 체크한 유형과는 다른 첫 후보
+  let firstNonResidential = null; // 아예 비주거인 첫 후보
   let firstApiError = null; // API 호출 자체가 실패한 경우 (일시적 오류 등)
 
   for (const candidate of pool) {
@@ -35,16 +56,38 @@ async function pickResidentialCandidate(candidates) {
       if (!firstApiError) firstApiError = err;
       continue;
     }
-    if (!firstNonResidential) firstNonResidential = { candidate, info };
-    if (info.found && RESIDENTIAL_BUILDING_TYPES.has(info.buildingType)) {
+    if (info.found && acceptTypes.has(info.buildingType)) {
       return { candidate, info };
+    }
+    if (info.found && RESIDENTIAL_BUILDING_TYPES.has(info.buildingType)) {
+      if (!firstWrongType) firstWrongType = { candidate, info };
+    } else if (!firstNonResidential) {
+      firstNonResidential = { candidate, info };
     }
   }
 
-  // API 호출은 됐는데 주거용 건물이 없었던 경우: "찾는 게 맞는지"만 알려준다
-  if (firstNonResidential) {
+  // 체크박스로 특정 유형을 기대했는데 실제로는 다른 주거용 유형이 확인된 경우:
+  // "못 찾음"이 아니라 "체크한 것과 다르다"고 명확히 알려준다 — 양도세 코드 오류나
+  // 주소 오기재를 사용자가 스스로 걸러낼 수 있는 지점이기 때문에 이게 핵심 기능이다.
+  if (wantedTypes && firstWrongType) {
     return {
-      candidate: firstNonResidential.candidate,
+      candidate: firstWrongType.candidate,
+      info: {
+        found: false,
+        buildingType: `체크하신 유형과 다릅니다 — 이 주소에서 실제 확인된 건물유형은 "${firstWrongType.info.buildingType}"입니다. 체크한 유형이나 주소가 맞는지 다시 확인해주세요 (양도세 코드가 실제 건물과 다르게 신고됐을 가능성도 있습니다).`,
+        buildingName: null,
+        useAprDay: null,
+        raw: null,
+        actualType: firstWrongType.info.buildingType,
+      },
+    };
+  }
+
+  // 주거용 건물 자체를 못 찾은 경우 (체크 유형 무관): "찾는 게 맞는지"만 알려준다
+  const nonMatch = firstWrongType || firstNonResidential;
+  if (nonMatch) {
+    return {
+      candidate: nonMatch.candidate,
       info: {
         found: false,
         buildingType: '이 주소 주변에서 거주용 건물을 찾지 못했습니다 (상가·업무시설 등 비주거 건물만 확인됨). 주소를 다시 확인해주세요.',
@@ -75,10 +118,12 @@ async function pickResidentialCandidate(candidates) {
  * 두 환경 모두에서 동일하게 재사용 가능하다.
  *
  * @param {string} address
+ * @param {string[]} [buildingTypeGroups] 검색창 하단 체크박스로 지정한 기대 건물유형
+ *   그룹 키 배열 (예: ['apartment']). 비어있거나 생략하면 제한 없음("전체").
  * @returns {Promise<object>} 응답 바디로 그대로 내려줄 결과 객체
  * @throws {Error & { status?: number, parsed?: object }}
  */
-async function handleSearch(address) {
+async function handleSearch(address, buildingTypeGroups) {
   if (!address || !address.trim()) {
     const err = new Error('주소를 입력해주세요.');
     err.status = 400;
@@ -94,9 +139,11 @@ async function handleSearch(address) {
     throw err;
   }
 
+  const wantedTypes = expandExpectedTypes(buildingTypeGroups);
+
   // 건축물대장은 지번 기준 조회. 대단지는 후보가 여러 개일 수 있어 주거용 건물이
   // 나올 때까지 순회한 뒤, 그 후보를 이후 응답(주소 표시, 네이버 검색어)에도 일관되게 사용한다.
-  const { candidate: best, info: buildingInfo } = await pickResidentialCandidate(candidates);
+  const { candidate: best, info: buildingInfo } = await pickResidentialCandidate(candidates, wantedTypes);
 
   // 네이버 검색은 단지명이 있으면 단지명 위주로, 없으면 지번주소 기준으로 검색.
   // 지번주소는 검색어에 지역명(시/군/구/동)을 강제로 붙이는 데 별도로 사용된다 —

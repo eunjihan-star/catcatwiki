@@ -24,8 +24,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const address = (req.body || {}).address;
-    const result = await handleSearch(address);
+    const body0 = req.body || {};
+    const result = await handleSearch(body0.address, body0.buildingTypes);
     res.status(200).json(result);
   } catch (err) {
     const status = err.status || (err.code === 'MISSING_API_KEY' ? 500 : 502);
