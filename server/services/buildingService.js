@@ -195,21 +195,46 @@ function buildMockInfo(buildingNameHint) {
 }
 
 /**
+ * 도로명주소 API가 주는 sigunguCd/bjdongCd(admCd 기반, 최신 행정구역 코드)와
+ * 건축물대장 API가 실제로 색인하는 코드가 어긋나는 경우가 있다 — 예를 들어
+ * 2025년 인천 중구+동구가 "제물포구"로 통합되면서, juso는 새 코드(28125)를 주지만
+ * 건축물대장은 아직 옛 코드(28110/중구)로만 조회된다. 이런 행정구역 개편 지역은
+ * 앞으로도 계속 생길 수 있어 매번 지역별로 예외처리하는 대신, juso가 함께 주는
+ * bdMgtSn(건물관리번호)의 앞 10자리(시군구5+법정동5)가 건축물대장 색인과 일치하는
+ * "레거시" 코드이므로 이를 우선 사용한다. bdMgtSn이 없으면 admCd 기반 코드로 폴백.
+ */
+function resolveRegistryCodes({ sigunguCd, bjdongCd, bdMgtSn }) {
+  if (bdMgtSn && bdMgtSn.length >= 10 && /^\d{10,}$/.test(bdMgtSn)) {
+    return { sigunguCd: bdMgtSn.slice(0, 5), bjdongCd: bdMgtSn.slice(5, 10) };
+  }
+  return { sigunguCd, bjdongCd };
+}
+
+/**
  * 도로명주소 API 결과(sigunguCd/bjdongCd/지번)로 건축물대장 표제부를 조회해
  * 화면에 필요한 형태로 가공한다.
  */
-async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, buildingName }) {
+async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, buildingName, bdMgtSn }) {
   if (!resolveApiKey()) {
     return buildMockInfo(buildingName);
   }
 
-  const items = await fetchTitleInfo({
-    sigunguCd,
-    bjdongCd,
-    platGbCd: mtYn === '1' ? '1' : '0',
+  const registry = resolveRegistryCodes({ sigunguCd, bjdongCd, bdMgtSn });
+  const platGbCd = mtYn === '1' ? '1' : '0';
+
+  let items = await fetchTitleInfo({
+    sigunguCd: registry.sigunguCd,
+    bjdongCd: registry.bjdongCd,
+    platGbCd,
     bun: lnbrMnnm,
     ji: lnbrSlno,
   });
+
+  // bdMgtSn 기반 코드로도 못 찾았고 admCd 기반 코드와 실제로 달랐다면, 혹시 몰라
+  // admCd 기반으로도 한 번 더 시도해본다 (반대 방향의 코드 불일치 가능성 대비).
+  if (items.length === 0 && (registry.sigunguCd !== sigunguCd || registry.bjdongCd !== bjdongCd)) {
+    items = await fetchTitleInfo({ sigunguCd, bjdongCd, platGbCd, bun: lnbrMnnm, ji: lnbrSlno });
+  }
 
   if (items.length === 0) {
     return {

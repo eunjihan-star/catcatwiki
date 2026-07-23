@@ -2558,12 +2558,21 @@ function renderRealEstateResult(data) {
   let html = '';
 
   // 1. 상단 히어로: 건물유형 + 사용승인일 (가장 크게 강조)
+  // 이 서비스의 최우선순위는 "사용승인일 노출"이다 — 건축물대장 조회가 실패해도
+  // (비주거 판정, 행정구역 코드 불일치 등) 네이버 검색으로 사용승인일을 찾았다면
+  // 절대 화면을 비워두지 않고 그 값을 메인으로 보여준다.
+  const naverOnly = !building.found && building.useAprDaySource === 'naver-only';
   html += '<div class="re-hero">';
   html += '<div class="re-hero-top">';
-  html += `<span class="re-badge">건축물대장</span>`;
+  html += `<span class="re-badge">${naverOnly ? '네이버 검색' : '건축물대장'}</span>`;
   if (building.isMock) html += `<span class="re-badge warn">임시 목데이터</span>`;
   html += `<span class="re-hero-addr">${reEscapeHtml(address.buildingName || address.roadAddr)}</span>`;
   html += '</div>';
+
+  if (building.actualType) {
+    // 체크박스로 기대한 유형과 실제 확인된 유형이 다른 경우 - 눈에 띄게 경고로 표시
+    html += `<div class="re-disclaimer" style="font-size:13px;">⚠️ ${reEscapeHtml(building.buildingType)}</div>`;
+  }
 
   if (building.found) {
     html += '<div class="re-hero-stats">';
@@ -2579,10 +2588,16 @@ function renderRealEstateResult(data) {
     if (building.isMock) {
       html += '<div class="re-disclaimer">공공데이터포털 건축물대장정보 API 키가 아직 승인 대기 중이라 실제 데이터가 아닌 임시 샘플값입니다. 키 발급 후 자동으로 실제 값으로 전환됩니다.</div>';
     }
-  } else if (building.actualType) {
-    // 체크박스로 기대한 유형과 실제 확인된 유형이 다른 경우 - 눈에 띄게 경고로 표시
-    html += `<div class="re-disclaimer" style="font-size:13px;">⚠️ ${reEscapeHtml(building.buildingType)}</div>`;
-  } else {
+  } else if (naverOnly) {
+    html += '<div class="re-hero-stats">';
+    html += reStatValue(
+      '사용승인일(준공일)',
+      building.useAprDay,
+      `<div class="re-stat-subref">네이버 검색 확인 (건축물대장 조회 실패) <a href="${reEscapeHtml(building.useAprDayNaverLink)}" target="_blank" rel="noopener">원문</a></div>`
+    );
+    html += '</div>';
+    html += '<div class="re-disclaimer">건축물대장에서 건물유형·공식 사용승인일을 확인하지 못해(행정구역 코드 변경, 비주거 판정 등) 네이버 검색으로 찾은 값을 대신 보여드립니다. 정규식 텍스트 추출 결과이므로 반드시 원문으로 교차 확인해주세요.</div>';
+  } else if (!building.actualType) {
     html += `<div class="empty-state" style="padding:20px 0;">${reEscapeHtml(building.buildingType || building.error || '건축물대장 정보를 찾을 수 없습니다.')}</div>`;
   }
   html += '</div>';

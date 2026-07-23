@@ -158,21 +158,27 @@ async function handleSearch(address, buildingTypeGroups) {
     searchUseApprovalDate(searchKeyword, best.jibunAddr).catch(() => null),
   ]);
 
-  // 사용승인일: 건축물대장 값을 계속 주(main) 표시값으로 유지하고, 네이버 검색에서 찾은
-  // 값은 "참고/교차확인용"으로 별도 필드에 함께 내려준다 — 네이버 값이 더 정확할 거라는
-  // 요청으로 실제 우선 노출을 시도해봤지만, 은마아파트(1979년 준공) 테스트에서 네이버가
-  // "사용승인일 2000년 07월 31일"이라는 명백히 틀린 날짜를 집어와 검증에 실패했다.
-  // 정규식 텍스트 추출이라는 한계는 관리처분인가 등과 동일하게 적용되므로, 사용승인일처럼
-  // 하나의 정답만 있는 값을 뉴스/블로그 스크래핑으로 "최우선" 신뢰하는 건 위험 — 특히 이
-  // 값이 양도세 취득일 판단 등에 쓰일 수 있는 맥락에서는 더더욱.
-  if (buildingInfo.found) {
-    buildingInfo.useAprDaySource = 'official';
-    if (naverApproval) {
-      buildingInfo.useAprDayNaver = naverApproval.date;
-      buildingInfo.useAprDayNaverLink = naverApproval.link;
-      buildingInfo.useAprDayNaverTitle = naverApproval.title;
+  // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
+  // 찾은 값은 참고/교차확인용으로 함께 내려준다 (네이버 단독 신뢰는 위험 — 은마아파트
+  // 테스트에서 명백히 틀린 날짜를 집어온 사례가 있었음, 아래 useAprDayMismatch 참고).
+  //
+  // 다만 건축물대장 조회 자체가 실패한 경우(비주거 판정·API 오류 등)에도 네이버에서
+  // 사용승인일을 찾았다면 절대 숨기지 않는다 — 이 서비스의 최우선순위는 "사용승인일을
+  // 보여주는 것"이다. 건축물대장이 안 되면 네이버 값이라도 메인으로 노출한다.
+  if (naverApproval) {
+    buildingInfo.useAprDayNaver = naverApproval.date;
+    buildingInfo.useAprDayNaverLink = naverApproval.link;
+    buildingInfo.useAprDayNaverTitle = naverApproval.title;
+    if (buildingInfo.found) {
+      buildingInfo.useAprDaySource = 'official';
       buildingInfo.useAprDayMismatch = naverApproval.date.slice(0, 10) !== (buildingInfo.useAprDay || '').slice(0, 10);
+    } else {
+      // 건축물대장 실패 시 네이버 값을 메인으로 승격
+      buildingInfo.useAprDay = naverApproval.date;
+      buildingInfo.useAprDaySource = 'naver-only';
     }
+  } else if (buildingInfo.found) {
+    buildingInfo.useAprDaySource = 'official';
   }
 
   return {
