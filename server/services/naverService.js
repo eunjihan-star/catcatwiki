@@ -98,17 +98,20 @@ function charDistance(a, b) {
  * 텍스트 전체를 대상으로, 각 날짜가 "가장 가까운" 키워드(추적 대상 + 인접 단계 방해 키워드
  * 모두 포함)에만 배정되도록 한다. 가장 가까운 키워드가 추적 대상이 아니거나 거리가 너무 멀면
  * 해당 날짜는 버린다.
+ * @param {string} text
+ * @param {Record<string, string[]>} keywordMap 추적할 이벤트타입 -> 키워드 목록
+ * @param {string[]} distractorKeywords 거리 비교에만 쓰는 방해 키워드(추적 안 함)
  */
-function extractEventsFromText(text) {
+function extractEventsFromText(text, keywordMap, distractorKeywords) {
   const keywordHits = [];
-  for (const [eventType, keywords] of Object.entries(EVENT_KEYWORD_MAP)) {
+  for (const [eventType, keywords] of Object.entries(keywordMap)) {
     for (const kw of keywords) {
       for (const pos of findAllOccurrences(text, kw)) {
         keywordHits.push({ ...pos, eventType });
       }
     }
   }
-  for (const kw of DISTRACTOR_KEYWORDS) {
+  for (const kw of distractorKeywords) {
     for (const pos of findAllOccurrences(text, kw)) {
       keywordHits.push({ ...pos, eventType: null });
     }
@@ -167,7 +170,7 @@ function extractRedevelopmentEvents(articles) {
 
   for (const article of articles) {
     const text = `${article.title} ${article.description}`;
-    const found = extractEventsFromText(text);
+    const found = extractEventsFromText(text, EVENT_KEYWORD_MAP, DISTRACTOR_KEYWORDS);
     for (const f of found) {
       eventsByType[f.eventType].push({
         ...f,
@@ -312,6 +315,62 @@ async function searchRedevelopmentInfo(keyword, jibunAddr) {
   };
 }
 
+// 사용승인일/준공일 전용 키워드. 재건축 검색("재건축 OR 재개발 OR ...")과는 별도 검색이
+// 필요하다 — 재건축 중이 아닌 대다수의 평범한 단지는 그 쿼리로는 아예 걸리는 글이 없기 때문.
+const USE_APPROVAL_KEYWORD_MAP = {
+  useApprovalDate: ['사용승인일', '사용승인', '준공승인일', '준공일', '준공승인', '준공인가'],
+};
+// 착공일 등 인접 날짜가 준공일로 잘못 배정되지 않도록 거리 비교용으로만 등록
+const USE_APPROVAL_DISTRACTORS = ['착공일', '착공', '설계', '분양', '입주예정', '입주 예정'];
+
+/**
+ * 네이버 뉴스/블로그에서 "사용승인일/준공일" 언급을 찾는다.
+ * 건축물대장 API보다 이쪽 값을 우선 노출해달라는 요청에 따른 보조 조회 — 다만 이것도
+ * 결국 텍스트에서 정규식으로 날짜를 추출하는 휴리스틱이라는 점은 동일하다 (100% 정확 X).
+ * 네이버부동산/네이버지도가 보여주는 값은 비공개 API라 직접 가져올 방법이 없어서,
+ * 이 위키가 이미 쓰고 있는 네이버 검색 오픈API(뉴스/블로그)로 최대한 근접하게 흉내낸 것.
+ *
+ * @param {string} keyword
+ * @param {string} [jibunAddr]
+ * @returns {Promise<{date:string, title:string, link:string, snippet:string}|null>}
+ */
+async function searchUseApprovalDate(keyword, jibunAddr) {
+  const region = extractRegionTokens(jibunAddr);
+  const queryPrefix = region.queryRegion ? `${region.queryRegion} ` : '';
+  const query = `${queryPrefix}${keyword} 사용승인일 OR 준공일 OR 준공승인`;
+
+  const [news, blog] = await Promise.all([
+    searchNaver('news', query, 20).catch(() => []),
+    searchNaver('blog', query, 20).catch(() => []),
+  ]);
+
+  const distinctiveTokens = extractDistinctiveTokens(keyword, region);
+  const articles = [...news, ...blog].filter((a) =>
+    isRelevantArticle(`${a.title} ${a.description}`, region, distinctiveTokens)
+  );
+
+  // 검색 결과는 관련도순(sort=sim)으로 오므로, 가장 먼저 매칭되는 걸 채택한다
+  // (여러 날짜 중 임의로 "가장 이른 날짜"를 고르면 오히려 무관한 매칭을 주울 위험이 있음).
+  for (const article of articles) {
+    const text = `${article.title} ${article.description}`;
+    const found = extractEventsFromText(text, USE_APPROVAL_KEYWORD_MAP, USE_APPROVAL_DISTRACTORS);
+    const hit = found.find((f) => f.eventType === 'useApprovalDate');
+    if (hit) {
+      return {
+        date: hit.date,
+        title: article.title,
+        link: article.link,
+        pubDate: article.pubDate,
+        sourceType: article.source,
+        snippet: hit.snippet,
+      };
+    }
+  }
+
+  return null;
+}
+
 module.exports = {
   searchRedevelopmentInfo,
+  searchUseApprovalDate,
 };

@@ -259,6 +259,10 @@
   .re-stat-label { font-size:12px; color:var(--ink-soft); font-weight:600; margin-bottom:4px; }
   .re-stat-value { font-size:26px; font-weight:800; color:var(--teal-900); letter-spacing:-0.4px; }
   .re-stat-value.empty { color:#a8b0bd; font-weight:600; font-size:16px; }
+  .re-stat-subref { margin-top:4px; font-size:11.5px; color:var(--ink-soft); font-weight:500; }
+  .re-stat-subref a { color:var(--teal-700); text-decoration:none; margin-left:4px; font-weight:600; }
+  .re-stat-subref a:hover { text-decoration:underline; }
+  .re-stat-subref.re-stat-subref-mismatch { color:var(--warn); }
   .re-hero-sub { display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; padding-top:14px; border-top:1px dashed var(--line); }
   .re-hero-sub-item { font-size:12px; color:var(--ink-soft); }
   .re-hero-sub-item b { color:var(--ink); font-weight:700; }
@@ -2488,8 +2492,18 @@ const RE_API_BASE = location.protocol === 'file:' ? 'http://localhost:4000' : ''
 
 function reEscapeHtml(str) { return escapeHtml(str); }
 
-function reStatValue(label, value) {
-  return `<div><div class="re-stat-label">${label}</div><div class="re-stat-value${value ? '' : ' empty'}">${value ? reEscapeHtml(value) : '정보 없음'}</div></div>`;
+function reStatValue(label, value, subRefHtml) {
+  return `<div><div class="re-stat-label">${label}</div><div class="re-stat-value${value ? '' : ' empty'}">${value ? reEscapeHtml(value) : '정보 없음'}</div>${subRefHtml || ''}</div>`;
+}
+
+// 사용승인일은 건축물대장 값을 주로 쓰되, 네이버 검색에서 확인된 값이 있으면 참고용으로
+// 작게 병기한다. 정규식 텍스트 추출이라 틀릴 수 있어 "최우선 신뢰"로 바꿔치기하진 않는다
+// (예: 은마아파트 테스트에서 네이버가 명백히 틀린 사용승인일을 찾아온 사례가 있었음).
+function reUseAprDaySubRef(building) {
+  if (!building.useAprDayNaver) return '';
+  const warn = building.useAprDayMismatch ? ' re-stat-subref-mismatch' : '';
+  const note = building.useAprDayMismatch ? ' (건축물대장과 다름 — 교차확인 필요)' : '';
+  return `<div class="re-stat-subref${warn}">네이버 검색 확인: ${reEscapeHtml(building.useAprDayNaver)}${note} <a href="${reEscapeHtml(building.useAprDayNaverLink)}" target="_blank" rel="noopener">원문</a></div>`;
 }
 
 function reEventRow(label, ev) {
@@ -2531,7 +2545,7 @@ function renderRealEstateResult(data) {
   if (building.found) {
     html += '<div class="re-hero-stats">';
     html += reStatValue('건물유형', building.buildingType);
-    html += reStatValue('사용승인일(준공일)', building.useAprDay);
+    html += reStatValue('사용승인일(준공일)', building.useAprDay, reUseAprDaySubRef(building));
     html += '</div>';
     if (building.totalFloorArea || building.groundFloors || building.undergroundFloors) {
       html += '<div class="re-hero-sub">';

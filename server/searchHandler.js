@@ -2,7 +2,7 @@
 
 const { resolveAddress } = require('./services/addressService');
 const { getBuildingInfo } = require('./services/buildingService');
-const { searchRedevelopmentInfo } = require('./services/naverService');
+const { searchRedevelopmentInfo, searchUseApprovalDate } = require('./services/naverService');
 
 // 이 위키는 "거주용 건물" 정보만 다룬다. 상가/업무시설 등 비주거 건물의 사용승인일·면적을
 // 정확히 알려주는 건 애초에 목적이 아니므로, 그런 건물이 걸리면 상세 정보를 보여주는 대신
@@ -102,11 +102,31 @@ async function handleSearch(address) {
   // 지번주소는 검색어에 지역명(시/군/구/동)을 강제로 붙이는 데 별도로 사용된다 —
   // 그래야 "종암아이파크"처럼 흔한 브랜드명이 다른 지역 결과와 섞이지 않는다.
   const searchKeyword = best.buildingName || parsed.complexNameHint || best.jibunAddr;
-  const naverInfo = await searchRedevelopmentInfo(searchKeyword, best.jibunAddr).catch((err) => ({
-    error: err.message,
-    events: null,
-    articles: [],
-  }));
+  const [naverInfo, naverApproval] = await Promise.all([
+    searchRedevelopmentInfo(searchKeyword, best.jibunAddr).catch((err) => ({
+      error: err.message,
+      events: null,
+      articles: [],
+    })),
+    searchUseApprovalDate(searchKeyword, best.jibunAddr).catch(() => null),
+  ]);
+
+  // 사용승인일: 건축물대장 값을 계속 주(main) 표시값으로 유지하고, 네이버 검색에서 찾은
+  // 값은 "참고/교차확인용"으로 별도 필드에 함께 내려준다 — 네이버 값이 더 정확할 거라는
+  // 요청으로 실제 우선 노출을 시도해봤지만, 은마아파트(1979년 준공) 테스트에서 네이버가
+  // "사용승인일 2000년 07월 31일"이라는 명백히 틀린 날짜를 집어와 검증에 실패했다.
+  // 정규식 텍스트 추출이라는 한계는 관리처분인가 등과 동일하게 적용되므로, 사용승인일처럼
+  // 하나의 정답만 있는 값을 뉴스/블로그 스크래핑으로 "최우선" 신뢰하는 건 위험 — 특히 이
+  // 값이 양도세 취득일 판단 등에 쓰일 수 있는 맥락에서는 더더욱.
+  if (buildingInfo.found) {
+    buildingInfo.useAprDaySource = 'official';
+    if (naverApproval) {
+      buildingInfo.useAprDayNaver = naverApproval.date;
+      buildingInfo.useAprDayNaverLink = naverApproval.link;
+      buildingInfo.useAprDayNaverTitle = naverApproval.title;
+      buildingInfo.useAprDayMismatch = naverApproval.date.slice(0, 10) !== (buildingInfo.useAprDay || '').slice(0, 10);
+    }
+  }
 
   return {
     input: {
