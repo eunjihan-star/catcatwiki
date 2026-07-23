@@ -48,12 +48,32 @@ async function fetchTitleInfo({ sigunguCd, bjdongCd, platGbCd = '0', bun, ji }) 
     platGbCd,
     bun: (bun || '0000').padStart(4, '0'),
     ji: (ji || '0000').padStart(4, '0'),
-    numOfRows: 10,
+    // 큰 단지는 한 지번 아래 동이 수십 개까지 등록되기도 해서 넉넉히 받아온다
+    // (대표 동을 고를 때 첫 페이지에 다 안 잡히면 소용없음).
+    numOfRows: 100,
     pageNo: 1,
     _type: 'json',
   };
 
-  const { data } = await axios.get(`${BASE_URL}${TITLE_INFO_PATH}`, { params, timeout: 8000 });
+  // 공공데이터포털 게이트웨이가 요청 크기와 무관하게 꽤 자주(체감상 20~40%) 일시적인
+  // 500/타임아웃을 던지는 게 관찰되어(같은 파라미터로 재요청하면 대부분 바로 성공),
+  // 넉넉히 재시도한다. 실패 응답 자체는 빠르게 오므로 재시도를 늘려도 체감 지연은 크지 않다.
+  // 4xx(요청 자체가 잘못됨)는 재시도해도 소용없으므로 그대로 던진다.
+  const MAX_ATTEMPTS = 5;
+  let data;
+  let lastErr;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      ({ data } = await axios.get(`${BASE_URL}${TITLE_INFO_PATH}`, { params, timeout: 8000 }));
+      lastErr = null;
+      break;
+    } catch (err) {
+      lastErr = err;
+      if (err.response && err.response.status < 500) throw err;
+      if (attempt < MAX_ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+    }
+  }
+  if (lastErr) throw lastErr;
 
   // 일부 오류 응답은 _type=json 을 무시하고 XML로 내려오므로 방어적으로 처리
   if (typeof data === 'string') {
@@ -122,6 +142,26 @@ function classifyBuildingType(item) {
   return mainPurpsCdNm || '확인 불가';
 }
 
+/**
+ * 하나의 지번(예: "예하리 1286")에 여러 동이 함께 등록된 경우, 그중 대표로 삼을
+ * 1개를 고른다.
+ *  1) mainAtchGbCd(주부속구분)가 "부속건축물"(경비실·관리동·환경관리원 휴게소 등)인
+ *     항목은 제외한다 — 실거주 단지 정보를 찾는 게 목적이므로 부속건물은 대표가 될 수 없다.
+ *     (실제로 "다세대주택"으로 오분류됐던 사례가 있었는데, 알고 보니 17㎡짜리
+ *     "환경관리원 휴게소" 부속건물이 items[0]으로 뽑혔던 것이었음)
+ *  2) 주건축물끼리는 층수 → 연면적이 가장 큰 동을 대표로 사용 (가장 "단지답게" 큰 동).
+ */
+function pickRepresentativeItem(items) {
+  const mainOnly = items.filter((it) => it.mainAtchGbCd === '0' || it.mainAtchGbCdNm === '주건축물');
+  const pool = mainOnly.length > 0 ? mainOnly : items;
+
+  return pool.slice().sort((a, b) => {
+    const floorDiff = (Number(b.grndFlrCnt) || 0) - (Number(a.grndFlrCnt) || 0);
+    if (floorDiff !== 0) return floorDiff;
+    return (Number(b.totArea) || 0) - (Number(a.totArea) || 0);
+  })[0];
+}
+
 function formatDate(yyyymmdd) {
   if (!yyyymmdd || yyyymmdd.length !== 8) return null;
   return `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}`;
@@ -181,8 +221,7 @@ async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, 
     };
   }
 
-  // 동이 여러 개인 경우 첫 항목을 대표로 사용(표제부는 동별로 동일한 사용승인일을 갖는 경우가 대부분)
-  const item = items[0];
+  const item = pickRepresentativeItem(items);
 
   return {
     found: true,
