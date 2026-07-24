@@ -2552,8 +2552,25 @@ function reManagementDisposalRow(md) {
   return html;
 }
 
+function renderOfficialZoneCard(zone) {
+  if (!zone) return '';
+  let html = '<div class="card" style="cursor:default;">';
+  html += '<div class="card-title-row" style="margin-bottom:12px;"><span class="card-title">정비구역 공식 데이터</span><span class="card-cat">서울시 정비사업 데이터</span></div>';
+  html += '<dl class="re-kv-grid">';
+  html += `<dt>정비구역명</dt><dd>${reEscapeHtml(zone.zoneName || '정보 없음')}</dd>`;
+  html += `<dt>현재 단계</dt><dd><b>${reEscapeHtml(zone.stage || '정보 없음')}</b></dd>`;
+  html += `<dt>고시일</dt><dd>${reEscapeHtml(zone.noticeDate || '정보 없음')}${zone.noticeNumber ? ' (고시번호: ' + reEscapeHtml(zone.noticeNumber) + ')' : ''}</dd>`;
+  if (zone.projectType) html += `<dt>정비유형</dt><dd>${reEscapeHtml(zone.projectType)}</dd>`;
+  if (zone.implementationMethod) html += `<dt>사업시행방식</dt><dd>${reEscapeHtml(zone.implementationMethod)}</dd>`;
+  if (zone.zoneArea) html += `<dt>정비구역면적</dt><dd>${reEscapeHtml(zone.zoneArea)}㎡</dd>`;
+  html += '</dl>';
+  html += `<div class="re-disclaimer">공공데이터포털 공식 데이터이지만, "현재 단계"와 그 고시일 1건만 제공되어 조합설립인가일·사업시행인가일·관리처분계획인가일을 각각 따로 보여주지는 못합니다. 또한 수시(비정기) 갱신 데이터라 최신이 아닐 수 있습니다. 출처: ${reEscapeHtml(zone.source)}</div>`;
+  html += '</div>';
+  return html;
+}
+
 function renderRealEstateResult(data) {
-  const { input: inputInfo, address, candidateCount, otherCandidates, building, redevelopment } = data;
+  const { input: inputInfo, address, candidateCount, otherCandidates, building, redevelopment, officialRedevelopmentZone } = data;
   const resultEl = document.getElementById('re-result');
   let html = '';
 
@@ -2579,8 +2596,9 @@ function renderRealEstateResult(data) {
     html += reStatValue('건물유형', building.buildingType);
     html += reStatValue('사용승인일(준공일)', building.useAprDay, reUseAprDaySubRef(building));
     html += '</div>';
-    if (building.totalFloorArea || building.groundFloors || building.undergroundFloors) {
+    if (building.siteArea || building.totalFloorArea || building.groundFloors || building.undergroundFloors) {
       html += '<div class="re-hero-sub">';
+      if (building.siteArea) html += `<span class="re-hero-sub-item">대지면적 <b>${reEscapeHtml(building.siteArea)}㎡</b></span>`;
       if (building.totalFloorArea) html += `<span class="re-hero-sub-item">연면적 <b>${reEscapeHtml(building.totalFloorArea)}㎡</b></span>`;
       if (building.groundFloors || building.undergroundFloors) html += `<span class="re-hero-sub-item">층수 <b>지상 ${building.groundFloors || 0}층 / 지하 ${building.undergroundFloors || 0}층</b></span>`;
       html += '</div>';
@@ -2592,7 +2610,11 @@ function renderRealEstateResult(data) {
       // 동/호를 특정하지 않고 검색하면, 같은 지번에 등록된 여러 동 중 가장 큰 동을
       // "대표"로 골라 보여준다 — 이 사실과, 동별로 값이 실제로 다를 수 있다는 걸
       // 반드시 알려야 사용자가 "이 단지 전체가 이 층수"라고 오해하지 않는다.
-      const dongLabel = building.dongName ? `${reEscapeHtml(building.dongName)}동` : '대표 동';
+      // dongName 원본 표기가 지자체마다 달라서("17", "103동" 등) "동"을 무조건 붙이면
+      // "103동동"처럼 중복될 수 있어, 이미 "동"으로 끝나는 경우는 그대로 둔다.
+      const dongLabel = building.dongName
+        ? `${reEscapeHtml(building.dongName)}${/동$/.test(building.dongName) ? '' : '동'}`
+        : '대표 동';
       html += building.representativeVaries
         ? `<div class="re-disclaimer">⚠️ 이 지번에는 동이 총 ${building.dongCount}개 등록되어 있고, <b>동별로 층수·면적·사용승인일이 다릅니다.</b> 위 값은 그중 가장 규모가 큰 ${dongLabel}(지상 ${building.groundFloors || '?'}층) 기준입니다. 특정 동/호 기준으로 보려면 주소에 동 번호를 포함해서 다시 검색해주세요 (예: "OOO아파트 101동 101호").</div>`
         : `<div class="re-disclaimer">이 지번에는 동이 총 ${building.dongCount}개 등록되어 있습니다 (확인 결과 층수·면적·사용승인일은 모두 동일). 위 값은 그중 ${dongLabel} 기준입니다.</div>`;
@@ -2610,6 +2632,9 @@ function renderRealEstateResult(data) {
     html += `<div class="empty-state" style="padding:20px 0;">${reEscapeHtml(building.buildingType || building.error || '건축물대장 정보를 찾을 수 없습니다.')}</div>`;
   }
   html += '</div>';
+
+  // 1.5. 공식 정비구역 데이터 (현재 서울만 지원) — 있으면 네이버 기반 카드보다 먼저 보여준다
+  html += renderOfficialZoneCard(officialRedevelopmentZone);
 
   // 2. 재건축/재개발 관련 정보
   html += '<div class="card" style="cursor:default;"><div class="card-title-row" style="margin-bottom:12px;"><span class="card-title">재건축/재개발 관련 정보</span><span class="card-cat">네이버 검색 기반</span></div>';

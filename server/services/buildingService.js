@@ -9,6 +9,8 @@ const BASE_URL = 'https://apis.data.go.kr/1613000/BldRgstHubService';
 
 // 표제부(건물 전체 개요) - 건물유형/사용승인일 확인용
 const TITLE_INFO_PATH = '/getBrTitleInfo';
+// 총괄표제부 - 대지면적은 동별 표제부가 아니라 여기(단지 전체 기준)에 있다
+const RECAP_TITLE_INFO_PATH = '/getBrRecapTitleInfo';
 
 // 사람마다 .env / Vercel 환경변수에 다른 이름으로 등록하는 경우가 많아
 // (예: "공공데이터 API 키" -> PUBLIC_DATA_API_KEY), 흔히 쓰는 이름들을
@@ -28,10 +30,10 @@ function resolveApiKey() {
 }
 
 /**
- * 건축물대장 표제부 API를 호출한다.
+ * 건축물대장 표제부/총괄표제부 공용 호출 로직 (재시도 + XML 폴백 포함).
  * platGbCd: 0(대지) / 1(산)
  */
-async function fetchTitleInfo({ sigunguCd, bjdongCd, platGbCd = '0', bun, ji }) {
+async function callBuildingRegisterApi(path, { sigunguCd, bjdongCd, platGbCd = '0', bun, ji }) {
   const apiKey = resolveApiKey();
   if (!apiKey) {
     const err = new Error(
@@ -64,7 +66,7 @@ async function fetchTitleInfo({ sigunguCd, bjdongCd, platGbCd = '0', bun, ji }) 
   let lastErr;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      ({ data } = await axios.get(`${BASE_URL}${TITLE_INFO_PATH}`, { params, timeout: 8000 }));
+      ({ data } = await axios.get(`${BASE_URL}${path}`, { params, timeout: 8000 }));
       lastErr = null;
       break;
     } catch (err) {
@@ -90,6 +92,21 @@ async function fetchTitleInfo({ sigunguCd, bjdongCd, platGbCd = '0', bun, ji }) 
   const items = data?.response?.body?.items?.item;
   if (!items) return [];
   return Array.isArray(items) ? items : [items];
+}
+
+function fetchTitleInfo(query) {
+  return callBuildingRegisterApi(TITLE_INFO_PATH, query);
+}
+
+// 총괄표제부는 단지 전체 기준 대지면적을 담고 있다. 단독주택 등은 총괄표제부 자체가
+// 없는 경우가 많아(일반건축물대장만 존재) 빈 배열이 정상일 수 있다 — 호출 실패로 취급하지 않는다.
+async function fetchRecapTitleInfo(query) {
+  try {
+    return await callBuildingRegisterApi(RECAP_TITLE_INFO_PATH, query);
+  } catch (err) {
+    if (err.code === 'MISSING_API_KEY') throw err;
+    return [];
+  }
 }
 
 async function parseXmlResponse(xml) {
@@ -201,6 +218,7 @@ function buildMockInfo(buildingNameHint) {
     buildingName: buildingNameHint || '(목데이터) 건물명 미상',
     dongName: null,
     useAprDay: '1998-05-14',
+    siteArea: '312.4',
     totalFloorArea: '84.97',
     groundFloors: '15',
     undergroundFloors: '2',
@@ -238,6 +256,7 @@ async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, 
 
   const registry = resolveRegistryCodes({ sigunguCd, bjdongCd, bdMgtSn });
   const platGbCd = mtYn === '1' ? '1' : '0';
+  let usedCodes = registry;
 
   let items = await fetchTitleInfo({
     sigunguCd: registry.sigunguCd,
@@ -250,6 +269,7 @@ async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, 
   // bdMgtSn 기반 코드로도 못 찾았고 admCd 기반 코드와 실제로 달랐다면, 혹시 몰라
   // admCd 기반으로도 한 번 더 시도해본다 (반대 방향의 코드 불일치 가능성 대비).
   if (items.length === 0 && (registry.sigunguCd !== sigunguCd || registry.bjdongCd !== bjdongCd)) {
+    usedCodes = { sigunguCd, bjdongCd };
     items = await fetchTitleInfo({ sigunguCd, bjdongCd, platGbCd, bun: lnbrMnnm, ji: lnbrSlno });
   }
 
@@ -265,12 +285,24 @@ async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, 
 
   const { item, dongCount, varies } = pickRepresentativeItem(items);
 
+  // 대지면적은 동별 표제부가 아니라 총괄표제부(단지 전체 기준)에 있다. 단독주택 등은
+  // 총괄표제부가 아예 없을 수 있어(일반건축물대장만 존재) 실패해도 무시하고 null로 둔다.
+  const recapItems = await fetchRecapTitleInfo({
+    sigunguCd: usedCodes.sigunguCd,
+    bjdongCd: usedCodes.bjdongCd,
+    platGbCd,
+    bun: lnbrMnnm,
+    ji: lnbrSlno,
+  }).catch(() => []);
+  const siteArea = recapItems[0]?.platArea || item.platArea || null;
+
   return {
     found: true,
     buildingType: classifyBuildingType(item),
     buildingName: item.bldNm || null,
     dongName: item.dongNm || null,
     useAprDay: formatDate(item.useAprDay),
+    siteArea,
     totalFloorArea: item.totArea || null,
     groundFloors: item.grndFlrCnt || null,
     undergroundFloors: item.ugrndFlrCnt || null,

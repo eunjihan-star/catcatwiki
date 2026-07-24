@@ -3,6 +3,7 @@
 const { resolveAddress } = require('./services/addressService');
 const { getBuildingInfo } = require('./services/buildingService');
 const { searchRedevelopmentInfo, searchUseApprovalDate } = require('./services/naverService');
+const { findSeoulRedevelopmentZone } = require('./services/regionalRedevelopmentService');
 
 // 이 위키는 "거주용 건물" 정보만 다룬다. 상가/업무시설 등 비주거 건물의 사용승인일·면적을
 // 정확히 알려주는 건 애초에 목적이 아니므로, 그런 건물이 걸리면 상세 정보를 보여주는 대신
@@ -196,13 +197,21 @@ async function handleSearch(address, buildingTypeGroups) {
   // 정확한 번지가 본문에 언급된 기사만 인정하도록 강제한다 (아래 함수 설명 참고).
   const requiredBunji = !best.buildingName && !parsed.complexNameHint && bunji ? bunji : undefined;
 
-  const [naverInfo, naverApproval] = await Promise.all([
+  // 서울 주소면 네이버 텍스트 마이닝보다 신뢰도가 높은 공식 데이터(공공데이터포털
+  // "서울특별시_서울시 정비사업 데이터")도 함께 조회한다. 서울이 아니거나, 키가 없거나,
+  // 매칭되는 구역이 없으면 조용히 null — 메인 검색 흐름을 절대 막지 않는다.
+  const addrTokens = (best.jibunAddr || '').trim().split(/\s+/);
+  const sidoToken = addrTokens[0] || '';
+  const dongToken = addrTokens.find((t) => /(동|읍|면|가)$/.test(t)) || '';
+
+  const [naverInfo, naverApproval, officialRedevelopmentZone] = await Promise.all([
     searchRedevelopmentInfo(searchKeyword, best.jibunAddr, requiredBunji).catch((err) => ({
       error: err.message,
       events: null,
       articles: [],
     })),
     searchUseApprovalDate(searchKeyword, best.jibunAddr, requiredBunji).catch(() => null),
+    findSeoulRedevelopmentZone({ sido: sidoToken, dong: dongToken, bunji }).catch(() => null),
   ]);
 
   // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
@@ -253,6 +262,9 @@ async function handleSearch(address, buildingTypeGroups) {
       })),
     building: buildingInfo,
     redevelopment: naverInfo,
+    // 공식 데이터 매칭 결과 (현재 서울만 지원). 네이버 기반 redevelopment와 별도로 내려줘서
+    // 프론트엔드가 "공식 데이터"와 "참고용 텍스트 추출"을 명확히 구분해 보여줄 수 있게 한다.
+    officialRedevelopmentZone,
   };
 }
 
