@@ -150,16 +150,30 @@ function classifyBuildingType(item) {
  *     (실제로 "다세대주택"으로 오분류됐던 사례가 있었는데, 알고 보니 17㎡짜리
  *     "환경관리원 휴게소" 부속건물이 items[0]으로 뽑혔던 것이었음)
  *  2) 주건축물끼리는 층수 → 연면적이 가장 큰 동을 대표로 사용 (가장 "단지답게" 큰 동).
+ *
+ * 동/호를 특정하지 않고 검색하면 이렇게 "대표 동"을 임의로 골라 보여주게 되는데,
+ * 동마다 층수·면적·사용승인일이 실제로 다를 수 있어 이 사실을 화면에도 알려야 한다.
+ * 그래서 대표 동뿐 아니라 후보 풀 전체(pool)와, 그 안에서 값이 실제로 갈리는지도 반환한다.
  */
 function pickRepresentativeItem(items) {
   const mainOnly = items.filter((it) => it.mainAtchGbCd === '0' || it.mainAtchGbCdNm === '주건축물');
   const pool = mainOnly.length > 0 ? mainOnly : items;
 
-  return pool.slice().sort((a, b) => {
+  const sorted = pool.slice().sort((a, b) => {
     const floorDiff = (Number(b.grndFlrCnt) || 0) - (Number(a.grndFlrCnt) || 0);
     if (floorDiff !== 0) return floorDiff;
     return (Number(b.totArea) || 0) - (Number(a.totArea) || 0);
-  })[0];
+  });
+  const item = sorted[0];
+
+  const varies =
+    pool.length > 1 &&
+    pool.some(
+      (it) =>
+        it.grndFlrCnt !== item.grndFlrCnt || it.totArea !== item.totArea || it.useAprDay !== item.useAprDay
+    );
+
+  return { item, dongCount: pool.length, varies };
 }
 
 function formatDate(yyyymmdd) {
@@ -190,6 +204,9 @@ function buildMockInfo(buildingNameHint) {
     totalFloorArea: '84.97',
     groundFloors: '15',
     undergroundFloors: '2',
+    dongCount: 1,
+    isRepresentativeDong: false,
+    representativeVaries: false,
     raw: null,
   };
 }
@@ -246,7 +263,7 @@ async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, 
     };
   }
 
-  const item = pickRepresentativeItem(items);
+  const { item, dongCount, varies } = pickRepresentativeItem(items);
 
   return {
     found: true,
@@ -257,6 +274,12 @@ async function getBuildingInfo({ sigunguCd, bjdongCd, lnbrMnnm, lnbrSlno, mtYn, 
     totalFloorArea: item.totArea || null,
     groundFloors: item.grndFlrCnt || null,
     undergroundFloors: item.ugrndFlrCnt || null,
+    // 동을 특정하지 않고 검색한 경우, 이 값이 "그 지번의 여러 동 중 하나(대표 동)"의
+    // 값이라는 걸 화면에서 알 수 있도록 넘겨준다. dongCount>1이면 다른 동이 더 있다는
+    // 뜻이고, representativeVaries는 그 동들 간 층수·면적·사용승인일이 실제로 다른지.
+    dongCount,
+    isRepresentativeDong: dongCount > 1,
+    representativeVaries: varies,
     raw: item,
   };
 }

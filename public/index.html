@@ -2588,6 +2588,15 @@ function renderRealEstateResult(data) {
     if (building.isMock) {
       html += '<div class="re-disclaimer">공공데이터포털 건축물대장정보 API 키가 아직 승인 대기 중이라 실제 데이터가 아닌 임시 샘플값입니다. 키 발급 후 자동으로 실제 값으로 전환됩니다.</div>';
     }
+    if (building.isRepresentativeDong) {
+      // 동/호를 특정하지 않고 검색하면, 같은 지번에 등록된 여러 동 중 가장 큰 동을
+      // "대표"로 골라 보여준다 — 이 사실과, 동별로 값이 실제로 다를 수 있다는 걸
+      // 반드시 알려야 사용자가 "이 단지 전체가 이 층수"라고 오해하지 않는다.
+      const dongLabel = building.dongName ? `${reEscapeHtml(building.dongName)}동` : '대표 동';
+      html += building.representativeVaries
+        ? `<div class="re-disclaimer">⚠️ 이 지번에는 동이 총 ${building.dongCount}개 등록되어 있고, <b>동별로 층수·면적·사용승인일이 다릅니다.</b> 위 값은 그중 가장 규모가 큰 ${dongLabel}(지상 ${building.groundFloors || '?'}층) 기준입니다. 특정 동/호 기준으로 보려면 주소에 동 번호를 포함해서 다시 검색해주세요 (예: "OOO아파트 101동 101호").</div>`
+        : `<div class="re-disclaimer">이 지번에는 동이 총 ${building.dongCount}개 등록되어 있습니다 (확인 결과 층수·면적·사용승인일은 모두 동일). 위 값은 그중 ${dongLabel} 기준입니다.</div>`;
+    }
   } else if (naverOnly) {
     html += '<div class="re-hero-stats">';
     html += reStatValue(

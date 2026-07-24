@@ -51,12 +51,40 @@ function stripHtml(str) {
 // 뉴스/블로그 요약에서 흔한 "2018년 7월"처럼 일(day)이 생략된 형태도 인식한다.
 const DATE_RE = /(\d{2,4})[.\-년]\s*(\d{1,2})[.\-월]\s*(\d{1,2})?\s*일?/g;
 
+/**
+ * 관리처분인가·사용승인일 등은 전부 "이미 일어난" 행정 절차를 보도하는 값이라
+ * 논리적으로 미래 날짜가 나올 수 없다 — 그런데도 "77" 같은 2자리 연도를 무조건
+ * "20xx"로 해석하면 1977년을 2077년으로 잘못 읽어 실제로 이런 오탐이 나왔다.
+ * 1) 2자리 연도는 "오늘 기준 미래가 되면 19xx로" 보정하고,
+ * 2) 최종 날짜가 그래도 오늘보다 미래면 오추출로 보고 버린다.
+ */
 function normalizeDate(y, m, d) {
-  let year = y.length === 2 ? Number(`20${y}`) : Number(y);
-  const month = String(m).padStart(2, '0');
-  if (year < 1980 || year > 2100) return null;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  let year;
+  if (y.length <= 2) {
+    const asIs2000 = 2000 + Number(y);
+    year = asIs2000 > currentYear ? 1900 + Number(y) : asIs2000;
+  } else {
+    year = Number(y);
+  }
+  if (year < 1980) return null;
+
+  const monthNum = Number(m);
+  if (monthNum < 1 || monthNum > 12) return null;
+  const month = String(monthNum).padStart(2, '0');
+
+  if (year > currentYear) return null;
+  if (year === currentYear && monthNum > now.getMonth() + 1) return null;
+
   if (!d) return `${year}-${month}`; // 일자 미상 - 연/월까지만 제공
-  const day = String(d).padStart(2, '0');
+
+  const dayNum = Number(d);
+  if (dayNum < 1 || dayNum > 31) return null;
+  if (year === currentYear && monthNum === now.getMonth() + 1 && dayNum > now.getDate()) return null;
+
+  const day = String(dayNum).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
