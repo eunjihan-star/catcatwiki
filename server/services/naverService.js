@@ -222,25 +222,46 @@ const ALL_SIDO_SHORT_NAMES = [...new Set(Object.values(SIDO_SHORT_MAP))];
  * 검색어에 붙일 지역 문자열("서울 성북구 종암동")을 만든다.
  * "종암아이파크"처럼 전국에 같은/유사한 이름의 단지가 있는 경우, 지역명 없이
  * 단지명만으로 검색하면 엉뚱한 지역의 글이 섞여 들어오기 때문에 반드시 붙인다.
+ *
+ * 경기도 다수 도시처럼 "성남시 분당구", "수원시 영통구", "안양시 동안구"같이
+ * 시/군/구가 두 토큰(시+구)으로 이루어진 주소가 있다 — 이걸 한 토큰(시)으로만
+ * 읽으면 그 다음 토큰("분당구")이 동네 이름인 줄 알고 동(dong) 추출에 실패해서,
+ * 정작 진짜 동네(서현동 등) 없이 "경기 성남시"까지만 검색어가 만들어지는 버그가
+ * 있었다 — "분당 한양아파트"가 여의도 한양아파트 재건축 소식과 섞인 원인이 이것.
  */
 function extractRegionTokens(jibunAddr) {
-  if (!jibunAddr) return { sido: '', sigungu: '', dong: '', queryRegion: '' };
+  if (!jibunAddr) return { sido: '', sigungu: '', sigunguParts: [], dong: '', queryRegion: '' };
   const tokens = jibunAddr.trim().split(/\s+/);
   const sidoRaw = tokens[0] || '';
   const sido = SIDO_SHORT_MAP[sidoRaw] || sidoRaw;
-  const sigungu = tokens[1] || '';
-  const dong = tokens[2] && /(동|읍|면|가)$/.test(tokens[2]) ? tokens[2] : '';
+
+  let idx = 1;
+  const sigunguParts = [];
+  if (tokens[idx] && /(시|군|구)$/.test(tokens[idx])) {
+    sigunguParts.push(tokens[idx]);
+    idx++;
+    // "OO시" 다음에 "OO구"가 또 나오면(성남시 분당구 등) 같이 묶는다
+    if (/시$/.test(sigunguParts[0]) && tokens[idx] && /구$/.test(tokens[idx])) {
+      sigunguParts.push(tokens[idx]);
+      idx++;
+    }
+  }
+  const sigungu = sigunguParts.join(' ');
+  const dong = tokens[idx] && /(동|읍|면|가)$/.test(tokens[idx]) ? tokens[idx] : '';
+
   const queryRegion = [sido, sigungu, dong].filter(Boolean).join(' ');
-  return { sido, sigungu, dong, queryRegion };
+  return { sido, sigungu, sigunguParts, dong, queryRegion };
 }
 
 /**
  * 검색 결과 텍스트가 다른 지역(우리 지역명은 전혀 언급 없이, 다른 시/도명만 언급)에
- * 관한 글로 보이면 true.
+ * 관한 글로 보이면 true. sigungu는 "성남시 분당구"처럼 두 토큰일 수 있어 부분(성남시,
+ * 분당구 각각) 어느 쪽이든 언급되면 "우리 지역 언급"으로 인정한다.
  */
 function isLikelyWrongRegion(text, region) {
   if (!region.sido) return false;
-  const mentionsOwnRegion = text.includes(region.sido) || (region.sigungu && text.includes(region.sigungu));
+  const mentionsOwnRegion =
+    text.includes(region.sido) || (region.sigunguParts || []).some((part) => text.includes(part));
   if (mentionsOwnRegion) return false;
   return ALL_SIDO_SHORT_NAMES.some((name) => name !== region.sido && text.includes(name));
 }
@@ -255,7 +276,7 @@ const GENERIC_WORDS = new Set([
 
 function extractDistinctiveTokens(keyword, region) {
   if (!keyword) return [];
-  const regionTokens = new Set([region.sido, region.sigungu, region.dong].filter(Boolean));
+  const regionTokens = new Set([region.sido, region.dong, ...(region.sigunguParts || [])].filter(Boolean));
   return keyword
     .split(/\s+/)
     .map((t) => t.trim())
