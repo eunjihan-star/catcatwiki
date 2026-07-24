@@ -182,17 +182,27 @@ async function handleSearch(address, buildingTypeGroups) {
   // 나올 때까지 순회한 뒤, 그 후보를 이후 응답(주소 표시, 네이버 검색어)에도 일관되게 사용한다.
   const { candidate: best, info: buildingInfo } = await pickResidentialCandidate(candidates, wantedTypes);
 
-  // 네이버 검색은 단지명이 있으면 단지명 위주로, 없으면 지번주소 기준으로 검색.
-  // 지번주소는 검색어에 지역명(시/군/구/동)을 강제로 붙이는 데 별도로 사용된다 —
-  // 그래야 "종암아이파크"처럼 흔한 브랜드명이 다른 지역 결과와 섞이지 않는다.
-  const searchKeyword = best.buildingName || parsed.complexNameHint || best.jibunAddr;
+  // 단지명(아파트/오피스텔 등)이 있으면 그 이름으로, 없으면(단독주택 등) 번지로 검색한다.
+  // 번지는 지역명(시/군/구/동)과 별도로 붙는데, 예전엔 여기에 jibunAddr 전체를 넣어서
+  // "경기 부천시 소사구 소사본동 경기도 부천시 소사구 소사본동 286-23" 처럼 지역명이
+  // 중복 삽입되는 버그가 있었다 — 번지만 깔끔하게 뽑아 쓴다.
+  const bunji = best.lnbrMnnm
+    ? `${Number(best.lnbrMnnm)}${best.lnbrSlno && Number(best.lnbrSlno) !== 0 ? `-${Number(best.lnbrSlno)}` : ''}`
+    : '';
+  const searchKeyword = best.buildingName || parsed.complexNameHint || bunji || best.jibunAddr;
+
+  // 단지명이 없는 일반 주소(단독주택 등)는 "동" 단위 필터만으로는 부족하다 — 같은 동 안에
+  // "OO본동 1구역", "OO본동 3구역"처럼 서로 다른 재개발구역이 동시에 진행되는 경우가 흔해서,
+  // 정확한 번지가 본문에 언급된 기사만 인정하도록 강제한다 (아래 함수 설명 참고).
+  const requiredBunji = !best.buildingName && !parsed.complexNameHint && bunji ? bunji : undefined;
+
   const [naverInfo, naverApproval] = await Promise.all([
-    searchRedevelopmentInfo(searchKeyword, best.jibunAddr).catch((err) => ({
+    searchRedevelopmentInfo(searchKeyword, best.jibunAddr, requiredBunji).catch((err) => ({
       error: err.message,
       events: null,
       articles: [],
     })),
-    searchUseApprovalDate(searchKeyword, best.jibunAddr).catch(() => null),
+    searchUseApprovalDate(searchKeyword, best.jibunAddr, requiredBunji).catch(() => null),
   ]);
 
   // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
