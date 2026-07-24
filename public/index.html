@@ -2555,7 +2555,7 @@ function reManagementDisposalRow(md) {
 function renderOfficialZoneCard(zone) {
   if (!zone) return '';
   let html = '<div class="card" style="cursor:default;">';
-  html += '<div class="card-title-row" style="margin-bottom:12px;"><span class="card-title">정비구역 공식 데이터</span><span class="card-cat">서울시 정비사업 데이터</span></div>';
+  html += `<div class="card-title-row" style="margin-bottom:12px;"><span class="card-title">정비구역 공식 데이터</span><span class="card-cat">지자체 정비사업 데이터</span></div>`;
   html += '<dl class="re-kv-grid">';
   html += `<dt>정비구역명</dt><dd>${reEscapeHtml(zone.zoneName || '정보 없음')}</dd>`;
   html += `<dt>현재 단계</dt><dd><b>${reEscapeHtml(zone.stage || '정보 없음')}</b></dd>`;
@@ -2563,6 +2563,10 @@ function renderOfficialZoneCard(zone) {
   if (zone.projectType) html += `<dt>정비유형</dt><dd>${reEscapeHtml(zone.projectType)}</dd>`;
   if (zone.implementationMethod) html += `<dt>사업시행방식</dt><dd>${reEscapeHtml(zone.implementationMethod)}</dd>`;
   if (zone.zoneArea) html += `<dt>정비구역면적</dt><dd>${reEscapeHtml(zone.zoneArea)}㎡</dd>`;
+  if (zone.location) html += `<dt>위치</dt><dd>${reEscapeHtml(zone.location)}</dd>`;
+  if (zone.contractor) html += `<dt>시공자</dt><dd>${reEscapeHtml(zone.contractor)}</dd>`;
+  if (zone.householdCount) html += `<dt>세대수</dt><dd>${reEscapeHtml(zone.householdCount)}</dd>`;
+  if (zone.unionMemberCount) html += `<dt>조합원수</dt><dd>${reEscapeHtml(zone.unionMemberCount)}</dd>`;
   html += '</dl>';
   html += `<div class="re-disclaimer">공공데이터포털 공식 데이터이지만, "현재 단계"와 그 고시일 1건만 제공되어 조합설립인가일·사업시행인가일·관리처분계획인가일을 각각 따로 보여주지는 못합니다. 또한 수시(비정기) 갱신 데이터라 최신이 아닐 수 있습니다. 출처: ${reEscapeHtml(zone.source)}</div>`;
   html += '</div>';

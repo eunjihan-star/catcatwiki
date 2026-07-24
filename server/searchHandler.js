@@ -3,7 +3,7 @@
 const { resolveAddress } = require('./services/addressService');
 const { getBuildingInfo } = require('./services/buildingService');
 const { searchRedevelopmentInfo, searchUseApprovalDate } = require('./services/naverService');
-const { findSeoulRedevelopmentZone } = require('./services/regionalRedevelopmentService');
+const { findRedevelopmentZone } = require('./services/regionalRedevelopmentService');
 
 // 이 위키는 "거주용 건물" 정보만 다룬다. 상가/업무시설 등 비주거 건물의 사용승인일·면적을
 // 정확히 알려주는 건 애초에 목적이 아니므로, 그런 건물이 걸리면 상세 정보를 보여주는 대신
@@ -211,7 +211,7 @@ async function handleSearch(address, buildingTypeGroups) {
       articles: [],
     })),
     searchUseApprovalDate(searchKeyword, best.jibunAddr, requiredBunji).catch(() => null),
-    findSeoulRedevelopmentZone({ sido: sidoToken, dong: dongToken, bunji }).catch(() => null),
+    findRedevelopmentZone({ sido: sidoToken, dong: dongToken, bunji }).catch(() => null),
   ]);
 
   // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
