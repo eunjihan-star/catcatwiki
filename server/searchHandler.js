@@ -112,6 +112,41 @@ async function pickResidentialCandidate(candidates, wantedTypes) {
   };
 }
 
+// 도로명("선수촌로" 등)도, 아파트 브랜드명("한양아파트" 등)도 전국 여러 시/군/구에
+// 동일한 이름이 존재할 수 있다. 이 경우 juso 후보들이 서로 다른 시군구코드로 갈라져서
+// 나오는데, 그중 아무거나(candidates[0])를 골라버리면 완전히 엉뚱한 지역의 건물유형·
+// 사용승인일·재건축 정보를 "그 주소 정보"인 것처럼 보여주게 된다. 서로 다른 시/군/구가
+// 섞여 있으면 특정 불가로 보고 검색을 거부하고, 어떤 지역들이 걸렸는지 알려준다.
+function describeRegion(candidate) {
+  const tokens = (candidate.roadAddr || candidate.jibunAddr || '').trim().split(/\s+/);
+  return [tokens[0], tokens[1]].filter(Boolean).join(' ');
+}
+
+function assertUnambiguousRegion(candidates) {
+  const distinctSigungu = new Set(candidates.map((c) => c.sigunguCd).filter(Boolean));
+  if (distinctSigungu.size <= 1) return;
+
+  const seen = new Set();
+  const regionList = [];
+  for (const c of candidates) {
+    const label = describeRegion(c);
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      regionList.push(label);
+    }
+    if (regionList.length >= 5) break;
+  }
+
+  const err = new Error(
+    `입력하신 주소/건물명이 여러 지역에서 검색됩니다 (${regionList.join(', ')}${distinctSigungu.size > regionList.length ? ' 등' : ''}). ` +
+    `동일한 이름의 도로·아파트가 여러 시/군/구에 있을 수 있어 정확한 지역을 특정할 수 없습니다. ` +
+    `시/도·시/군/구까지 포함해서 다시 검색해주세요 (예: "서울 강남구 ○○아파트").`
+  );
+  err.status = 422;
+  err.ambiguousRegions = regionList;
+  throw err;
+}
+
 /**
  * 주소 검색 오케스트레이션 로직 — Express 라우트(로컬 개발)와 Vercel 서버리스
  * 함수(배포)가 이 함수 하나를 공유한다. HTTP 프레임워크에 대한 의존이 없어야
@@ -138,6 +173,8 @@ async function handleSearch(address, buildingTypeGroups) {
     err.parsed = parsed;
     throw err;
   }
+
+  assertUnambiguousRegion(candidates);
 
   const wantedTypes = expandExpectedTypes(buildingTypeGroups);
 
