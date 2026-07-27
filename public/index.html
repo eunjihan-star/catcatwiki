@@ -8,7 +8,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>유닛블랙 CX운영지원팀 고객지원파트 WIKI</title>
+<title>WIKI & 부동산정보</title>
 <style>
   :root {
     color-scheme: light;
@@ -301,6 +301,16 @@
   .re-change-list { margin:6px 0 0; padding-left:0; list-style:none; font-size:12px; color:var(--ink-soft); }
   .re-change-list li { padding:3px 0; }
   .re-change-list a { color:var(--teal-700); text-decoration:none; font-weight:600; margin-left:6px; }
+
+  .re-copy-btn {
+    display:inline-flex; align-items:center; gap:3px; margin-left:8px; vertical-align:middle;
+    padding:2px 8px; font-size:11px; font-weight:600; line-height:1.7; font-family:inherit;
+    color:var(--ink-soft); background:#fff; border:1px solid var(--line); border-radius:6px;
+    cursor:pointer; transition:border-color .15s, color .15s, background .15s;
+  }
+  .re-copy-btn:hover { border-color:var(--teal-500); color:var(--teal-700); }
+  .re-copy-btn.re-copy-btn-done { border-color:var(--teal-600); color:#fff; background:var(--teal-600); }
+  .re-hero-addr-row { display:flex; align-items:center; gap:2px; flex-wrap:wrap; }
 
   .re-disclaimer {
     font-size:11.5px; color:var(--warn); background:var(--warn-bg); border:1px solid #fde3c8;
@@ -2515,8 +2525,45 @@ const RE_API_BASE = location.protocol === 'file:' ? 'http://localhost:4000' : ''
 
 function reEscapeHtml(str) { return escapeHtml(str); }
 
-function reStatValue(label, value, subRefHtml) {
-  return `<div><div class="re-stat-label">${label}</div><div class="re-stat-value${value ? '' : ' empty'}">${value ? reEscapeHtml(value) : '정보 없음'}</div>${subRefHtml || ''}</div>`;
+// 클립보드 복사 - Clipboard API 우선, 안 되면(비보안 컨텍스트 등) 임시 textarea로 폴백.
+function copyToClipboard(text, btn) {
+  if (!text) return;
+  const done = () => {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = '복사됨';
+    btn.classList.add('re-copy-btn-done');
+    setTimeout(() => { btn.textContent = original; btn.classList.remove('re-copy-btn-done'); }, 1200);
+  };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { /* 복사 실패 시 조용히 무시 */ }
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+// 값이 있을 때만 작은 "복사" 버튼을 만든다. visibleLabel을 주면 버튼 글자를 바꿀 수 있다
+// (예: 전체 주소 복사 버튼은 "주소 복사"로 눈에 띄게). extraAttr로 style="margin-left:auto"
+// 같은 걸 넘기면 같은 flex row 안에서 오른쪽으로 밀어낼 수 있다.
+function reCopyBtn(text, title, visibleLabel, extraAttr) {
+  if (!text) return '';
+  const label = visibleLabel || '복사';
+  return `<button type="button" class="re-copy-btn" ${extraAttr || ''} data-copy="${reEscapeHtml(text)}" onclick="copyToClipboard(this.dataset.copy, this)" title="${reEscapeHtml(title || label)}">${label}</button>`;
+}
+
+function reStatValue(label, value, subRefHtml, copyable) {
+  const copyBtn = copyable ? reCopyBtn(value, `${label} 복사`) : '';
+  return `<div><div class="re-stat-label">${label}</div><div class="re-stat-value${value ? '' : ' empty'}">${value ? reEscapeHtml(value) : '정보 없음'}${copyBtn}</div>${subRefHtml || ''}</div>`;
 }
 
 // 사용승인일은 건축물대장 값을 주로 쓰되, 네이버 검색에서 확인된 값이 있으면 참고용으로
@@ -2533,19 +2580,19 @@ function reEventRow(label, ev) {
   if (!ev) {
     return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span></span></div>`;
   }
-  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span><a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
+  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span>${reCopyBtn(ev.date, `${label} 복사`)}<a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
 }
 
 function reManagementDisposalRow(md) {
   if (!md || !md.initial) {
     return `<div class="re-event-row"><span class="re-event-label">관리처분인가일</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span></span></div>`;
   }
-  let html = `<div class="re-event-row"><span class="re-event-label">관리처분인가일 (최초)</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(md.initial.date)}</span><a href="${reEscapeHtml(md.initial.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
+  let html = `<div class="re-event-row"><span class="re-event-label">관리처분인가일 (최초)</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(md.initial.date)}</span>${reCopyBtn(md.initial.date, '관리처분인가일 복사')}<a href="${reEscapeHtml(md.initial.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
   if (md.changes && md.changes.length > 0) {
     html += `<div class="re-event-row" style="border-bottom:none;padding-bottom:0;"><span class="re-event-label">변경 이력</span><span class="re-event-value"></span></div>`;
     html += '<ul class="re-change-list">';
     md.changes.forEach((c) => {
-      html += `<li>${reEscapeHtml(c.date)}<a href="${reEscapeHtml(c.link)}" target="_blank" rel="noopener">원문</a></li>`;
+      html += `<li>${reEscapeHtml(c.date)}${reCopyBtn(c.date, '변경일자 복사')}<a href="${reEscapeHtml(c.link)}" target="_blank" rel="noopener">원문</a></li>`;
     });
     html += '</ul>';
   }
@@ -2559,7 +2606,7 @@ function renderOfficialZoneCard(zone) {
   html += '<dl class="re-kv-grid">';
   html += `<dt>정비구역명</dt><dd>${reEscapeHtml(zone.zoneName || '정보 없음')}</dd>`;
   html += `<dt>현재 단계</dt><dd><b>${reEscapeHtml(zone.stage || '정보 없음')}</b></dd>`;
-  html += `<dt>고시일</dt><dd>${reEscapeHtml(zone.noticeDate || '정보 없음')}${zone.noticeNumber ? ' (고시번호: ' + reEscapeHtml(zone.noticeNumber) + ')' : ''}</dd>`;
+  html += `<dt>고시일</dt><dd>${reEscapeHtml(zone.noticeDate || '정보 없음')}${zone.noticeDate ? reCopyBtn(zone.noticeDate, '고시일 복사') : ''}${zone.noticeNumber ? ' (고시번호: ' + reEscapeHtml(zone.noticeNumber) + ')' : ''}</dd>`;
   if (zone.projectType) html += `<dt>정비유형</dt><dd>${reEscapeHtml(zone.projectType)}</dd>`;
   if (zone.implementationMethod) html += `<dt>사업시행방식</dt><dd>${reEscapeHtml(zone.implementationMethod)}</dd>`;
   if (zone.zoneArea) html += `<dt>정비구역면적</dt><dd>${reEscapeHtml(zone.zoneArea)}㎡</dd>`;
@@ -2583,11 +2630,25 @@ function renderRealEstateResult(data) {
   // (비주거 판정, 행정구역 코드 불일치 등) 네이버 검색으로 사용승인일을 찾았다면
   // 절대 화면을 비워두지 않고 그 값을 메인으로 보여준다.
   const naverOnly = !building.found && building.useAprDaySource === 'naver-only';
+  // "전체 주소": 도로명주소 + (다르면) 지번주소 + 건물명을 한 번에 붙여넣기 좋은 한 덩어리로.
+  const fullAddressText = [
+    address.roadAddr,
+    address.jibunAddr && address.jibunAddr !== address.roadAddr ? `(지번) ${address.jibunAddr}` : null,
+    address.buildingName ? `[${address.buildingName}]` : null,
+  ].filter(Boolean).join(' ');
+
+  // "이름+준공일" 한 번에 복사 (예: "성동마을엘지빌리지1차 2001.02.19") - 날짜는 점 표기로.
+  const nameAndDateText = building.useAprDay
+    ? `${address.buildingName || address.roadAddr} ${building.useAprDay.replaceAll('-', '.')}`
+    : '';
+
   html += '<div class="re-hero">';
   html += '<div class="re-hero-top">';
   html += `<span class="re-badge">${naverOnly ? '네이버 검색' : '건축물대장'}</span>`;
   if (building.isMock) html += `<span class="re-badge warn">임시 목데이터</span>`;
   html += `<span class="re-hero-addr">${reEscapeHtml(address.buildingName || address.roadAddr)}</span>`;
+  html += reCopyBtn(fullAddressText, '전체 주소 복사', '주소 복사');
+  html += reCopyBtn(nameAndDateText, '이름+준공일 복사', '이름+준공일 복사', 'style="margin-left:auto;"');
   html += '</div>';
 
   if (building.actualType) {
@@ -2598,7 +2659,7 @@ function renderRealEstateResult(data) {
   if (building.found) {
     html += '<div class="re-hero-stats">';
     html += reStatValue('건물유형', building.buildingType);
-    html += reStatValue('사용승인일(준공일)', building.useAprDay, reUseAprDaySubRef(building));
+    html += reStatValue('사용승인일(준공일)', building.useAprDay, reUseAprDaySubRef(building), true);
     html += '</div>';
     if (building.siteArea || building.totalFloorArea || building.groundFloors || building.undergroundFloors) {
       html += '<div class="re-hero-sub">';
@@ -2628,7 +2689,8 @@ function renderRealEstateResult(data) {
     html += reStatValue(
       '사용승인일(준공일)',
       building.useAprDay,
-      `<div class="re-stat-subref">네이버 검색 확인 (건축물대장 조회 실패) <a href="${reEscapeHtml(building.useAprDayNaverLink)}" target="_blank" rel="noopener">원문</a></div>`
+      `<div class="re-stat-subref">네이버 검색 확인 (건축물대장 조회 실패) <a href="${reEscapeHtml(building.useAprDayNaverLink)}" target="_blank" rel="noopener">원문</a></div>`,
+      true
     );
     html += '</div>';
     html += '<div class="re-disclaimer">건축물대장에서 건물유형·공식 사용승인일을 확인하지 못해(행정구역 코드 변경, 비주거 판정 등) 네이버 검색으로 찾은 값을 대신 보여드립니다. 정규식 텍스트 추출 결과이므로 반드시 원문으로 교차 확인해주세요.</div>';
@@ -2646,6 +2708,7 @@ function renderRealEstateResult(data) {
     html += `<div class="empty-state" style="padding:20px 0;">${reEscapeHtml(redevelopment.error)}</div>`;
   } else {
     const ev = redevelopment.events || {};
+    html += reEventRow('조합설립인가일', ev.unionEstablishment);
     html += reEventRow('사업시행인가일', ev.projectImplementationApproval);
     html += reManagementDisposalRow(ev.managementDisposalApproval);
     html += reEventRow('청약 당첨일(분양)', ev.subscriptionWin);

@@ -89,6 +89,7 @@ function normalizeDate(y, m, d) {
 }
 
 const EVENT_KEYWORD_MAP = {
+  unionEstablishment: ['조합설립인가', '조합 설립인가', '조합설립 인가'],
   managementDisposalApproval: ['관리처분인가', '관리처분계획인가', '관리처분 인가'],
   projectImplementationApproval: ['사업시행인가', '사업시행계획인가', '사업시행 인가'],
   subscriptionWin: ['청약 당첨', '당첨자 발표', '분양 당첨'],
@@ -100,7 +101,7 @@ const EVENT_KEYWORD_MAP = {
 // 엉뚱한 단계(EVENT_KEYWORD_MAP에 없는 키워드)에 잘못 배정하지 않도록, 추적 대상이 아닌
 // 인접 단계 키워드도 "거리 비교용"으로만 함께 등록해둔다.
 const DISTRACTOR_KEYWORDS = [
-  '조합설립인가', '조합설립', '추진위원회', '안전진단', '구역지정', '정비구역', '정비계획',
+  '추진위원회', '안전진단', '구역지정', '정비구역', '정비계획',
   '착공', '준공', '입주', '이주', '철거', '시공사 선정', '분양신청', '구역 지정',
 ];
 
@@ -190,6 +191,7 @@ function extractEventsFromText(text, keywordMap, distractorKeywords) {
  */
 function extractRedevelopmentEvents(articles) {
   const eventsByType = {
+    unionEstablishment: [],
     managementDisposalApproval: [],
     projectImplementationApproval: [],
     subscriptionWin: [],
@@ -223,6 +225,7 @@ function extractRedevelopmentEvents(articles) {
   const managementDisposal = eventsByType.managementDisposalApproval;
 
   return {
+    unionEstablishment: eventsByType.unionEstablishment[0] || null,
     managementDisposalApproval: {
       initial: managementDisposal[0] || null,
       changes: managementDisposal.slice(1),

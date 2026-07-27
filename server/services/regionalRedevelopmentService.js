@@ -30,13 +30,13 @@ function dongRoot(dong) {
 // =========================================================================
 // 서울특별시 — 공공데이터포털 "서울특별시_서울시 정비사업 데이터" (15097425)
 // https://www.data.go.kr/data/15097425/fileData.do
-// UDDI 확인됨: ea9330ee-5759-4bc9-b2d6-c759ec615815
-// ⚠️ 정확한 Request URL은 활용신청 승인 후 "마이페이지 > 개발계정 상세보기"에서
-//    확인 필요 (아래 URL은 공공데이터포털 파일데이터 자동변환 API의 표준 패턴을
-//    따른 추정값 — 다르면 SEOUL_REDEVELOPMENT_API_URL 환경변수로 덮어쓸 것).
+// UDDI/엔드포인트 2026-07-24 실제 응답으로 확인 완료: ea9330ee-5759-4bc9-b2d6-c759ec615815
+// (SEOUL_REDEVELOPMENT_API_URL 환경변수로 필요 시 덮어쓸 수 있음).
+// ⚠️ "20211227" 스냅샷 고정 데이터 — 갱신주기 "수시(1회성)", 실제 고시일도 최대
+//    2021-12-16까지뿐이라 그 이후 진행 상황은 반영되지 않음. 25개 자치구 중 19개 구만
+//    포함(전체 200건) — 강남·강동·광진·금천·도봉·은평구 없음.
 // ⚠️ 조합설립인가일/사업시행인가일/관리처분계획인가일 개별 필드 없음 —
 //    "시행단계"(현재 단계 텍스트) + "고시일"(그 단계 1건의 고시일)만 제공.
-// ⚠️ "수시(1회성)" 갱신이라 실시간 최신이 아닐 수 있음.
 // =========================================================================
 const SEOUL_UDDI = 'ea9330ee-5759-4bc9-b2d6-c759ec615815';
 const SEOUL_DEFAULT_URL = `https://api.odcloud.kr/api/15097425/v1/uddi:${SEOUL_UDDI}`;
@@ -68,9 +68,19 @@ async function fetchSeoulRows() {
   return rows;
 }
 
+// 실제 API 응답은 번지를 "번"(본번)과 "지"(부번) 두 개의 숫자 필드로 나눠서 준다
+// (합쳐진 "번지" 문자열 필드는 없음 — 2026-07-24 실제 응답으로 확인).
+// searchHandler.js가 넘기는 bunji 포맷("137" 또는 "137-8")과 맞추기 위해 동일한 규칙으로 조립한다.
+function seoulRowBunji(row) {
+  const main = row['번'];
+  if (main === undefined || main === null || main === '') return '';
+  const sub = row['지'];
+  return `${Number(main)}${sub && Number(sub) !== 0 ? `-${Number(sub)}` : ''}`;
+}
+
 function matchSeoulRow(row, { dong, bunji }) {
   const rowDong = dongRoot(row['법정동명']);
-  const rowBunji = normalizeText(row['번지']);
+  const rowBunji = normalizeText(seoulRowBunji(row));
   const wantDong = dongRoot(dong);
   const wantBunji = normalizeText(bunji);
   if (wantDong && rowDong && rowDong !== wantDong) return false;
@@ -80,17 +90,19 @@ function matchSeoulRow(row, { dong, bunji }) {
 
 function normalizeSeoulRow(row) {
   return {
-    zoneName: row['정비구역명'] || null,
+    // ⚠️ 실제 응답 필드명은 공백 포함: "정비 구역명", "정비구역 면적(제곱미터)", "시행자 구분"
+    // (공공데이터포털 파일데이터 자동변환 API 특성상 원본 엑셀 헤더의 공백이 그대로 남아있음).
+    zoneName: row['정비 구역명'] || null,
     sigungu: row['시군구명'] || null,
     dong: row['법정동명'] || null,
-    bunji: row['번지'] || null,
+    bunji: seoulRowBunji(row) || null,
     projectType: row['정비유형'] || null,
     implementationMethod: row['사업시행방식'] || null,
-    implementerType: row['시행자구분'] || null,
+    implementerType: row['시행자 구분'] || null,
     stage: row['시행단계'] || null,
     noticeDate: row['고시일'] || null,
     noticeNumber: row['고시번호'] || null,
-    zoneArea: row['정비구역면적'] || null,
+    zoneArea: row['정비구역 면적(제곱미터)'] || null,
     basicPlanName: row['기본계획명'] || null,
     source: '공공데이터포털 "서울특별시_서울시 정비사업 데이터"(15097425, 수시 갱신)',
   };
@@ -172,11 +184,111 @@ function normalizeBusanRow(row) {
 }
 
 // =========================================================================
+// 인천광역시 — 공공데이터포털 "인천광역시_도시 및 주거환경 정비사업 추진현황" (15055212)
+// https://www.data.go.kr/data/15055212/fileData.do
+// ⚠️ 서울/부산과 달리 매월 새 파일이 올라올 때마다 UDDI 자체가 통째로 바뀐다
+//    (2026-08 확인 시점 기준 ..._20260430 -> ..._20260531 처럼 매달 새 UDDI).
+//    그래서 UDDI를 고정 상수로 박아두면 한 달 뒤 죽는다 — 대신 infuser.odcloud.kr의
+//    OAS 문서에서 그 시점 "가장 최신 날짜" 항목을 직접 찾아 쓰고(resolveIncheonPath),
+//    30일 캐시한다. 크롤링 없이 공식 API만으로 "월 1회 자동 최신화"가 되는 케이스.
+// ⚠️ 조합설립인가일/사업시행인가일/관리처분계획인가일 개별 필드 없음 - "진행단계" 텍스트만.
+// ⚠️ 응답 필드명에 공백 있음: "구 역 명" (2026-08 실제 응답으로 확인, "구역명" 아님).
+// ⚠️ 법정동/번지 필드가 따로 없고 "위치" 텍스트 하나뿐 - 부산과 같은 방식(텍스트 포함
+//    여부)으로 매칭한다.
+// ⚠️ 2026-08 기준 이 dataset(15055212)에 대한 활용신청이 아직 안 되어 있어
+//    INCHEON_REDEVELOPMENT_API_KEY 없이는 401을 받는다 - data.go.kr에서 활용신청 필요.
+// =========================================================================
+const INCHEON_DATASET_ID = '15055212';
+let incheonPathCache = null; // { path, resolvedAt }
+const INCHEON_PATH_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30일
+
+async function resolveIncheonPath() {
+  if (incheonPathCache && Date.now() - incheonPathCache.resolvedAt < INCHEON_PATH_CACHE_TTL_MS) {
+    return incheonPathCache.path;
+  }
+  const { data } = await axios.get('https://infuser.odcloud.kr/oas/docs', {
+    params: { namespace: `${INCHEON_DATASET_ID}/v1` },
+    timeout: 8000,
+  });
+  const paths = Object.keys(data?.paths || {});
+  let best = null;
+  for (const p of paths) {
+    const summary = data.paths[p]?.get?.summary || '';
+    const m = summary.match(/_(\d{8})$/); // "..._20260531" 형태에서 날짜만 추출
+    if (!m) continue;
+    if (!best || m[1] > best.dateStr) best = { path: p, dateStr: m[1] };
+  }
+  if (!best) {
+    throw new Error('인천 정비사업 API의 최신 UDDI를 찾지 못했습니다 (OAS 문서 구조가 바뀌었을 수 있음).');
+  }
+  incheonPathCache = { path: best.path, resolvedAt: Date.now() };
+  return best.path;
+}
+
+async function fetchIncheonRows() {
+  const apiKey = process.env.INCHEON_REDEVELOPMENT_API_KEY;
+  if (!apiKey) {
+    const err = new Error(
+      '인천 정비사업 데이터 키가 없습니다. data.go.kr "인천광역시_도시 및 주거환경 정비사업 추진현황"(15055212) 활용신청 후 ' +
+        '.env의 INCHEON_REDEVELOPMENT_API_KEY 에 등록해주세요.'
+    );
+    err.code = 'MISSING_API_KEY';
+    throw err;
+  }
+  const path = await resolveIncheonPath(); // 예: "/15055212/v1/uddi:..."
+  const baseUrl = `https://api.odcloud.kr/api${path}`;
+
+  const rows = [];
+  let page = 1;
+  let totalCount = Infinity;
+  while (rows.length < totalCount && page <= 30) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data } = await axios.get(baseUrl, { params: { page, perPage: 300, serviceKey: apiKey }, timeout: 8000 });
+    const pageRows = data?.data || [];
+    totalCount = typeof data?.totalCount === 'number' ? data.totalCount : pageRows.length;
+    rows.push(...pageRows);
+    if (pageRows.length === 0) break;
+    page += 1;
+  }
+  return rows;
+}
+
+function matchIncheonRow(row, { dong, bunji }) {
+  const location = normalizeText(row['위치']);
+  if (!location) return false;
+  const wantDong = dongRoot(dong);
+  const wantBunji = normalizeText(bunji);
+  if (wantDong && !location.includes(wantDong)) return false;
+  if (!wantBunji || !location.includes(wantBunji)) return false;
+  return true;
+}
+
+function normalizeIncheonRow(row) {
+  return {
+    zoneName: row['구 역 명'] || null,
+    sigungu: row['구명'] || null,
+    dong: null,
+    bunji: null,
+    location: row['위치'] || null,
+    projectType: row['사업유형'] || null,
+    implementationMethod: null,
+    implementerType: null,
+    stage: row['진행단계'] || null,
+    noticeDate: null,
+    noticeNumber: null,
+    zoneArea: row['면적(제곱미터)'] || null,
+    basicPlanName: null,
+    source: '공공데이터포털 "인천광역시_도시 및 주거환경 정비사업 추진현황"(15055212, 매월 갱신)',
+  };
+}
+
+// =========================================================================
 // 지역 레지스트리 — 새 지역은 이 배열에 추가한다.
 // =========================================================================
 const REGION_HANDLERS = [
   { name: 'seoul', match: (sido) => sido.includes('서울'), fetchRows: fetchSeoulRows, matchRow: matchSeoulRow, normalizeRow: normalizeSeoulRow },
   { name: 'busan', match: (sido) => sido.includes('부산'), fetchRows: fetchBusanRows, matchRow: matchBusanRow, normalizeRow: normalizeBusanRow },
+  { name: 'incheon', match: (sido) => sido.includes('인천'), fetchRows: fetchIncheonRows, matchRow: matchIncheonRow, normalizeRow: normalizeIncheonRow },
 ];
 
 // "수시" 갱신 데이터라 자주 바뀌지 않으므로, 같은 서버리스 인스턴스가 살아있는 동안은
