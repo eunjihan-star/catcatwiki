@@ -204,15 +204,21 @@ async function handleSearch(address, buildingTypeGroups) {
   const sidoToken = addrTokens[0] || '';
   const dongToken = addrTokens.find((t) => /(동|읍|면|가)$/.test(t)) || '';
 
-  const [naverInfo, naverApproval, officialRedevelopmentZone] = await Promise.all([
-    searchRedevelopmentInfo(searchKeyword, best.jibunAddr, requiredBunji).catch((err) => ({
+  // 건축물대장으로 이미 사용승인일을 확인한 경우에만 넘긴다 - 네이버 2차(동 단위) 폴백
+  // 검색에서 "이 날짜보다 이후 인허가는 다른 단지 얘기"로 걸러내는 안전장치로 쓰인다.
+  const maxDateForNaverFallback = buildingInfo.found ? buildingInfo.useAprDay : undefined;
+
+  const [naverInfo, naverApproval, zoneResult] = await Promise.all([
+    searchRedevelopmentInfo(searchKeyword, best.jibunAddr, requiredBunji, maxDateForNaverFallback).catch((err) => ({
       error: err.message,
       events: null,
       articles: [],
     })),
     searchUseApprovalDate(searchKeyword, best.jibunAddr, requiredBunji).catch(() => null),
-    findRedevelopmentZone({ sido: sidoToken, dong: dongToken, bunji }).catch(() => null),
+    findRedevelopmentZone({ sido: sidoToken, dong: dongToken, bunji }).catch(() => ({ zone: null, candidates: [] })),
   ]);
+  const officialRedevelopmentZone = zoneResult.zone;
+  const officialRedevelopmentCandidates = zoneResult.candidates || [];
 
   // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
   // 찾은 값은 참고/교차확인용으로 함께 내려준다 (네이버 단독 신뢰는 위험 — 은마아파트
@@ -262,9 +268,12 @@ async function handleSearch(address, buildingTypeGroups) {
       })),
     building: buildingInfo,
     redevelopment: naverInfo,
-    // 공식 데이터 매칭 결과 (현재 서울만 지원). 네이버 기반 redevelopment와 별도로 내려줘서
+    // 공식 데이터 매칭 결과 (서울/부산/인천 지원). 네이버 기반 redevelopment와 별도로 내려줘서
     // 프론트엔드가 "공식 데이터"와 "참고용 텍스트 추출"을 명확히 구분해 보여줄 수 있게 한다.
     officialRedevelopmentZone,
+    // 정확한 번지 매칭은 실패했지만 같은 법정동에 등록된 사업이 있으면 후보로 내려준다 -
+    // 재건축이 이미 끝난 건물은 지번이 재편되어 정확 매칭이 원천적으로 안 되는 경우가 많다.
+    officialRedevelopmentCandidates,
   };
 }
 

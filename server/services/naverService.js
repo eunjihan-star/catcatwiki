@@ -188,8 +188,13 @@ function extractEventsFromText(text, keywordMap, distractorKeywords) {
  * 뉴스/블로그 검색 결과에서 재건축/재개발 관련 이벤트 날짜를 휴리스틱하게 추출한다.
  * 정규식/키워드 기반 텍스트 마이닝이므로 100% 정확하지 않으며, 반드시 원문(link)으로
  * 교차 확인해야 한다 — 결과에 원문 리스트를 함께 반환하는 이유.
+ *
+ * @param {Array} articles
+ * @param {string} [maxDate] 사용승인일(준공일, "YYYY-MM-DD"). 재건축 인허가는 논리적으로
+ *   전부 준공보다 먼저 일어나므로, 이 값이 있으면 그 이후 날짜는 다른 건물 얘기이거나
+ *   오추출로 보고 버린다 (단지명 없이 넓게 검색하는 dong 폴백에서 특히 중요한 안전장치).
  */
-function extractRedevelopmentEvents(articles) {
+function extractRedevelopmentEvents(articles, maxDate) {
   const eventsByType = {
     unionEstablishment: [],
     managementDisposalApproval: [],
@@ -202,6 +207,7 @@ function extractRedevelopmentEvents(articles) {
     const text = `${article.title} ${article.description}`;
     const found = extractEventsFromText(text, EVENT_KEYWORD_MAP, DISTRACTOR_KEYWORDS);
     for (const f of found) {
+      if (maxDate && f.date >= maxDate) continue;
       eventsByType[f.eventType].push({
         ...f,
         title: article.title,
@@ -351,8 +357,13 @@ function isRelevantArticle(text, region, distinctiveTokens, requiredBunji) {
  * @param {string} [jibunAddr] 지번주소 — 지역명을 뽑아 검색어에 강제로 포함시키기 위해 사용
  * @param {string} [requiredBunji] 단지명이 없는 일반 주소일 때만 넘긴다 — 해당 번지가
  *   본문에 정확히 언급된 기사만 인정 (동 단위 매칭은 재개발구역 오염에 취약하기 때문)
+ * @param {string} [maxDate] 사용승인일(준공일, "YYYY-MM-DD"). 건축물대장에서 이미 확인된
+ *   경우에만 넘긴다 — 이미 완공된 건물은 재건축 후 단지명이 바뀌거나("OO주공" -> "OO그라시움")
+ *   지번이 재편되어 단지명 검색으로는 옛 인허가 뉴스를 못 찾는 경우가 많다. 1차 검색이
+ *   빈손이면 단지명 없이 "동+재건축" 키워드로 넓게 한 번 더 찾되(2차 폴백), maxDate를
+ *   지난 날짜는 다른 단지 얘기로 보고 버려서 오탐을 막는다.
  */
-async function searchRedevelopmentInfo(keyword, jibunAddr, requiredBunji) {
+async function searchRedevelopmentInfo(keyword, jibunAddr, requiredBunji, maxDate) {
   const region = extractRegionTokens(jibunAddr);
   const queryPrefix = region.queryRegion ? `${region.queryRegion} ` : '';
   const query = `${queryPrefix}${keyword} 재건축 OR 재개발 OR 관리처분인가 OR 사업시행인가`;
@@ -368,7 +379,27 @@ async function searchRedevelopmentInfo(keyword, jibunAddr, requiredBunji) {
     isRelevantArticle(`${a.title} ${a.description}`, region, distinctiveTokens, requiredBunji)
   );
 
-  const events = extractRedevelopmentEvents(articles);
+  let events = extractRedevelopmentEvents(articles, maxDate);
+  const hasAnyEvent = (ev) =>
+    Boolean(ev.unionEstablishment || ev.projectImplementationApproval || ev.managementDisposalApproval.initial
+      || ev.subscriptionWin || ev.memberSuccession);
+
+  if (!hasAnyEvent(events) && maxDate && region.queryRegion) {
+    const fallbackQuery = `${region.queryRegion} 재건축 OR 재개발 관리처분인가 OR 사업시행인가 OR 조합설립인가`;
+    const [fbNews, fbBlog] = await Promise.all([
+      searchNaver('news', fallbackQuery, 20).catch(() => []),
+      searchNaver('blog', fallbackQuery, 20).catch(() => []),
+    ]);
+    // 단지명이 없는 검색이라 distinctiveTokens/requiredBunji 필터는 못 쓰고, 동 일치만 확인한다.
+    const fbArticles = [...fbNews, ...fbBlog]
+      .filter((a) => isRelevantArticle(`${a.title} ${a.description}`, region, [], undefined))
+      .filter((a) => !articles.some((existing) => existing.link === a.link));
+    const fbEvents = extractRedevelopmentEvents(fbArticles, maxDate);
+    if (hasAnyEvent(fbEvents)) {
+      events = { ...fbEvents, viaDongFallback: true };
+      articles = articles.concat(fbArticles);
+    }
+  }
 
   return {
     query,

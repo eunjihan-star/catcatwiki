@@ -2620,8 +2620,34 @@ function renderOfficialZoneCard(zone) {
   return html;
 }
 
+// 정확한 번지로는 못 찾았지만 같은 법정동에 등록된 정비사업이 있을 때 후보로 보여준다.
+// 재건축이 이미 완료된 건물은 지번이 재편되거나 예전 지번이 없어져서 정확 매칭이 원천적으로
+// 안 되는 경우가 많다 — 세대수·사업유형으로 사람이 직접 확인할 수 있게 후보만 제공한다.
+function renderCandidateZonesCard(candidates) {
+  if (!candidates || candidates.length === 0) return '';
+  let html = '<div class="card" style="cursor:default;">';
+  html += '<div class="card-title-row" style="margin-bottom:12px;"><span class="card-title">같은 동네 정비사업 후보</span><span class="card-cat">지자체 정비사업 데이터</span></div>';
+  html += '<div class="re-disclaimer">⚠️ 정확한 지번으로 일치하는 정비구역을 찾지 못했습니다. 재건축이 이미 완료된 경우 지번이 재편되어 매칭이 안 될 수 있습니다 — 아래는 같은 법정동에 등록된 사업 목록이니 세대수·사업유형·준공연도로 이 건물이 맞는지 직접 확인해주세요.</div>';
+  candidates.forEach((zone, idx) => {
+    html += `<dl class="re-kv-grid" style="${idx > 0 ? 'margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);' : 'margin-top:12px;'}">`;
+    html += `<dt>정비구역명</dt><dd><b>${reEscapeHtml(zone.zoneName || '정보 없음')}</b></dd>`;
+    html += `<dt>현재 단계</dt><dd>${reEscapeHtml(zone.stage || '정보 없음')}</dd>`;
+    if (zone.projectType) html += `<dt>사업유형</dt><dd>${reEscapeHtml(zone.projectType)}</dd>`;
+    if (zone.zoneArea) html += `<dt>정비구역면적</dt><dd>${reEscapeHtml(zone.zoneArea)}㎡</dd>`;
+    if (zone.householdCount) html += `<dt>세대수</dt><dd>${reEscapeHtml(zone.householdCount)}</dd>`;
+    if (zone.unionMemberCount) html += `<dt>조합원수</dt><dd>${reEscapeHtml(zone.unionMemberCount)}</dd>`;
+    if (zone.location) html += `<dt>위치</dt><dd>${reEscapeHtml(zone.location)}</dd>`;
+    html += '</dl>';
+  });
+  html += '</div>';
+  return html;
+}
+
 function renderRealEstateResult(data) {
-  const { input: inputInfo, address, candidateCount, otherCandidates, building, redevelopment, officialRedevelopmentZone } = data;
+  const {
+    input: inputInfo, address, candidateCount, otherCandidates, building, redevelopment,
+    officialRedevelopmentZone, officialRedevelopmentCandidates,
+  } = data;
   const resultEl = document.getElementById('re-result');
   let html = '';
 
@@ -2630,13 +2656,6 @@ function renderRealEstateResult(data) {
   // (비주거 판정, 행정구역 코드 불일치 등) 네이버 검색으로 사용승인일을 찾았다면
   // 절대 화면을 비워두지 않고 그 값을 메인으로 보여준다.
   const naverOnly = !building.found && building.useAprDaySource === 'naver-only';
-  // "전체 주소": 도로명주소 + (다르면) 지번주소 + 건물명을 한 번에 붙여넣기 좋은 한 덩어리로.
-  const fullAddressText = [
-    address.roadAddr,
-    address.jibunAddr && address.jibunAddr !== address.roadAddr ? `(지번) ${address.jibunAddr}` : null,
-    address.buildingName ? `[${address.buildingName}]` : null,
-  ].filter(Boolean).join(' ');
-
   // "이름+준공일" 한 번에 복사 (예: "성동마을엘지빌리지1차 2001.02.19") - 날짜는 점 표기로.
   const nameAndDateText = building.useAprDay
     ? `${address.buildingName || address.roadAddr} ${building.useAprDay.replaceAll('-', '.')}`
@@ -2647,7 +2666,7 @@ function renderRealEstateResult(data) {
   html += `<span class="re-badge">${naverOnly ? '네이버 검색' : '건축물대장'}</span>`;
   if (building.isMock) html += `<span class="re-badge warn">임시 목데이터</span>`;
   html += `<span class="re-hero-addr">${reEscapeHtml(address.buildingName || address.roadAddr)}</span>`;
-  html += reCopyBtn(fullAddressText, '전체 주소 복사', '주소 복사');
+  html += reCopyBtn(address.buildingName || address.roadAddr, '이름 복사', '이름 복사');
   html += reCopyBtn(nameAndDateText, '이름+준공일 복사', '이름+준공일 복사', 'style="margin-left:auto;"');
   html += '</div>';
 
@@ -2699,8 +2718,12 @@ function renderRealEstateResult(data) {
   }
   html += '</div>';
 
-  // 1.5. 공식 정비구역 데이터 (현재 서울만 지원) — 있으면 네이버 기반 카드보다 먼저 보여준다
+  // 1.5. 공식 정비구역 데이터 (서울/부산/인천 지원) — 있으면 네이버 기반 카드보다 먼저 보여준다.
+  // 정확 매칭이 없으면 같은 법정동 후보 목록으로 대체한다 (지번 재편 등으로 인한 매칭 실패 보완).
   html += renderOfficialZoneCard(officialRedevelopmentZone);
+  if (!officialRedevelopmentZone) {
+    html += renderCandidateZonesCard(officialRedevelopmentCandidates);
+  }
 
   // 2. 재건축/재개발 관련 정보
   html += '<div class="card" style="cursor:default;"><div class="card-title-row" style="margin-bottom:12px;"><span class="card-title">재건축/재개발 관련 정보</span><span class="card-cat">네이버 검색 기반</span></div>';
@@ -2713,6 +2736,9 @@ function renderRealEstateResult(data) {
     html += reManagementDisposalRow(ev.managementDisposalApproval);
     html += reEventRow('청약 당첨일(분양)', ev.subscriptionWin);
     html += reEventRow('조합원 승계일', ev.memberSuccession);
+    if (ev.viaDongFallback) {
+      html += '<div class="re-disclaimer">⚠️ 단지명으로는 못 찾아서, 이름 없이 동 단위로 넓게 찾은 결과입니다(사용승인일 이전 날짜만 인정하는 안전장치 적용). 재건축 완료 후 단지명·지번이 바뀐 경우 등에 대비한 보완 검색이니, 다른 단지 소식이 섞였을 수 있어 원문에서 이 건물이 맞는지 꼭 확인해주세요.</div>';
+    }
     html += '<div class="re-disclaimer">위 날짜는 뉴스/블로그 텍스트에서 키워드 주변 날짜를 자동 추출한 결과입니다. 정확도가 100%가 아니므로 반드시 아래 원문 링크로 교차 확인해주세요.</div>';
   }
   html += '</div>';
@@ -2721,8 +2747,8 @@ function renderRealEstateResult(data) {
   html += '<details class="re-addr-detail"><summary>정제된 주소 상세 보기</summary>';
   html += '<dl class="re-kv-grid">';
   html += `<dt>입력 원본</dt><dd>${reEscapeHtml(inputInfo.original)}</dd>`;
-  html += `<dt>도로명주소</dt><dd>${reEscapeHtml(address.roadAddr)}</dd>`;
-  html += `<dt>지번주소</dt><dd>${reEscapeHtml(address.jibunAddr)}</dd>`;
+  html += `<dt>도로명주소</dt><dd>${reEscapeHtml(address.roadAddr)}${reCopyBtn(address.roadAddr, '도로명주소 복사')}</dd>`;
+  html += `<dt>지번주소</dt><dd>${reEscapeHtml(address.jibunAddr)}${reCopyBtn(address.jibunAddr, '지번주소 복사')}</dd>`;
   html += `<dt>건물명</dt><dd class="${address.buildingName ? '' : 'empty'}">${address.buildingName ? reEscapeHtml(address.buildingName) : '정보 없음'}</dd>`;
   const dongHo = (inputInfo.dong || inputInfo.ho) ? `${inputInfo.dong ? inputInfo.dong + '동 ' : ''}${inputInfo.ho ? inputInfo.ho + '호' : ''}` : '';
   html += `<dt>동/호</dt><dd class="${dongHo ? '' : 'empty'}">${dongHo || '정보 없음'}</dd>`;

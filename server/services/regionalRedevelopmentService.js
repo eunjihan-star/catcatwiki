@@ -88,6 +88,13 @@ function matchSeoulRow(row, { dong, bunji }) {
   return rowBunji === wantBunji;
 }
 
+// 정확한 번지가 안 맞을 때(재건축 완료로 지번이 재편된 경우 등) 같은 법정동 후보를 찾는 용도.
+function matchSeoulDongRow(row, { dong }) {
+  const wantDong = dongRoot(dong);
+  if (!wantDong) return false;
+  return dongRoot(row['법정동명']) === wantDong;
+}
+
 function normalizeSeoulRow(row) {
   return {
     // ⚠️ 실제 응답 필드명은 공백 포함: "정비 구역명", "정비구역 면적(제곱미터)", "시행자 구분"
@@ -159,6 +166,13 @@ function matchBusanRow(row, { dong, bunji }) {
   if (wantDong && !location.includes(wantDong)) return false;
   if (!wantBunji || !location.includes(wantBunji)) return false;
   return true;
+}
+
+function matchBusanDongRow(row, { dong }) {
+  const location = normalizeText(row['location']);
+  const wantDong = dongRoot(dong);
+  if (!location || !wantDong) return false;
+  return location.includes(wantDong);
 }
 
 function normalizeBusanRow(row) {
@@ -263,6 +277,13 @@ function matchIncheonRow(row, { dong, bunji }) {
   return true;
 }
 
+function matchIncheonDongRow(row, { dong }) {
+  const location = normalizeText(row['위치']);
+  const wantDong = dongRoot(dong);
+  if (!location || !wantDong) return false;
+  return location.includes(wantDong);
+}
+
 function normalizeIncheonRow(row) {
   return {
     zoneName: row['구 역 명'] || null,
@@ -286,9 +307,9 @@ function normalizeIncheonRow(row) {
 // 지역 레지스트리 — 새 지역은 이 배열에 추가한다.
 // =========================================================================
 const REGION_HANDLERS = [
-  { name: 'seoul', match: (sido) => sido.includes('서울'), fetchRows: fetchSeoulRows, matchRow: matchSeoulRow, normalizeRow: normalizeSeoulRow },
-  { name: 'busan', match: (sido) => sido.includes('부산'), fetchRows: fetchBusanRows, matchRow: matchBusanRow, normalizeRow: normalizeBusanRow },
-  { name: 'incheon', match: (sido) => sido.includes('인천'), fetchRows: fetchIncheonRows, matchRow: matchIncheonRow, normalizeRow: normalizeIncheonRow },
+  { name: 'seoul', match: (sido) => sido.includes('서울'), fetchRows: fetchSeoulRows, matchRow: matchSeoulRow, matchDongRow: matchSeoulDongRow, normalizeRow: normalizeSeoulRow },
+  { name: 'busan', match: (sido) => sido.includes('부산'), fetchRows: fetchBusanRows, matchRow: matchBusanRow, matchDongRow: matchBusanDongRow, normalizeRow: normalizeBusanRow },
+  { name: 'incheon', match: (sido) => sido.includes('인천'), fetchRows: fetchIncheonRows, matchRow: matchIncheonRow, matchDongRow: matchIncheonDongRow, normalizeRow: normalizeIncheonRow },
 ];
 
 // "수시" 갱신 데이터라 자주 바뀌지 않으므로, 같은 서버리스 인스턴스가 살아있는 동안은
@@ -304,22 +325,34 @@ async function getCachedRows(handler) {
   return rows;
 }
 
+const MAX_CANDIDATE_ZONES = 5;
+
 /**
  * 시/도명으로 등록된 지역 핸들러를 찾아 정비구역을 조회한다.
- * 아직 등록되지 않은 지역이면 에러 없이 조용히 null을 반환한다
+ * 아직 등록되지 않은 지역이면 에러 없이 조용히 { zone: null, candidates: [] }를 반환한다
  * (전국 커버리지가 아직 없다는 뜻이지 오류가 아니다 — 메인 검색 흐름을 막지 않는다).
+ *
+ * 정확한 번지 매칭이 실패하면(재건축이 이미 끝나 지번이 재편되거나 옛 지번이 멸실된 경우
+ * 등) 같은 법정동에 등록된 사업을 candidates로 대신 내려준다 — 사람이 세대수·사업유형·
+ * 준공연도로 직접 확인할 수 있게 하기 위함이다. 정확 매칭이 있으면 candidates는 비운다.
  * @param {{ sido: string, dong: string, bunji: string }} location
+ * @returns {Promise<{ zone: object|null, candidates: object[] }>}
  */
 async function findRedevelopmentZone({ sido, dong, bunji }) {
-  if (!sido) return null;
+  const empty = { zone: null, candidates: [] };
+  if (!sido) return empty;
   const handler = REGION_HANDLERS.find((h) => h.match(sido));
-  if (!handler) return null;
-  if (!dong && !bunji) return null;
+  if (!handler) return empty;
+  if (!dong && !bunji) return empty;
 
   const rows = await getCachedRows(handler);
   const match = rows.find((row) => handler.matchRow(row, { dong, bunji }));
-  if (!match) return null;
-  return handler.normalizeRow(match);
+  if (match) return { zone: handler.normalizeRow(match), candidates: [] };
+
+  if (!handler.matchDongRow || !dong) return empty;
+  const dongMatches = rows.filter((row) => handler.matchDongRow(row, { dong }));
+  const candidates = dongMatches.slice(0, MAX_CANDIDATE_ZONES).map((row) => handler.normalizeRow(row));
+  return { zone: null, candidates };
 }
 
 module.exports = { findRedevelopmentZone };
