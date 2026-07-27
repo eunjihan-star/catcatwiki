@@ -1,6 +1,7 @@
 'use strict';
 
 const axios = require('axios');
+const xml2js = require('xml2js');
 
 /**
  * 지역별 정비사업(재건축·재개발) 데이터 연동.
@@ -25,6 +26,14 @@ function normalizeText(s) {
 
 function dongRoot(dong) {
   return normalizeText(dong).replace(/(동|읍|면|가)$/, '');
+}
+
+// 부산/인천/경기 데이터는 "OOO번지 일원"처럼 대표 본번만 적어두고 그 일대(부번 포함)를
+// 통째로 가리킨다 - 실제 검색 주소는 "727-17"처럼 부번이 붙어있는 경우가 많아서, 부번까지
+// 포함한 전체 문자열로 매칭하면 실패한다. 본번만 떼어 매칭한다 (서울은 번/지 필드가 따로
+// 있어 정확 매칭이 가능하므로 이 함수를 쓰지 않는다).
+function mainLot(bunji) {
+  return normalizeText(bunji).split('-')[0];
 }
 
 // =========================================================================
@@ -162,7 +171,7 @@ function matchBusanRow(row, { dong, bunji }) {
   const location = normalizeText(row['location']);
   if (!location) return false;
   const wantDong = dongRoot(dong);
-  const wantBunji = normalizeText(bunji);
+  const wantBunji = mainLot(bunji);
   if (wantDong && !location.includes(wantDong)) return false;
   if (!wantBunji || !location.includes(wantBunji)) return false;
   return true;
@@ -271,7 +280,7 @@ function matchIncheonRow(row, { dong, bunji }) {
   const location = normalizeText(row['위치']);
   if (!location) return false;
   const wantDong = dongRoot(dong);
-  const wantBunji = normalizeText(bunji);
+  const wantBunji = mainLot(bunji);
   if (wantDong && !location.includes(wantDong)) return false;
   if (!wantBunji || !location.includes(wantBunji)) return false;
   return true;
@@ -304,12 +313,124 @@ function normalizeIncheonRow(row) {
 }
 
 // =========================================================================
+// 경기도 — 경기데이터드림 "일반 정비 사업 추진 현황"
+// https://data.gg.go.kr/portal/data/service/selectServicePage.do?infId=S62GFEEN7JMLMA0PH6CF19108891&infSeq=1
+// ⚠️ data.go.kr이 아니라 경기도 자체 포털(경기데이터드림)이라 인증키가 별도다
+//    (data.gg.go.kr 로그인 -> 마이페이지 -> 인증키발급). 정확한 서비스 Request URL은
+//    경기데이터드림 자체 "서비스 목록 조회" API(https://openapi.gg.go.kr/opendatalist,
+//    INF_NM 파라미터로 검색)로 2026-08 실제 응답에서 확인: GenrlimprvBizpropls.
+// ⚠️ JSON 응답(Type=json)은 이 API에서 500 에러가 났다 - XML(Type=xml)만 정상 동작
+//    확인됨 (2026-08). 그래서 axios가 아니라 xml2js로 파싱한다.
+// ⚠️ 헤더에 User-Agent가 없으면 방화벽(WAF)이 차단한다 - 반드시 브라우저 UA를 보낸다.
+// ✅ 서울/부산/인천과 달리 조합설립인가일/사업시행인가일/관리처분인가일/착공일/준공일/
+//    이전고시일까지 전부 개별 날짜 필드로 제공한다 (분기 갱신, 데이터기준일 2025-09-30).
+// ⚠️ 법정동/번지 필드가 따로 없고 LOCPLC_ADDR(전체 주소 텍스트) 하나뿐 - 부산/인천과
+//    같은 방식(텍스트 포함 여부)으로 매칭한다.
+// =========================================================================
+const GYEONGGI_BASE_URL = 'https://openapi.gg.go.kr/GenrlimprvBizpropls';
+const GYEONGGI_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+// "20030630" -> "2003-06-30". 빈 값이면 null.
+function formatCompactDate(d) {
+  if (!d || d.length !== 8) return null;
+  return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+}
+
+async function fetchGyeonggiRows() {
+  const apiKey = process.env.GYEONGGI_REDEVELOPMENT_API_KEY;
+  if (!apiKey) {
+    const err = new Error(
+      '경기 정비사업 데이터 키가 없습니다. data.gg.go.kr 로그인 후 마이페이지 > 인증키발급으로 발급받아 ' +
+        '.env의 GYEONGGI_REDEVELOPMENT_API_KEY 에 등록해주세요.'
+    );
+    err.code = 'MISSING_API_KEY';
+    throw err;
+  }
+
+  const rows = [];
+  let pIndex = 1;
+  let totalCount = Infinity;
+  const parser = new xml2js.Parser({ explicitArray: false, trim: true });
+  while (rows.length < totalCount && pIndex <= 30) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data: xml } = await axios.get(GYEONGGI_BASE_URL, {
+      params: { KEY: apiKey, Type: 'xml', pIndex, pSize: 100 },
+      headers: { 'User-Agent': GYEONGGI_USER_AGENT },
+      timeout: 8000,
+    });
+    // eslint-disable-next-line no-await-in-loop
+    const parsed = await parser.parseStringPromise(xml);
+    const root = parsed?.GenrlimprvBizpropls;
+    const code = root?.head?.RESULT?.CODE;
+    if (code && code !== 'INFO-000') {
+      throw new Error(`경기 정비사업 API 오류: ${root?.head?.RESULT?.MESSAGE || code}`);
+    }
+    totalCount = Number(root?.head?.list_total_count) || 0;
+    const pageRowsRaw = root?.row;
+    const pageRows = pageRowsRaw ? (Array.isArray(pageRowsRaw) ? pageRowsRaw : [pageRowsRaw]) : [];
+    rows.push(...pageRows);
+    if (pageRows.length === 0) break;
+    pIndex += 1;
+  }
+  return rows;
+}
+
+function matchGyeonggiRow(row, { dong, bunji }) {
+  const location = normalizeText(row['LOCPLC_ADDR']);
+  if (!location) return false;
+  const wantDong = dongRoot(dong);
+  const wantBunji = mainLot(bunji);
+  if (wantDong && !location.includes(wantDong)) return false;
+  if (!wantBunji || !location.includes(wantBunji)) return false;
+  return true;
+}
+
+function matchGyeonggiDongRow(row, { dong }) {
+  const location = normalizeText(row['LOCPLC_ADDR']);
+  const wantDong = dongRoot(dong);
+  if (!location || !wantDong) return false;
+  return location.includes(wantDong);
+}
+
+function normalizeGyeonggiRow(row) {
+  return {
+    zoneName: row['IMPRV_ZONE_NM'] || null,
+    sigungu: row['SIGUN_NM'] || null,
+    dong: null,
+    bunji: null,
+    location: row['LOCPLC_ADDR'] || null,
+    projectType: row['BIZ_TYPE_NM'] || null,
+    implementationMethod: null,
+    implementerType: row['BIZ_IMPLMNTR_NM'] || null,
+    stage: row['BIZ_STEP_NM'] || null,
+    noticeDate: null,
+    noticeNumber: null,
+    zoneArea: row['ZONE_AR'] || null,
+    basicPlanName: null,
+    contractor: null,
+    householdCount: row['EXISTNG_HOUSNG_HSHLD_CNT'] || null,
+    unionMemberCount: row['ASOCNTMB_CNT'] || null,
+    // 서울/부산/인천과 달리 개별 인허가 날짜를 전부 제공 - renderOfficialZoneCard에서
+    // 이 필드들이 있으면 "현재 단계" 1건 대신 단계별 날짜를 그대로 보여준다.
+    unionEstablishmentDate: formatCompactDate(row['ASSOCTN_FOUND_CONFMTN_DE']),
+    projectImplementationDate: formatCompactDate(row['BIZ_IMPLMTN_CONFMTN_DE']),
+    managementDispositionDate: formatCompactDate(row['MANAGE_DISPOSIT_CONFMTN_DE']),
+    constructionStartDate: formatCompactDate(row['STRCONTR_DE']),
+    completionDate: formatCompactDate(row['COMPLTN_DE']),
+    transferNotificationDate: formatCompactDate(row['TRANSFR_NOTIFC_DE']),
+    source: '경기데이터드림 "일반 정비 사업 추진 현황"(분기 갱신)',
+  };
+}
+
+// =========================================================================
 // 지역 레지스트리 — 새 지역은 이 배열에 추가한다.
 // =========================================================================
 const REGION_HANDLERS = [
   { name: 'seoul', match: (sido) => sido.includes('서울'), fetchRows: fetchSeoulRows, matchRow: matchSeoulRow, matchDongRow: matchSeoulDongRow, normalizeRow: normalizeSeoulRow },
   { name: 'busan', match: (sido) => sido.includes('부산'), fetchRows: fetchBusanRows, matchRow: matchBusanRow, matchDongRow: matchBusanDongRow, normalizeRow: normalizeBusanRow },
   { name: 'incheon', match: (sido) => sido.includes('인천'), fetchRows: fetchIncheonRows, matchRow: matchIncheonRow, matchDongRow: matchIncheonDongRow, normalizeRow: normalizeIncheonRow },
+  { name: 'gyeonggi', match: (sido) => sido.includes('경기'), fetchRows: fetchGyeonggiRows, matchRow: matchGyeonggiRow, matchDongRow: matchGyeonggiDongRow, normalizeRow: normalizeGyeonggiRow },
 ];
 
 // "수시" 갱신 데이터라 자주 바뀌지 않으므로, 같은 서버리스 인스턴스가 살아있는 동안은

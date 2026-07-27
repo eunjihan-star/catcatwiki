@@ -2615,7 +2615,29 @@ function renderOfficialZoneCard(zone) {
   if (zone.householdCount) html += `<dt>세대수</dt><dd>${reEscapeHtml(zone.householdCount)}</dd>`;
   if (zone.unionMemberCount) html += `<dt>조합원수</dt><dd>${reEscapeHtml(zone.unionMemberCount)}</dd>`;
   html += '</dl>';
-  html += `<div class="re-disclaimer">공공데이터포털 공식 데이터이지만, "현재 단계"와 그 고시일 1건만 제공되어 조합설립인가일·사업시행인가일·관리처분계획인가일을 각각 따로 보여주지는 못합니다. 또한 수시(비정기) 갱신 데이터라 최신이 아닐 수 있습니다. 출처: ${reEscapeHtml(zone.source)}</div>`;
+
+  // 경기도처럼 개별 인허가 날짜를 주는 지역은 "현재 단계" 1건 대신 단계별 날짜를 그대로 보여준다
+  // (서울/부산/인천은 이 필드들이 없어서 자동으로 생략됨).
+  const dateFields = [
+    ['조합설립인가일', zone.unionEstablishmentDate],
+    ['사업시행인가일', zone.projectImplementationDate],
+    ['관리처분인가일', zone.managementDispositionDate],
+    ['착공일', zone.constructionStartDate],
+    ['준공일', zone.completionDate],
+    ['이전고시일', zone.transferNotificationDate],
+  ].filter(([, value]) => value);
+
+  if (dateFields.length > 0) {
+    html += '<dl class="re-kv-grid" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);">';
+    dateFields.forEach(([label, value]) => {
+      html += `<dt>${label}</dt><dd>${reEscapeHtml(value)}${reCopyBtn(value, `${label} 복사`)}</dd>`;
+    });
+    html += '</dl>';
+  }
+
+  html += dateFields.length > 0
+    ? `<div class="re-disclaimer">공공데이터 공식 데이터입니다. 다만 갱신 주기가 있어 최신이 아닐 수 있습니다. 출처: ${reEscapeHtml(zone.source)}</div>`
+    : `<div class="re-disclaimer">공공데이터포털 공식 데이터이지만, "현재 단계"와 그 고시일 1건만 제공되어 조합설립인가일·사업시행인가일·관리처분계획인가일을 각각 따로 보여주지는 못합니다. 또한 수시(비정기) 갱신 데이터라 최신이 아닐 수 있습니다. 출처: ${reEscapeHtml(zone.source)}</div>`;
   html += '</div>';
   return html;
 }
