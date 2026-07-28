@@ -4,6 +4,7 @@ const { resolveAddress } = require('./services/addressService');
 const { getBuildingInfo } = require('./services/buildingService');
 const { searchRedevelopmentInfo, searchUseApprovalDate } = require('./services/naverService');
 const { findRedevelopmentZone } = require('./services/regionalRedevelopmentService');
+const { findApplyhomeInfo } = require('./services/cheongyakService');
 
 // 이 위키는 "거주용 건물" 정보만 다룬다. 상가/업무시설 등 비주거 건물의 사용승인일·면적을
 // 정확히 알려주는 건 애초에 목적이 아니므로, 그런 건물이 걸리면 상세 정보를 보여주는 대신
@@ -208,7 +209,7 @@ async function handleSearch(address, buildingTypeGroups) {
   // 검색에서 "이 날짜보다 이후 인허가는 다른 단지 얘기"로 걸러내는 안전장치로 쓰인다.
   const maxDateForNaverFallback = buildingInfo.found ? buildingInfo.useAprDay : undefined;
 
-  const [naverInfo, naverApproval, zoneResult] = await Promise.all([
+  const [naverInfo, naverApproval, zoneResult, applyhomeInfo] = await Promise.all([
     searchRedevelopmentInfo(searchKeyword, best.jibunAddr, requiredBunji, maxDateForNaverFallback).catch((err) => ({
       error: err.message,
       events: null,
@@ -216,9 +217,22 @@ async function handleSearch(address, buildingTypeGroups) {
     })),
     searchUseApprovalDate(searchKeyword, best.jibunAddr, requiredBunji).catch(() => null),
     findRedevelopmentZone({ sido: sidoToken, dong: dongToken, bunji }).catch(() => ({ zone: null, candidates: [] })),
+    findApplyhomeInfo(best.buildingName).catch(() => null),
   ]);
   const officialRedevelopmentZone = zoneResult.zone;
   const officialRedevelopmentCandidates = zoneResult.candidates || [];
+
+  // 청약 당첨일(분양일): 한국부동산원 청약홈 공식 데이터가 있으면 네이버 텍스트마이닝
+  // 결과보다 신뢰도가 높으므로 우선 사용한다 (사용승인일에서 이미 쓰는 것과 같은 원칙 -
+  // 공식 데이터 우선, 없을 때만 네이버로 보완).
+  if (naverInfo && naverInfo.events && applyhomeInfo && applyhomeInfo.winAnnouncementDate) {
+    naverInfo.events.subscriptionWin = {
+      date: applyhomeInfo.winAnnouncementDate,
+      official: true,
+      houseName: applyhomeInfo.houseName,
+      source: applyhomeInfo.source,
+    };
+  }
 
   // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
   // 찾은 값은 참고/교차확인용으로 함께 내려준다 (네이버 단독 신뢰는 위험 — 은마아파트
