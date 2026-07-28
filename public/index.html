@@ -2589,12 +2589,11 @@ function reEventRow(label, ev) {
   if (!ev) {
     return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span></span></div>`;
   }
-  // official: true 인 경우(청약홈 공식 데이터 등) 뉴스/블로그 원문 링크가 없다 - 대신
-  // 작은 "공식" 배지를 붙여서 네이버 텍스트마이닝 결과와 구분되게 한다.
-  const linkOrBadge = ev.official
-    ? '<span class="re-badge" style="margin-left:8px;">공식</span>'
-    : `<a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">원문</a>`;
-  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span>${reCopyBtn(ev.date, `${label} 복사`)}${linkOrBadge}</span></div>`;
+  // official: true 인 경우(청약홈 공식 데이터 등) 작은 "공식" 배지를 붙여서 네이버
+  // 텍스트마이닝 결과와 구분되게 한다. 원문 링크가 있으면(청약홈 상세페이지 등) 같이 보여준다.
+  const badge = ev.official ? '<span class="re-badge" style="margin-left:8px;">공식</span>' : '';
+  const link = ev.link ? `<a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">원문</a>` : '';
+  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span>${reCopyBtn(ev.date, `${label} 복사`)}${badge}${link}</span></div>`;
 }
 
 function reManagementDisposalRow(md) {

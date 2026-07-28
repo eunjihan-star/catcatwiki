@@ -217,7 +217,7 @@ async function handleSearch(address, buildingTypeGroups) {
     })),
     searchUseApprovalDate(searchKeyword, best.jibunAddr, requiredBunji).catch(() => null),
     findRedevelopmentZone({ sido: sidoToken, dong: dongToken, bunji }).catch(() => ({ zone: null, candidates: [] })),
-    findApplyhomeInfo(best.buildingName).catch(() => null),
+    findApplyhomeInfo(best.buildingName, dongToken).catch(() => null),
   ]);
   const officialRedevelopmentZone = zoneResult.zone;
   const officialRedevelopmentCandidates = zoneResult.candidates || [];
@@ -229,6 +229,7 @@ async function handleSearch(address, buildingTypeGroups) {
     naverInfo.events.subscriptionWin = {
       date: applyhomeInfo.winAnnouncementDate,
       official: true,
+      link: applyhomeInfo.link,
       houseName: applyhomeInfo.houseName,
       source: applyhomeInfo.source,
     };
