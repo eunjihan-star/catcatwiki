@@ -2585,9 +2585,20 @@ function reUseAprDaySubRef(building) {
   return `<div class="re-stat-subref${warn}">네이버 검색 확인: ${reEscapeHtml(building.useAprDayNaver)}${note} <a href="${reEscapeHtml(building.useAprDayNaverLink)}" target="_blank" rel="noopener">원문</a></div>`;
 }
 
-function reEventRow(label, ev) {
+// 자동 추출이 실패했을 때 "확인된 정보 없음"으로 끝내지 않고, 지역+건물명+이 필드명으로
+// 미리 채워진 네이버 검색 링크를 붙여준다 - 사람이 직접 검색어를 다시 만들 필요 없이
+// 1클릭으로 확인해볼 수 있게 하기 위함. (API로 못 잡는 오래된/유명 단지에 특히 유용)
+function reNaverSearchUrl(searchBase, fieldKeyword) {
+  if (!searchBase) return null;
+  const q = `${searchBase} ${fieldKeyword}`.trim();
+  return `https://search.naver.com/search.naver?query=${encodeURIComponent(q)}`;
+}
+
+function reEventRow(label, ev, searchBase, fieldKeyword) {
   if (!ev) {
-    return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span></span></div>`;
+    const url = reNaverSearchUrl(searchBase, fieldKeyword || label);
+    const link = url ? `<a href="${reEscapeHtml(url)}" target="_blank" rel="noopener">네이버에서 검색</a>` : '';
+    return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span>${link}</span></div>`;
   }
   // official: true 인 경우(청약홈 공식 데이터 등) 작은 "공식" 배지를 붙여서 네이버
   // 텍스트마이닝 결과와 구분되게 한다. 원문 링크가 있으면(청약홈 상세페이지 등) 같이 보여준다.
@@ -2596,9 +2607,11 @@ function reEventRow(label, ev) {
   return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span>${reCopyBtn(ev.date, `${label} 복사`)}${badge}${link}</span></div>`;
 }
 
-function reManagementDisposalRow(md) {
+function reManagementDisposalRow(md, searchBase) {
   if (!md || !md.initial) {
-    return `<div class="re-event-row"><span class="re-event-label">관리처분인가일</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span></span></div>`;
+    const url = reNaverSearchUrl(searchBase, '관리처분인가일');
+    const link = url ? `<a href="${reEscapeHtml(url)}" target="_blank" rel="noopener">네이버에서 검색</a>` : '';
+    return `<div class="re-event-row"><span class="re-event-label">관리처분인가일</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span>${link}</span></div>`;
   }
   let html = `<div class="re-event-row"><span class="re-event-label">관리처분인가일 (최초)</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(md.initial.date)}</span>${reCopyBtn(md.initial.date, '관리처분인가일 복사')}<a href="${reEscapeHtml(md.initial.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
   if (md.changes && md.changes.length > 0) {
@@ -2766,11 +2779,12 @@ function renderRealEstateResult(data) {
     html += `<div class="empty-state" style="padding:20px 0;">${reEscapeHtml(redevelopment.error)}</div>`;
   } else {
     const ev = redevelopment.events || {};
-    html += reEventRow('조합설립인가일', ev.unionEstablishment);
-    html += reEventRow('사업시행인가일', ev.projectImplementationApproval);
-    html += reManagementDisposalRow(ev.managementDisposalApproval);
-    html += reEventRow('청약 당첨일(분양)', ev.subscriptionWin);
-    html += reEventRow('조합원 승계일', ev.memberSuccession);
+    const searchBase = redevelopment.searchBase;
+    html += reEventRow('조합설립인가일', ev.unionEstablishment, searchBase, '조합설립인가일');
+    html += reEventRow('사업시행인가일', ev.projectImplementationApproval, searchBase, '사업시행인가일');
+    html += reManagementDisposalRow(ev.managementDisposalApproval, searchBase);
+    html += reEventRow('청약 당첨일(분양)', ev.subscriptionWin, searchBase, '청약 당첨일 분양');
+    html += reEventRow('조합원 승계일', ev.memberSuccession, searchBase, '조합원 승계일');
     if (ev.viaDongFallback) {
       html += '<div class="re-disclaimer">⚠️ 단지명으로는 못 찾아서, 이름 없이 동 단위로 넓게 찾은 결과입니다(사용승인일 이전 날짜만 인정하는 안전장치 적용). 재건축 완료 후 단지명·지번이 바뀐 경우 등에 대비한 보완 검색이니, 다른 단지 소식이 섞였을 수 있어 원문에서 이 건물이 맞는지 꼭 확인해주세요.</div>';
     }

@@ -366,7 +366,10 @@ function isRelevantArticle(text, region, distinctiveTokens, requiredBunji) {
 async function searchRedevelopmentInfo(keyword, jibunAddr, requiredBunji, maxDate) {
   const region = extractRegionTokens(jibunAddr);
   const queryPrefix = region.queryRegion ? `${region.queryRegion} ` : '';
-  const query = `${queryPrefix}${keyword} 재건축 OR 재개발 OR 관리처분인가 OR 사업시행인가`;
+  // "지역+건물명"만 떼어둔다 - 자동 추출이 실패했을 때, 프론트엔드가 여기에 필드명(조합설립인가
+  // 등)만 붙여서 "네이버에서 검색" 링크를 만들 수 있게 하기 위함이다.
+  const searchBase = `${queryPrefix}${keyword}`.trim();
+  const query = `${searchBase} 재건축 OR 재개발 OR 관리처분인가 OR 사업시행인가`;
 
   const [news, blog] = await Promise.all([
     searchNaver('news', query, 20).catch(() => []),
@@ -403,6 +406,7 @@ async function searchRedevelopmentInfo(keyword, jibunAddr, requiredBunji, maxDat
 
   return {
     query,
+    searchBase,
     articleCount: articles.length,
     events,
     articles, // 사람이 직접 교차 확인할 수 있도록 원문 리스트도 함께 제공
