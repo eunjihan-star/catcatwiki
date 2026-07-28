@@ -6,14 +6,18 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const searchRouter = require('./routes/search');
+const wikiDataRouter = require('./routes/wikiData');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
-app.use(express.json());
+// 기본 100kb 제한으로는 위키 전체 데이터(업무 매뉴얼+용어사전+회의록)를 통째로 저장하는
+// /api/wiki-data 요청이 걸려서 조용히 실패한다 - 넉넉하게 올려둔다.
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api', searchRouter);
+app.use('/api', wikiDataRouter);
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 

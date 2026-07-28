@@ -182,6 +182,13 @@
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--teal-900); color:#fff;
     padding:10px 18px; border-radius:999px; font-size:13px; z-index:1200; box-shadow:0 8px 20px rgba(0,0,0,0.2);
   }
+  .admin-toast.error { background:var(--danger); }
+  .admin-search-row { margin-bottom:12px; }
+  .admin-search-row input[type="search"] {
+    width:100%; padding:10px 14px; border:1px solid var(--line); border-radius:12px;
+    font-size:13.5px; outline:none; background:#fff;
+  }
+  .admin-search-row input[type="search"]:focus { border-color:var(--teal-500); box-shadow:0 0 0 3px var(--teal-100); }
 
   /* ---- 헤더 버튼 그룹 / 통합검색 / CSV 일괄 업로드 ---- */
   .header-actions { display:flex; gap:8px; flex-shrink:0; }
@@ -2265,6 +2272,8 @@ let CONFIG = JSON.parse(document.getElementById('data-config').textContent);
 
 let isAdmin = false;
 let editingContext = null; // {listName: 'MANUAL'|'GLOSSARY', id: string|null}
+let sessionAuthHash = null; // 로그인할 때 쓴 비밀번호 해시 - persistWikiData 서버 인증용
+let adminSearchQuery = ''; // 관리자모드 항목 검색어 - renderAdminPanel이 다시 그려져도 유지
 
 /* ---------- 유틸 ---------- */
 function escapeHtml(str) {
@@ -2336,12 +2345,12 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-function toast(msg) {
+function toast(msg, isError) {
   const el = document.createElement('div');
-  el.className = 'admin-toast';
+  el.className = isError ? 'admin-toast error' : 'admin-toast';
   el.textContent = msg;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2200);
+  setTimeout(() => el.remove(), isError ? 4000 : 2200);
 }
 
 /* ---------- 업무 매뉴얼 렌더 ---------- */
@@ -3211,6 +3220,7 @@ function openLoginModal(onSuccess) {
     const hash = await sha256Hex(pwInput.value);
     if (hash === CONFIG.adminPasswordHash) {
       isAdmin = true;
+      sessionAuthHash = hash;
       close();
       doOnSuccess();
     } else {
@@ -3400,7 +3410,7 @@ function openBulkUploadModal() {
   });
 }
 
-function applyBulkRows(rows) {
+async function applyBulkRows(rows) {
   const counts = { manual: 0, glossary: 0, meeting: 0 };
   rows.forEach(r => {
     const tags = (r.tags || '').split(';').map(t => t.trim()).filter(Boolean);
@@ -3429,7 +3439,8 @@ function applyBulkRows(rows) {
   renderMeetingList();
   renderSearchResults();
   if (isAdmin) renderAdminPanel();
-  toast(`업로드 완료: 매뉴얼 ${counts.manual}건 · 용어 ${counts.glossary}건 · 회의록 ${counts.meeting}건 추가됨`);
+  const ok = await persistWikiData();
+  if (ok) toast(`업로드 완료: 매뉴얼 ${counts.manual}건 · 용어 ${counts.glossary}건 · 회의록 ${counts.meeting}건 추가됨`);
 }
 
 function parseTableInput(raw) {
@@ -3495,12 +3506,19 @@ function renderAdminPanel() {
     </div>
 
     <div class="admin-section">
-      <h3>업무 매뉴얼 항목 (${MANUAL.length}건)</h3>
+      <h3>항목 검색</h3>
+      <div class="admin-search-row">
+        <input type="search" id="admin-search-input" value="${escapeHtml(adminSearchQuery)}" placeholder="제목·용어·카테고리·태그로 검색 (아래 업무 매뉴얼 + 용어사전 목록에 바로 적용됩니다)">
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>업무 매뉴얼 항목 (<span id="admin-manual-count">${MANUAL.length}</span>건)</h3>
       <div id="admin-manual-rows"></div>
     </div>
 
     <div class="admin-section">
-      <h3>용어사전 항목 (${GLOSSARY.length}건)</h3>
+      <h3>용어사전 항목 (<span id="admin-glossary-count">${GLOSSARY.length}</span>건)</h3>
       <div id="admin-glossary-rows"></div>
     </div>
 
@@ -3524,9 +3542,9 @@ function renderAdminPanel() {
     </div>
 
     <div class="admin-section">
-      <h3>변경사항 내보내기</h3>
-      <p class="hint" style="margin-bottom:10px;">지금까지의 추가·수정·삭제·비밀번호 변경 내용을 반영한 새 HTML 파일을 다운로드합니다. 다운로드한 파일로 기존 인트라넷 파일을 교체하면 모든 팀원이 최신 내용을 보게 됩니다.</p>
-      <button class="btn btn-primary" id="af-export">업데이트된 HTML로 내보내기</button>
+      <h3>백업 파일 내보내기 (선택)</h3>
+      <p class="hint" style="margin-bottom:10px;">추가·수정·삭제·비밀번호 변경 사항은 이제 저장 즉시 서버에 자동 반영됩니다 - 이 버튼은 오프라인 백업용 다운로드일 뿐, 배포 파일을 교체할 필요는 없습니다.</p>
+      <button class="btn btn-primary" id="af-export">현재 상태 HTML로 내보내기 (백업)</button>
     </div>
   `;
 
@@ -3567,13 +3585,25 @@ function renderAdminPanel() {
   document.getElementById('af-changepw').addEventListener('click', changePassword);
   document.getElementById('af-export').addEventListener('click', exportHtml);
   document.getElementById('af-bulk-open').addEventListener('click', openBulkUploadModal);
+  document.getElementById('admin-search-input').addEventListener('input', (e) => {
+    adminSearchQuery = e.target.value;
+    renderAdminEntryRows();
+  });
 
   renderAdminEntryRows();
 }
 
+// 관리자모드 목록은 기존 검색 로직(matches())을 그대로 재사용해서 필터링한다 - 항목이
+// 많아지면 스크롤로 다 찾아야 했던 걸, 통합검색 탭과 똑같은 방식으로 검색할 수 있게 한다.
 function renderAdminEntryRows() {
+  const q = adminSearchQuery;
+  const filteredManual = MANUAL.filter(m => matches(m, q, ['title', 'category', 'body']));
+  const filteredGlossary = GLOSSARY.filter(g => matches(g, q, ['term', 'category', 'def']));
+  document.getElementById('admin-manual-count').textContent = filteredManual.length;
+  document.getElementById('admin-glossary-count').textContent = filteredGlossary.length;
+
   const manualRows = document.getElementById('admin-manual-rows');
-  manualRows.innerHTML = MANUAL.map(m => `
+  manualRows.innerHTML = filteredManual.map(m => `
     <div class="admin-entry-row">
       <div>
         <div class="aer-title">${escapeHtml(m.title)}</div>
@@ -3584,10 +3614,10 @@ function renderAdminEntryRows() {
         <button class="btn btn-danger" data-del="MANUAL:${m.id}">삭제</button>
       </div>
     </div>
-  `).join('') || '<div class="field-hint">등록된 항목이 없습니다.</div>';
+  `).join('') || `<div class="field-hint">${q ? '검색 결과가 없습니다.' : '등록된 항목이 없습니다.'}</div>`;
 
   const glossaryRows = document.getElementById('admin-glossary-rows');
-  glossaryRows.innerHTML = GLOSSARY.map(g => `
+  glossaryRows.innerHTML = filteredGlossary.map(g => `
     <div class="admin-entry-row">
       <div>
         <div class="aer-title">${escapeHtml(g.term)}</div>
@@ -3598,7 +3628,7 @@ function renderAdminEntryRows() {
         <button class="btn btn-danger" data-del="GLOSSARY:${g.id}">삭제</button>
       </div>
     </div>
-  `).join('') || '<div class="field-hint">등록된 항목이 없습니다.</div>';
+  `).join('') || `<div class="field-hint">${q ? '검색 결과가 없습니다.' : '등록된 항목이 없습니다.'}</div>`;
 
   document.querySelectorAll('[data-edit]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -3609,7 +3639,7 @@ function renderAdminEntryRows() {
     });
   });
   document.querySelectorAll('[data-del]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const [listName, id] = btn.dataset.del.split(':');
       if (!confirm('이 항목을 삭제할까요? 되돌릴 수 없습니다.')) return;
       if (listName === 'MANUAL') {
@@ -3623,7 +3653,8 @@ function renderAdminEntryRows() {
       renderAdminPanel();
       renderManualChips(); renderManualList();
       renderGlossaryChips(); renderGlossaryList();
-      toast('항목을 삭제했습니다.');
+      const ok = await persistWikiData();
+      if (ok) toast('항목을 삭제했습니다.');
     });
   });
 }
@@ -3636,7 +3667,7 @@ function slugify(str) {
   return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 }
 
-function saveEntryFromForm() {
+async function saveEntryFromForm() {
   const type = document.getElementById('af-type').value;
   const title = document.getElementById('af-title').value.trim();
   const category = document.getElementById('af-category').value.trim();
@@ -3672,7 +3703,8 @@ function saveEntryFromForm() {
 
   editingContext = null;
   renderAdminPanel();
-  toast('저장되었습니다.');
+  const ok = await persistWikiData();
+  if (ok) toast('저장되었습니다.');
 }
 
 async function changePassword() {
@@ -3681,11 +3713,43 @@ async function changePassword() {
   CONFIG.adminPasswordHash = await sha256Hex(pw);
   syncDataIsland('data-config', CONFIG);
   document.getElementById('af-newpw').value = '';
-  toast('비밀번호가 변경되었습니다. 내보내기한 파일에도 반영됩니다.');
+  const ok = await persistWikiData();
+  if (ok) {
+    sessionAuthHash = CONFIG.adminPasswordHash; // 이후 저장은 새 비밀번호로 인증
+    toast('비밀번호가 변경되어 서버에 저장되었습니다.');
+  }
 }
 
 function syncDataIsland(elId, data) {
   document.getElementById(elId).textContent = JSON.stringify(data, null, 2);
+}
+
+// 관리자모드 변경사항(추가/수정/삭제/업로드/비밀번호 변경)을 서버에 실제로 저장한다.
+// 이게 없던 시절엔 브라우저 메모리에만 남아있다가 "내보내기" 파일 교체를 잊으면
+// 그대로 사라지는 문제가 있었다 - 이제는 각 변경 직후 자동으로 호출된다.
+async function persistWikiData() {
+  try {
+    const res = await fetch(`${RE_API_BASE}/api/wiki-data`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authHash: sessionAuthHash,
+        manual: MANUAL,
+        glossary: GLOSSARY,
+        meetings: MEETINGS,
+        adminPasswordHash: CONFIG.adminPasswordHash,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast(data.error || '서버 저장에 실패했습니다 - "내보내기"로 백업해두세요.', true);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    toast('서버 저장에 실패했습니다 (네트워크 오류) - "내보내기"로 백업해두세요.', true);
+    return false;
+  }
 }
 
 function exportHtml() {
@@ -3713,13 +3777,41 @@ function exportHtml() {
   toast('HTML 파일을 다운로드했습니다.');
 }
 
-/* ---------- 초기 렌더 ---------- */
+/* ---------- 초기 렌더 ----------
+   HTML에 내장된 데이터(seed)를 먼저 즉시 렌더한 뒤, 서버(관리자모드 저장소)에 실제
+   저장된 최신 데이터가 있으면 그걸로 덮어쓰고 다시 렌더한다. 관리자가 아직 한 번도
+   저장한 적 없으면(서버에 아무것도 없으면) 내장된 데이터가 그대로 유지된다. */
 renderManualChips();
 renderManualList();
 renderGlossaryChips();
 renderGlossaryList();
 renderMeetingList();
 renderSearchResults();
+
+async function loadPersistedWikiData() {
+  try {
+    const res = await fetch(`${RE_API_BASE}/api/wiki-data`);
+    if (!res.ok) return;
+    const saved = await res.json();
+    if (!saved) return;
+    let changed = false;
+    if (saved.manual) { MANUAL = saved.manual; changed = true; }
+    if (saved.glossary) { GLOSSARY = saved.glossary; changed = true; }
+    if (saved.meetings) { MEETINGS = saved.meetings; changed = true; }
+    if (saved.adminPasswordHash) { CONFIG.adminPasswordHash = saved.adminPasswordHash; changed = true; }
+    if (!changed) return;
+    renderManualChips();
+    renderManualList();
+    renderGlossaryChips();
+    renderGlossaryList();
+    renderMeetingList();
+    renderSearchResults();
+    if (isAdmin) renderAdminPanel();
+  } catch (err) {
+    // 서버 데이터를 못 가져와도 화면에는 내장된 기본 데이터로 계속 동작해야 하므로 조용히 무시.
+  }
+}
+loadPersistedWikiData();
 </script>
 </body>
 </html>
