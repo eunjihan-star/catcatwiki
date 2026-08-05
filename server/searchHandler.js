@@ -235,11 +235,6 @@ async function handleSearch(address, buildingTypeGroups) {
     };
   }
 
-  // AI 웹 검색 폴백은 더 이상 검색할 때마다 자동으로 호출하지 않는다 — 재건축 이력이
-  // 없는 평범한 아파트에서도 매번 비용이 발생하는 게 문제였다. 대신 프론트엔드에
-  // "AI로 조사하기" 버튼을 두고, 사용자가 직접 클릭했을 때만 /api/ai-research 를 호출한다
-  // (server/aiResearchHandler.js, server/routes/aiResearch.js, api/ai-research.js 참고).
-
   // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
   // 찾은 값은 참고/교차확인용으로 함께 내려준다 (네이버 단독 신뢰는 위험 — 은마아파트
   // 테스트에서 명백히 틀린 날짜를 집어온 사례가 있었음, 아래 useAprDayMismatch 참고).

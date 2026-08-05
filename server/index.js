@@ -7,7 +7,6 @@ const express = require('express');
 const cors = require('cors');
 const searchRouter = require('./routes/search');
 const wikiDataRouter = require('./routes/wikiData');
-const aiResearchRouter = require('./routes/aiResearch');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -19,7 +18,6 @@ app.use(express.json({ limit: '10mb' }));
 
 app.use('/api', searchRouter);
 app.use('/api', wikiDataRouter);
-app.use('/api', aiResearchRouter);
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
