@@ -2704,7 +2704,25 @@ function renderCandidateZonesCard(candidates) {
   return html;
 }
 
+// "AI로 조사하기" 버튼(runAiResearch)이 참조하는 마지막 검색 결과. 버튼 클릭 시 여기서
+// 건물명/지역/사용승인일을 읽어 /api/ai-research 를 호출하고, 결과를 이 객체에 병합한 뒤
+// renderRealEstateResult()를 다시 호출해 화면을 갱신한다.
+let lastRealEstateData = null;
+
+// 5개 재건축 이벤트 중 아직 못 찾은 필드 키만 뽑는다. 렌더링(버튼 표시 여부)과
+// runAiResearch() 양쪽에서 같은 기준을 써야 하므로 공용 함수로 뺐다.
+function reComputeMissingFields(ev) {
+  const missing = [];
+  if (!ev.unionEstablishment) missing.push('unionEstablishment');
+  if (!ev.projectImplementationApproval) missing.push('projectImplementationApproval');
+  if (!ev.managementDisposalApproval || !ev.managementDisposalApproval.initial) missing.push('managementDisposalApproval');
+  if (!ev.subscriptionWin) missing.push('subscriptionWin');
+  if (!ev.memberSuccession) missing.push('memberSuccession');
+  return missing;
+}
+
 function renderRealEstateResult(data) {
+  lastRealEstateData = data;
   const {
     input: inputInfo, address, candidateCount, otherCandidates, building, redevelopment,
     officialRedevelopmentZone, officialRedevelopmentCandidates,
@@ -2802,6 +2820,24 @@ function renderRealEstateResult(data) {
       html += '<div class="re-disclaimer">⚠️ 단지명으로는 못 찾아서, 이름 없이 동 단위로 넓게 찾은 결과입니다(사용승인일 이전 날짜만 인정하는 안전장치 적용). 재건축 완료 후 단지명·지번이 바뀐 경우 등에 대비한 보완 검색이니, 다른 단지 소식이 섞였을 수 있어 원문에서 이 건물이 맞는지 꼭 확인해주세요.</div>';
     }
     html += '<div class="re-disclaimer">위 날짜는 뉴스/블로그 텍스트에서 키워드 주변 날짜를 자동 추출한 결과입니다. 정확도가 100%가 아니므로 반드시 아래 원문 링크로 교차 확인해주세요.</div>';
+
+    // "AI로 조사하기" 버튼 — 검색할 때마다 자동으로 호출하지 않고(비용 문제), 사용자가
+    // 직접 클릭했을 때만 실시간 웹 검색이 가능한 AI(claude-opus-5 + web_search)를 부른다.
+    // 재건축 이력이 아예 없는 평범한 건물에서 헛클릭하지 않도록, 최소한의 신호(공식
+    // 정비구역 매칭/같은 법정동 후보/네이버 관련 기사 1건 이상)가 있을 때만 버튼을 보여준다.
+    const reAiMissingFields = reComputeMissingFields(ev);
+    const reHasSignal = Boolean(
+      officialRedevelopmentZone ||
+      (officialRedevelopmentCandidates && officialRedevelopmentCandidates.length > 0) ||
+      redevelopment.articleCount > 0
+    );
+    if (address.buildingName && reAiMissingFields.length > 0 && reHasSignal) {
+      html += '<div id="re-ai-research-wrap" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);">';
+      html += '<button type="button" class="btn" id="re-ai-research-btn" onclick="runAiResearch()">AI로 조사하기</button>';
+      html += '<span style="margin-left:8px;font-size:11.5px;color:var(--ink-soft);">유료 API를 호출합니다 — 클릭 시에만 과금됩니다.</span>';
+      html += '<div id="re-ai-research-status" style="font-size:12px;color:var(--ink-soft);margin-top:6px;"></div>';
+      html += '</div>';
+    }
   }
   html += '</div>';
 
@@ -2922,6 +2958,64 @@ async function runRealEstateSearch() {
       : '부동산정보 서버(/api/search)에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
   } finally {
     btn.disabled = false;
+  }
+}
+
+// "AI로 조사하기" 버튼 핸들러. lastRealEstateData(마지막 검색 결과)를 기준으로 아직 못 찾은
+// 필드만 /api/ai-research 에 넘기고, 응답을 그 자리에 병합한 뒤 카드 전체를 다시 그린다.
+// 출처(sourceUrl) 없는 값은 서버(aiSearchService.validateResult)에서 이미 걸러지므로
+// 여기서 받는 결과는 항상 링크가 있다고 가정해도 된다.
+async function runAiResearch() {
+  const data = lastRealEstateData;
+  if (!data || !data.redevelopment || !data.redevelopment.events) return;
+
+  const ev = data.redevelopment.events;
+  const missingFields = reComputeMissingFields(ev);
+  if (missingFields.length === 0) return;
+
+  const btn = document.getElementById('re-ai-research-btn');
+  const statusEl = document.getElementById('re-ai-research-status');
+  if (btn) { btn.disabled = true; btn.textContent = '조사 중... (최대 1분 정도 걸릴 수 있어요)'; }
+  if (statusEl) { statusEl.className = ''; statusEl.textContent = ''; }
+
+  const addrTokens = (data.address.jibunAddr || '').trim().split(/\s+/);
+  const regionLabel = addrTokens.slice(0, 3).join(' ');
+
+  try {
+    const res = await fetch(`${RE_API_BASE}/api/ai-research`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        buildingName: data.address.buildingName,
+        regionLabel,
+        knownCompletionDate: data.building && data.building.useAprDay,
+        missingFields,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok || json.error) throw new Error(json.error || 'AI 조사 중 오류가 발생했습니다.');
+
+    if (!json.results || json.results.length === 0) {
+      if (statusEl) statusEl.textContent = 'AI가 출처와 함께 확인 가능한 날짜를 찾지 못했습니다.';
+      if (btn) { btn.disabled = false; btn.textContent = '다시 시도'; }
+      return;
+    }
+
+    for (const r of json.results) {
+      const merged = { date: r.date, viaAI: true, link: r.sourceUrl, sourceTitle: r.sourceTitle, note: r.note };
+      if (r.field === 'managementDisposalApproval') {
+        if (!ev.managementDisposalApproval) ev.managementDisposalApproval = { initial: null, changes: [] };
+        if (!ev.managementDisposalApproval.initial) ev.managementDisposalApproval.initial = merged;
+      } else if (!ev[r.field]) {
+        ev[r.field] = merged;
+      }
+    }
+    renderRealEstateResult(data); // 카드 전체 재렌더 (반영된 필드는 버튼 대상에서도 빠짐)
+    toast('AI 조사 결과를 반영했습니다 — 출처를 꼭 확인하세요.');
+  } catch (err) {
+    if (statusEl) { statusEl.className = 're-status error'; statusEl.textContent = err.message; }
+    if (btn) { btn.disabled = false; btn.textContent = '다시 시도'; }
+    toast(err.message, true);
   }
 }
 

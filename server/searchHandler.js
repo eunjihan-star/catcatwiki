@@ -5,7 +5,6 @@ const { getBuildingInfo } = require('./services/buildingService');
 const { searchRedevelopmentInfo, searchUseApprovalDate } = require('./services/naverService');
 const { findRedevelopmentZone } = require('./services/regionalRedevelopmentService');
 const { findApplyhomeInfo } = require('./services/cheongyakService');
-const { findRedevelopmentDatesViaAI } = require('./services/aiSearchService');
 
 // 이 위키는 "거주용 건물" 정보만 다룬다. 상가/업무시설 등 비주거 건물의 사용승인일·면적을
 // 정확히 알려주는 건 애초에 목적이 아니므로, 그런 건물이 걸리면 상세 정보를 보여주는 대신
@@ -236,53 +235,10 @@ async function handleSearch(address, buildingTypeGroups) {
     };
   }
 
-  // 지역별 공식 API + 청약홈 + 네이버 텍스트마이닝까지 다 확인했는데도 5개 항목 중 빈 게
-  // 남아있고 단지명이 있는 경우에만 AI 실시간 웹 검색을 최후 폴백으로 시도한다 (단지명이
-  // 완전히 바뀐 완공 재건축 등, 네이버 뉴스/블로그 카테고리로는 도달 불가능한 자료가 대상).
-  // 단지명 없는 일반 주소는 AI가 특정 건물을 짚어낼 근거가 부족해 범위에서 제외한다.
-  //
-  // ⚠️ 중요: 재건축 이력이 아예 없는 "평범한" 아파트는 5개 항목이 원래 다 null이다 -
-  // 데이터 소스가 실패한 게 아니라 애초에 일어난 적 없는 일이기 때문. 이런 경우까지
-  // 매번 AI(+실시간 웹검색) API를 호출하면 비용만 낭비하고 무관한 결과가 나올 위험만
-  // 커지므로, "이 건물이 재건축/재개발과 관련 있다"는 최소한의 신호(공식 정비구역 매칭,
-  // 같은 법정동 후보, 또는 네이버 검색에 재건축 관련 기사가 하나라도 걸림)가 있을 때만
-  // 호출한다.
-  const hasRedevelopmentSignal = Boolean(
-    officialRedevelopmentZone ||
-    officialRedevelopmentCandidates.length > 0 ||
-    naverInfo.articleCount > 0
-  );
-  if (naverInfo && naverInfo.events && best.buildingName && hasRedevelopmentSignal) {
-    const ev = naverInfo.events;
-    const missingFields = [];
-    if (!ev.unionEstablishment) missingFields.push('unionEstablishment');
-    if (!ev.projectImplementationApproval) missingFields.push('projectImplementationApproval');
-    if (!ev.managementDisposalApproval || !ev.managementDisposalApproval.initial) missingFields.push('managementDisposalApproval');
-    if (!ev.subscriptionWin) missingFields.push('subscriptionWin');
-    if (!ev.memberSuccession) missingFields.push('memberSuccession');
-
-    if (missingFields.length > 0) {
-      const regionLabel = [sidoToken, addrTokens[1], dongToken].filter(Boolean).join(' ');
-      const aiResult = await findRedevelopmentDatesViaAI({
-        buildingName: best.buildingName,
-        regionLabel,
-        knownCompletionDate: maxDateForNaverFallback,
-        missingFields,
-      }).catch((err) => ({ results: [], error: err.message }));
-
-      // 출처(sourceUrl) 없는 항목은 aiSearchService 내부에서 이미 걸러진다 - 여기서는
-      // "출처 없는 AI 값을 화면에 노출"하는 경로 자체가 아예 존재하지 않도록 link를 항상 채운다.
-      for (const r of aiResult.results || []) {
-        const merged = { date: r.date, viaAI: true, link: r.sourceUrl, sourceTitle: r.sourceTitle, note: r.note };
-        if (r.field === 'managementDisposalApproval') {
-          if (!ev.managementDisposalApproval) ev.managementDisposalApproval = { initial: null, changes: [] };
-          if (!ev.managementDisposalApproval.initial) ev.managementDisposalApproval.initial = merged;
-        } else if (!ev[r.field]) {
-          ev[r.field] = merged;
-        }
-      }
-    }
-  }
+  // AI 웹 검색 폴백은 더 이상 검색할 때마다 자동으로 호출하지 않는다 — 재건축 이력이
+  // 없는 평범한 아파트에서도 매번 비용이 발생하는 게 문제였다. 대신 프론트엔드에
+  // "AI로 조사하기" 버튼을 두고, 사용자가 직접 클릭했을 때만 /api/ai-research 를 호출한다
+  // (server/aiResearchHandler.js, server/routes/aiResearch.js, api/ai-research.js 참고).
 
   // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
   // 찾은 값은 참고/교차확인용으로 함께 내려준다 (네이버 단독 신뢰는 위험 — 은마아파트
