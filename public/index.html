@@ -293,6 +293,8 @@
     color:var(--teal-800); font-weight:700; white-space:nowrap;
   }
   .re-badge.warn { background:var(--warn-bg); color:var(--warn); }
+  .re-badge.ai { background:#eef2ff; color:#4338ca; }
+  .re-event-value .re-ai-note { display:block; margin-top:3px; font-size:11px; color:var(--ink-soft); }
 
   .re-event-row {
     display:flex; align-items:baseline; justify-content:space-between; gap:10px;
@@ -2834,9 +2836,16 @@ function reEventRow(label, ev, searchBase, fieldKeyword) {
   }
   // official: true 인 경우(청약홈 공식 데이터 등) 작은 "공식" 배지를 붙여서 네이버
   // 텍스트마이닝 결과와 구분되게 한다. 원문 링크가 있으면(청약홈 상세페이지 등) 같이 보여준다.
-  const badge = ev.official ? '<span class="re-badge" style="margin-left:8px;">공식</span>' : '';
-  const link = ev.link ? `<a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">원문</a>` : '';
-  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span>${reCopyBtn(ev.date, `${label} 복사`)}${badge}${link}</span></div>`;
+  // viaAI: true 인 경우(Gemini 실시간 웹검색 폴백) - 이 값은 항상 sourceUrl(=link)이
+  // 함께 오도록 서버에서 검증되어 있다("출처 없는 AI 답변은 절대 보여주지 않는다"는 요구사항).
+  const badge = ev.official
+    ? '<span class="re-badge" style="margin-left:8px;">공식</span>'
+    : (ev.viaAI ? '<span class="re-badge ai" style="margin-left:8px;">AI 검색</span>' : '');
+  const link = ev.link ? `<a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">${ev.viaAI ? '출처' : '원문'}</a>` : '';
+  const aiNote = ev.viaAI
+    ? `<span class="re-ai-note">Gemini가 웹검색으로 찾은 값입니다 — 출처를 꼭 확인하세요.${ev.note ? ' ' + reEscapeHtml(ev.note) : ''}</span>`
+    : '';
+  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span>${reCopyBtn(ev.date, `${label} 복사`)}${badge}${link}${aiNote}</span></div>`;
 }
 
 function reManagementDisposalRow(md, searchBase) {
@@ -2845,7 +2854,11 @@ function reManagementDisposalRow(md, searchBase) {
     const link = url ? `<a href="${reEscapeHtml(url)}" target="_blank" rel="noopener">네이버에서 검색</a>` : '';
     return `<div class="re-event-row"><span class="re-event-label">관리처분인가일</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span>${link}</span></div>`;
   }
-  let html = `<div class="re-event-row"><span class="re-event-label">관리처분인가일 (최초)</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(md.initial.date)}</span>${reCopyBtn(md.initial.date, '관리처분인가일 복사')}<a href="${reEscapeHtml(md.initial.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
+  const initialBadge = md.initial.viaAI ? '<span class="re-badge ai" style="margin-left:8px;">AI 검색</span>' : '';
+  const initialAiNote = md.initial.viaAI
+    ? `<span class="re-ai-note">Gemini가 웹검색으로 찾은 값입니다 — 출처를 꼭 확인하세요.${md.initial.note ? ' ' + reEscapeHtml(md.initial.note) : ''}</span>`
+    : '';
+  let html = `<div class="re-event-row"><span class="re-event-label">관리처분인가일 (최초)</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(md.initial.date)}</span>${reCopyBtn(md.initial.date, '관리처분인가일 복사')}${initialBadge}<a href="${reEscapeHtml(md.initial.link)}" target="_blank" rel="noopener">${md.initial.viaAI ? '출처' : '원문'}</a>${initialAiNote}</span></div>`;
   if (md.changes && md.changes.length > 0) {
     html += `<div class="re-event-row" style="border-bottom:none;padding-bottom:0;"><span class="re-event-label">변경 이력</span><span class="re-event-value"></span></div>`;
     html += '<ul class="re-change-list">';

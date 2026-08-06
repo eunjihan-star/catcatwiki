@@ -5,6 +5,7 @@ const { getBuildingInfo } = require('./services/buildingService');
 const { searchRedevelopmentInfo, searchUseApprovalDate } = require('./services/naverService');
 const { findRedevelopmentZone } = require('./services/regionalRedevelopmentService');
 const { findApplyhomeInfo } = require('./services/cheongyakService');
+const { findRedevelopmentDatesViaGemini } = require('./services/geminiSearchService');
 
 // 이 위키는 "거주용 건물" 정보만 다룬다. 상가/업무시설 등 비주거 건물의 사용승인일·면적을
 // 정확히 알려주는 건 애초에 목적이 아니므로, 그런 건물이 걸리면 상세 정보를 보여주는 대신
@@ -233,6 +234,54 @@ async function handleSearch(address, buildingTypeGroups) {
       houseName: applyhomeInfo.houseName,
       source: applyhomeInfo.source,
     };
+  }
+
+  // 지역별 공식 API + 청약홈 + 네이버 텍스트마이닝까지 다 확인했는데도 5개 항목 중 빈 게
+  // 남아있고 단지명이 있는 경우, Gemini 실시간 웹검색을 최후 폴백으로 자동 호출한다
+  // (Gemini 2.5 Flash 무료 티어 - 카드 등록 없이 하루 500건까지 무료라 자동화해도 비용
+  // 걱정이 없다 - Claude API였을 때와의 결정적 차이).
+  //
+  // ⚠️ 재건축 이력이 아예 없는 "평범한" 아파트는 5개 항목이 원래 다 null이다 - 데이터
+  // 소스가 실패한 게 아니라 애초에 일어난 적 없는 일이기 때문. 무료라도 무의미한 호출로
+  // 하루 500건 쿼터를 낭비하지 않도록, "이 건물이 재건축/재개발과 관련 있다"는 최소한의
+  // 신호(공식 정비구역 매칭, 같은 법정동 후보, 또는 네이버 검색에 관련 기사가 하나라도
+  // 걸림)가 있을 때만 호출한다.
+  if (naverInfo && naverInfo.events && best.buildingName) {
+    const ev = naverInfo.events;
+    const missingFields = [];
+    if (!ev.unionEstablishment) missingFields.push('unionEstablishment');
+    if (!ev.projectImplementationApproval) missingFields.push('projectImplementationApproval');
+    if (!ev.managementDisposalApproval || !ev.managementDisposalApproval.initial) missingFields.push('managementDisposalApproval');
+    if (!ev.subscriptionWin) missingFields.push('subscriptionWin');
+    if (!ev.memberSuccession) missingFields.push('memberSuccession');
+
+    const hasRedevelopmentSignal = Boolean(
+      officialRedevelopmentZone ||
+      officialRedevelopmentCandidates.length > 0 ||
+      naverInfo.articleCount > 0
+    );
+
+    if (missingFields.length > 0 && hasRedevelopmentSignal) {
+      const regionLabel = [sidoToken, addrTokens[1], dongToken].filter(Boolean).join(' ');
+      const geminiResult = await findRedevelopmentDatesViaGemini({
+        buildingName: best.buildingName,
+        regionLabel,
+        knownCompletionDate: maxDateForNaverFallback,
+        missingFields,
+      }).catch((err) => ({ results: [], error: err.message }));
+
+      // 출처(sourceUrl) 없는 항목은 geminiSearchService 내부에서 이미 걸러진다 - 여기서는
+      // "출처 없는 AI 값을 화면에 노출"하는 경로 자체가 아예 존재하지 않도록 link를 항상 채운다.
+      for (const r of geminiResult.results || []) {
+        const merged = { date: r.date, viaAI: true, link: r.sourceUrl, sourceTitle: r.sourceTitle, note: r.note };
+        if (r.field === 'managementDisposalApproval') {
+          if (!ev.managementDisposalApproval) ev.managementDisposalApproval = { initial: null, changes: [] };
+          if (!ev.managementDisposalApproval.initial) ev.managementDisposalApproval.initial = merged;
+        } else if (!ev[r.field]) {
+          ev[r.field] = merged;
+        }
+      }
+    }
   }
 
   // 사용승인일: 건축물대장 값이 있으면 그걸 주(main) 표시값으로 쓰고, 네이버 검색에서
