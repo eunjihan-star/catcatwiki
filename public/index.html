@@ -293,8 +293,6 @@
     color:var(--teal-800); font-weight:700; white-space:nowrap;
   }
   .re-badge.warn { background:var(--warn-bg); color:var(--warn); }
-  .re-badge.ai { background:#eef2ff; color:#4338ca; }
-  .re-event-value .re-ai-note { display:block; margin-top:3px; font-size:11px; color:var(--ink-soft); }
 
   .re-event-row {
     display:flex; align-items:baseline; justify-content:space-between; gap:10px;
@@ -2836,16 +2834,9 @@ function reEventRow(label, ev, searchBase, fieldKeyword) {
   }
   // official: true 인 경우(청약홈 공식 데이터 등) 작은 "공식" 배지를 붙여서 네이버
   // 텍스트마이닝 결과와 구분되게 한다. 원문 링크가 있으면(청약홈 상세페이지 등) 같이 보여준다.
-  // viaAI: true 인 경우(Gemini 실시간 웹검색 폴백) - 이 값은 항상 sourceUrl(=link)이
-  // 함께 오도록 서버에서 검증되어 있다("출처 없는 AI 답변은 절대 보여주지 않는다"는 요구사항).
-  const badge = ev.official
-    ? '<span class="re-badge" style="margin-left:8px;">공식</span>'
-    : (ev.viaAI ? '<span class="re-badge ai" style="margin-left:8px;">AI 검색</span>' : '');
-  const link = ev.link ? `<a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">${ev.viaAI ? '출처' : '원문'}</a>` : '';
-  const aiNote = ev.viaAI
-    ? `<span class="re-ai-note">Gemini가 웹검색으로 찾은 값입니다 — 출처를 꼭 확인하세요.${ev.note ? ' ' + reEscapeHtml(ev.note) : ''}</span>`
-    : '';
-  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span>${reCopyBtn(ev.date, `${label} 복사`)}${badge}${link}${aiNote}</span></div>`;
+  const badge = ev.official ? '<span class="re-badge" style="margin-left:8px;">공식</span>' : '';
+  const link = ev.link ? `<a href="${reEscapeHtml(ev.link)}" target="_blank" rel="noopener">원문</a>` : '';
+  return `<div class="re-event-row"><span class="re-event-label">${label}</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(ev.date)}</span>${reCopyBtn(ev.date, `${label} 복사`)}${badge}${link}</span></div>`;
 }
 
 function reManagementDisposalRow(md, searchBase) {
@@ -2854,11 +2845,7 @@ function reManagementDisposalRow(md, searchBase) {
     const link = url ? `<a href="${reEscapeHtml(url)}" target="_blank" rel="noopener">네이버에서 검색</a>` : '';
     return `<div class="re-event-row"><span class="re-event-label">관리처분인가일</span><span class="re-event-value"><span class="re-empty">확인된 정보 없음</span>${link}</span></div>`;
   }
-  const initialBadge = md.initial.viaAI ? '<span class="re-badge ai" style="margin-left:8px;">AI 검색</span>' : '';
-  const initialAiNote = md.initial.viaAI
-    ? `<span class="re-ai-note">Gemini가 웹검색으로 찾은 값입니다 — 출처를 꼭 확인하세요.${md.initial.note ? ' ' + reEscapeHtml(md.initial.note) : ''}</span>`
-    : '';
-  let html = `<div class="re-event-row"><span class="re-event-label">관리처분인가일 (최초)</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(md.initial.date)}</span>${reCopyBtn(md.initial.date, '관리처분인가일 복사')}${initialBadge}<a href="${reEscapeHtml(md.initial.link)}" target="_blank" rel="noopener">${md.initial.viaAI ? '출처' : '원문'}</a>${initialAiNote}</span></div>`;
+  let html = `<div class="re-event-row"><span class="re-event-label">관리처분인가일 (최초)</span><span class="re-event-value"><span class="re-date">${reEscapeHtml(md.initial.date)}</span>${reCopyBtn(md.initial.date, '관리처분인가일 복사')}<a href="${reEscapeHtml(md.initial.link)}" target="_blank" rel="noopener">원문</a></span></div>`;
   if (md.changes && md.changes.length > 0) {
     html += `<div class="re-event-row" style="border-bottom:none;padding-bottom:0;"><span class="re-event-label">변경 이력</span><span class="re-event-value"></span></div>`;
     html += '<ul class="re-change-list">';
@@ -2936,19 +2923,8 @@ function renderCandidateZonesCard(candidates) {
   return html;
 }
 
-// "ChatGPT/Gemini에서 찾기" 버튼(reOpenAiChat)이 참조하는 마지막 검색 결과.
+// "ChatGPT/Gemini에게 물어보기" 버튼(reOpenAiChat/reOpenGemini)이 참조하는 마지막 검색 결과.
 let lastRealEstateData = null;
-
-// 5개 재건축 이벤트 중 아직 못 찾은 필드 키만 뽑는다.
-function reComputeMissingFields(ev) {
-  const missing = [];
-  if (!ev.unionEstablishment) missing.push('unionEstablishment');
-  if (!ev.projectImplementationApproval) missing.push('projectImplementationApproval');
-  if (!ev.managementDisposalApproval || !ev.managementDisposalApproval.initial) missing.push('managementDisposalApproval');
-  if (!ev.subscriptionWin) missing.push('subscriptionWin');
-  if (!ev.memberSuccession) missing.push('memberSuccession');
-  return missing;
-}
 
 const RE_FIELD_LABELS = {
   unionEstablishment: '조합설립인가일',
@@ -3058,28 +3034,19 @@ function renderRealEstateResult(data) {
     }
     html += '<div class="re-disclaimer">위 날짜는 뉴스/블로그 텍스트에서 키워드 주변 날짜를 자동 추출한 결과입니다. 정확도가 100%가 아니므로 반드시 아래 원문 링크로 교차 확인해주세요.</div>';
 
-    // Gemini 백그라운드 자동 보강(runAutoAiResearch)이 진행 상태를 표시하는 자리 - 검색
-    // 결과가 먼저 빠르게 뜬 뒤, 이 줄에 "확인 중..."이 잠깐 나타났다가 결과가 오면 카드
-    // 전체가 다시 그려지면서 사라진다(비어있으면 그냥 아무것도 안 보임).
-    html += '<div id="re-ai-auto-status" style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;"></div>';
-
-    // ChatGPT/Gemini 버튼 — 항목이 다 채워져 있어도(교차 확인용으로) 검색 결과마다 항상
-    // 노출한다. 예전엔 "공식 정비구역 매칭/같은 법정동 후보/네이버 기사 1건 이상" 신호가
-    // 있을 때만, 그리고 빈 항목이 있을 때만 보여줬는데 둘 다 없앴다 - 완공되고 이름 바뀐
-    // 유명 재건축(디에이치자이개포 등)은 그 신호가 전부 0으로 나오는 걸 실제로 확인했다.
-    //
-    // ChatGPT는 chatgpt.com/?q= 로 질문이 실제로 자동 입력된다(로그인 상태 기준, 확인됨).
-    // Gemini는 구글이 URL로 질문 미리 채우기를 아직 지원하지 않는다(확인됨 - 아예 그
-    // 기능을 추가해달라는 요청이 올라와 있는 상태) - 그래서 "질문을 채워주는 대신" 저희가
-    // 이미 연동해둔 Gemini API로 직접 조사해서 답을 바로 이 화면에 보여주는 방식으로
-    // 대체했다(reGeminiInlineResearch) - 질문 입력조차 필요 없이 결과가 바로 나오니
-    // 오히려 "자동완성"의 취지에 더 맞는다.
+    // ChatGPT/Gemini 버튼 — API 호출 없이, 각자 로그인된 브라우저 탭을 열어주는 방식이라
+    // 비용이 전혀 없다. 항목이 다 채워져 있어도(교차 확인용으로) 검색 결과마다 항상
+    // 노출한다.
+    // ⚠️ Gemini를 우리 백엔드 Gemini API로 직접 조사해서 인라인으로 보여주는 방식을
+    // 시도했었으나, 구글이 신규 발급 API 키에서 무료 웹검색 가능한 2.5세대 모델
+    // (flash, flash-lite)을 전부 차단해버려(2026-08, 공식 지원종료일보다 훨씬 이르게)
+    // 되돌렸다 - 최신 3.x 모델은 무료 티어에 웹검색 자체가 없다(결제 필요). 그래서 다시
+    // "각자 로그인된 사이트를 열어주는" 무료 방식으로 통일한다.
     if (address.buildingName || address.roadAddr) {
       html += '<div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);">';
-      html += '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">AI에게 재건축/재개발 이력을 물어보세요 — ChatGPT는 질문이 자동 입력된 새 탭이 열리고, Gemini는 저희 위키가 대신 조사해서 결과를 바로 여기에 보여드립니다.</div>';
+      html += '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">AI 챗봇에게 재건축/재개발 이력을 직접 물어보세요 (내 계정으로 접속되며, 비용 없음) — ChatGPT는 질문이 자동 입력되고, Gemini는 복사된 질문을 붙여넣기 해주세요.</div>';
       html += '<button type="button" class="btn" onclick="reOpenAiChat()">ChatGPT에게 물어보기</button>';
-      html += '<button type="button" class="btn" style="margin-left:8px;" id="re-gemini-inline-btn" onclick="reGeminiInlineResearch()">Gemini로 조사하기</button>';
-      html += '<div id="re-gemini-inline-status" style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;"></div>';
+      html += '<button type="button" class="btn" style="margin-left:8px;" onclick="reOpenGemini()">Gemini에게 물어보기</button>';
       html += '</div>';
     }
   }
@@ -3195,7 +3162,6 @@ async function runRealEstateSearch() {
     statusEl.className = 're-status';
     statusEl.textContent = '';
     renderRealEstateResult(data);
-    runAutoAiResearch(data); // 백그라운드(비차단) - 검색 응답을 기다리게 하지 않는다
   } catch (err) {
     statusEl.className = 're-status error';
     statusEl.textContent = RE_API_BASE
@@ -3203,63 +3169,6 @@ async function runRealEstateSearch() {
       : '부동산정보 서버(/api/search)에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
   } finally {
     btn.disabled = false;
-  }
-}
-
-// 검색 결과를 먼저 빠르게 보여준 뒤, 백그라운드로(비차단) Gemini에게 남은 항목을 물어보고
-// 도착하면 그 자리에 채워 넣는다. /api/search 를 기다리게 하지 않는 이유는 searchHandler.js
-// 상단 주석 참고 - 이 함수 자체를 await 하지 않고 그냥 호출만 하고 지나가는 게 핵심이다.
-async function runAutoAiResearch(data) {
-  if (!data || !data.redevelopment || !data.redevelopment.events) return;
-  const ev = data.redevelopment.events;
-  const missingFields = reComputeMissingFields(ev);
-  if (missingFields.length === 0 || !data.address.buildingName) return;
-
-  const statusEl = document.getElementById('re-ai-auto-status');
-  if (statusEl) statusEl.textContent = 'AI가 추가 정보를 확인하고 있습니다...';
-
-  const addrTokens = (data.address.jibunAddr || '').trim().split(/\s+/);
-  const regionLabel = addrTokens.slice(0, 3).join(' ');
-
-  try {
-    const res = await fetch(`${RE_API_BASE}/api/ai-research`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        buildingName: data.address.buildingName,
-        regionLabel,
-        knownCompletionDate: data.building && data.building.useAprDay,
-        missingFields,
-      }),
-    });
-    const json = await res.json();
-
-    // 백그라운드 보강이라 실패해도 사용자에게 에러를 띄우지 않는다 - 상태 문구만 조용히 지운다.
-    if (!res.ok || json.error || !json.results || json.results.length === 0) {
-      const el = document.getElementById('re-ai-auto-status');
-      if (el) el.textContent = '';
-      return;
-    }
-
-    for (const r of json.results) {
-      const merged = { date: r.date, viaAI: true, link: r.sourceUrl, sourceTitle: r.sourceTitle, note: r.note };
-      if (r.field === 'managementDisposalApproval') {
-        if (!ev.managementDisposalApproval) ev.managementDisposalApproval = { initial: null, changes: [] };
-        if (!ev.managementDisposalApproval.initial) ev.managementDisposalApproval.initial = merged;
-      } else if (!ev[r.field]) {
-        ev[r.field] = merged;
-      }
-    }
-
-    // 응답이 도착하기 전에 사용자가 다른 건물을 재검색했으면 lastRealEstateData가 이미
-    // 바뀌어 있다 - 그 경우 화면에 안 보이는 옛 결과로 덮어쓰지 않는다.
-    if (lastRealEstateData === data) {
-      renderRealEstateResult(data);
-      toast('AI가 추가 정보를 찾아 반영했습니다 — 출처를 꼭 확인하세요.');
-    }
-  } catch (err) {
-    const el = document.getElementById('re-ai-auto-status');
-    if (el) el.textContent = '';
   }
 }
 
@@ -3287,67 +3196,17 @@ function reOpenAiChat() {
   toast('ChatGPT 새 탭에 질문이 자동 입력됩니다 (안 되면 복사해둔 질문을 붙여넣어 주세요).');
 }
 
-// "Gemini로 조사하기" 버튼 핸들러. Gemini는 구글이 URL로 질문 미리 채우기를 아직 지원하지
-// 않아서(확인됨 - 기능 추가 요청이 따로 올라와 있는 상태) ChatGPT처럼 새 탭에 질문만
-// 채워줄 수는 없다. 대신 저희가 이미 연동해둔 Gemini API(/api/ai-research)를 직접 호출해서
-// "질문 입력"조차 건너뛰고 결과를 바로 이 화면에 보여준다.
-async function reGeminiInlineResearch() {
+// "Gemini에게 물어보기" 버튼 핸들러. Gemini는 구글이 URL로 질문 미리 채우기를 아직
+// 지원하지 않아서(확인됨) ChatGPT처럼 새 탭에 질문을 자동으로 채울 수 없다 - 질문을
+// 클립보드에 복사해두고 Gemini 홈을 새 탭으로 연다(비용 없음, 붙여넣기 한 번 필요).
+function reOpenGemini() {
   const data = lastRealEstateData;
-  if (!data || !data.redevelopment || !data.redevelopment.events) return;
-  const ev = data.redevelopment.events;
-  const missingFields = reComputeMissingFields(ev);
+  if (!data) return;
+  const question = reBuildAiQuestion(data, Object.keys(RE_FIELD_LABELS));
 
-  if (missingFields.length === 0) {
-    toast('이미 5개 항목이 모두 확인되어 있습니다.');
-    return;
-  }
-
-  const btn = document.getElementById('re-gemini-inline-btn');
-  const statusEl = document.getElementById('re-gemini-inline-status');
-  if (btn) { btn.disabled = true; btn.textContent = '조사 중... (최대 1분 정도 걸릴 수 있어요)'; }
-  if (statusEl) statusEl.textContent = '';
-
-  const buildingName = data.address.buildingName || data.address.roadAddr;
-  const addrTokens = (data.address.jibunAddr || '').trim().split(/\s+/);
-  const regionLabel = addrTokens.slice(0, 3).join(' ');
-
-  try {
-    const res = await fetch(`${RE_API_BASE}/api/ai-research`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        buildingName,
-        regionLabel,
-        knownCompletionDate: data.building && data.building.useAprDay,
-        missingFields,
-      }),
-    });
-    const json = await res.json();
-    if (!res.ok || json.error) throw new Error(json.error || 'Gemini 조사 중 오류가 발생했습니다.');
-
-    if (!json.results || json.results.length === 0) {
-      if (statusEl) statusEl.textContent = 'Gemini가 출처와 함께 확인 가능한 정보를 찾지 못했습니다.';
-      if (btn) { btn.disabled = false; btn.textContent = '다시 시도'; }
-      return;
-    }
-
-    for (const r of json.results) {
-      const merged = { date: r.date, viaAI: true, link: r.sourceUrl, sourceTitle: r.sourceTitle, note: r.note };
-      if (r.field === 'managementDisposalApproval') {
-        if (!ev.managementDisposalApproval) ev.managementDisposalApproval = { initial: null, changes: [] };
-        if (!ev.managementDisposalApproval.initial) ev.managementDisposalApproval.initial = merged;
-      } else if (!ev[r.field]) {
-        ev[r.field] = merged;
-      }
-    }
-    if (lastRealEstateData === data) {
-      renderRealEstateResult(data); // 카드 전체 재렌더 (버튼/상태도 새 상태로 갱신됨)
-      toast('Gemini 조사 결과를 반영했습니다 — 출처를 꼭 확인하세요.');
-    }
-  } catch (err) {
-    if (statusEl) statusEl.textContent = err.message;
-    if (btn) { btn.disabled = false; btn.textContent = '다시 시도'; }
-  }
+  window.open('https://gemini.google.com/app', '_blank', 'noopener');
+  copyToClipboard(question);
+  toast('Gemini는 자동 입력을 지원하지 않아 질문을 복사했어요 — 새 탭에 붙여넣기 해주세요.');
 }
 
 document.getElementById('re-search-btn').addEventListener('click', runRealEstateSearch);
