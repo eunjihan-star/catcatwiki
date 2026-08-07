@@ -374,8 +374,8 @@
   <div id="admin-bar-slot"></div>
 
   <div class="tabs" id="main-tabs">
-    <button class="tab-btn active" data-tab="search">통합검색</button>
     <button class="tab-btn" data-tab="realestate">부동산정보</button>
+    <button class="tab-btn active" data-tab="search">통합검색</button>
     <button class="tab-btn" data-tab="manual">업무 매뉴얼</button>
     <button class="tab-btn" data-tab="glossary">용어사전</button>
     <button class="tab-btn" data-tab="meeting">주간회의</button>
@@ -3063,18 +3063,23 @@ function renderRealEstateResult(data) {
     // 전체가 다시 그려지면서 사라진다(비어있으면 그냥 아무것도 안 보임).
     html += '<div id="re-ai-auto-status" style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;"></div>';
 
-    // ChatGPT/Gemini에서 찾기 — API 호출 없이, 각자 로그인된 브라우저 탭을 열어주는
-    // 방식이라 비용이 전혀 없다.
-    // ⚠️ 예전엔 "공식 정비구역 매칭/같은 법정동 후보/네이버 관련 기사 1건 이상" 신호가
-    // 있을 때만 보여줬는데, 완공되고 이름 바뀐 유명 재건축(디에이치자이개포 등)은 이
-    // 세 신호가 전부 0으로 나오는 걸 실제로 확인했다 - 정확히 이 버튼이 필요한 케이스를
-    // 걸러내고 있었다는 뜻이라 그 조건을 없앴다 (버튼은 비용이 없으니 매번 보여줘도 무방).
-    const reMissingFields = reComputeMissingFields(ev);
-    if (address.buildingName && reMissingFields.length > 0) {
+    // ChatGPT/Gemini 버튼 — 항목이 다 채워져 있어도(교차 확인용으로) 검색 결과마다 항상
+    // 노출한다. 예전엔 "공식 정비구역 매칭/같은 법정동 후보/네이버 기사 1건 이상" 신호가
+    // 있을 때만, 그리고 빈 항목이 있을 때만 보여줬는데 둘 다 없앴다 - 완공되고 이름 바뀐
+    // 유명 재건축(디에이치자이개포 등)은 그 신호가 전부 0으로 나오는 걸 실제로 확인했다.
+    //
+    // ChatGPT는 chatgpt.com/?q= 로 질문이 실제로 자동 입력된다(로그인 상태 기준, 확인됨).
+    // Gemini는 구글이 URL로 질문 미리 채우기를 아직 지원하지 않는다(확인됨 - 아예 그
+    // 기능을 추가해달라는 요청이 올라와 있는 상태) - 그래서 "질문을 채워주는 대신" 저희가
+    // 이미 연동해둔 Gemini API로 직접 조사해서 답을 바로 이 화면에 보여주는 방식으로
+    // 대체했다(reGeminiInlineResearch) - 질문 입력조차 필요 없이 결과가 바로 나오니
+    // 오히려 "자동완성"의 취지에 더 맞는다.
+    if (address.buildingName || address.roadAddr) {
       html += '<div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);">';
-      html += '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">위에서 못 찾은 정보는 AI 챗봇에게 직접 물어보세요 (내 계정으로 접속되며, 비용 없음) — ChatGPT는 질문이 자동 입력되고, Gemini는 복사된 질문을 붙여넣기 해주세요.</div>';
-      html += '<button type="button" class="btn" onclick="reOpenAiChat(\'chatgpt\')">ChatGPT에서 찾기</button>';
-      html += '<button type="button" class="btn" style="margin-left:8px;" onclick="reOpenAiChat(\'gemini\')">Gemini에서 찾기</button>';
+      html += '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">AI에게 재건축/재개발 이력을 물어보세요 — ChatGPT는 질문이 자동 입력된 새 탭이 열리고, Gemini는 저희 위키가 대신 조사해서 결과를 바로 여기에 보여드립니다.</div>';
+      html += '<button type="button" class="btn" onclick="reOpenAiChat()">ChatGPT에게 물어보기</button>';
+      html += '<button type="button" class="btn" style="margin-left:8px;" id="re-gemini-inline-btn" onclick="reGeminiInlineResearch()">Gemini로 조사하기</button>';
+      html += '<div id="re-gemini-inline-status" style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;"></div>';
       html += '</div>';
     }
   }
@@ -3258,42 +3263,91 @@ async function runAutoAiResearch(data) {
   }
 }
 
-const RE_AI_CHAT_URLS = {
-  // ChatGPT는 ?q= 파라미터로 질문을 자동 입력해준다(로그인 상태 기준, 커뮤니티에서
-  // 검증됨: https://chat.openai.com/?q=hello). Gemini는 구글이 이 기능을 아직
-  // 공식 지원하지 않는다(2026-08 기준 - Gemini 팀에 기능 요청이 별도로 올라와 있을
-  // 정도) - 브라우저 확장 없이는 URL로 미리 채울 방법이 없어 복사/붙여넣기로 남겨둔다.
-  chatgpt: (q) => `https://chatgpt.com/?q=${encodeURIComponent(q)}`,
-  gemini: () => 'https://gemini.google.com/app',
-};
-const RE_AI_CHAT_LABELS = { chatgpt: 'ChatGPT', gemini: 'Gemini' };
+function reBuildAiQuestion(data, fields) {
+  const buildingName = data.address.buildingName || data.address.roadAddr;
+  const addrTokens = (data.address.jibunAddr || '').trim().split(/\s+/);
+  const regionLabel = addrTokens.slice(0, 3).join(' ');
+  const wanted = fields.map((f) => RE_FIELD_LABELS[f]).join(', ');
+  return `${regionLabel} ${buildingName}의 재건축/재개발 이력 중 ${wanted}을(를) 알려줘. 알고 있다면 뉴스나 나무위키 등 확인 가능한 출처 링크도 같이 알려줘.`;
+}
 
-// "ChatGPT/Gemini에서 찾기" 버튼 핸들러. API를 호출하지 않고, 각 서비스를 새 탭으로
-// 연다 - 그 탭은 클릭한 사람의 브라우저 세션(로그인 여부 포함)을 그대로 쓰므로 우리
-// 쪽에 계정 정보가 오갈 일이 없다. 질문은 항상 클립보드에도 복사해둔다 - ChatGPT는
-// 자동 입력이 안 되는 경우(로그아웃 상태 등)의 안전장치, Gemini는 유일한 입력 수단.
-function reOpenAiChat(provider) {
+// "ChatGPT에게 물어보기" 버튼 핸들러. chatgpt.com/?q= 로 질문이 자동 입력된 새 탭을 연다
+// (로그인 상태 기준, 커뮤니티에서 검증됨: https://chat.openai.com/?q=hello). 그 탭은
+// 클릭한 사람의 브라우저 세션을 그대로 쓰므로 우리 쪽에 계정 정보가 오갈 일이 없다.
+// 이미 확인된 항목이 있어도 교차 확인용으로 5개 항목 전부를 물어본다.
+function reOpenAiChat() {
+  const data = lastRealEstateData;
+  if (!data) return;
+  const question = reBuildAiQuestion(data, Object.keys(RE_FIELD_LABELS));
+
+  // 팝업 차단을 피하려고 새 탭부터 먼저 연 뒤에 복사한다 (클립보드 API는 비동기라,
+  // 순서가 바뀌면 일부 브라우저가 window.open을 "사용자 조작과 무관한 호출"로 보고 막는다).
+  window.open(`https://chatgpt.com/?q=${encodeURIComponent(question)}`, '_blank', 'noopener');
+  copyToClipboard(question);
+  toast('ChatGPT 새 탭에 질문이 자동 입력됩니다 (안 되면 복사해둔 질문을 붙여넣어 주세요).');
+}
+
+// "Gemini로 조사하기" 버튼 핸들러. Gemini는 구글이 URL로 질문 미리 채우기를 아직 지원하지
+// 않아서(확인됨 - 기능 추가 요청이 따로 올라와 있는 상태) ChatGPT처럼 새 탭에 질문만
+// 채워줄 수는 없다. 대신 저희가 이미 연동해둔 Gemini API(/api/ai-research)를 직접 호출해서
+// "질문 입력"조차 건너뛰고 결과를 바로 이 화면에 보여준다.
+async function reGeminiInlineResearch() {
   const data = lastRealEstateData;
   if (!data || !data.redevelopment || !data.redevelopment.events) return;
-
   const ev = data.redevelopment.events;
   const missingFields = reComputeMissingFields(ev);
-  if (missingFields.length === 0) return;
+
+  if (missingFields.length === 0) {
+    toast('이미 5개 항목이 모두 확인되어 있습니다.');
+    return;
+  }
+
+  const btn = document.getElementById('re-gemini-inline-btn');
+  const statusEl = document.getElementById('re-gemini-inline-status');
+  if (btn) { btn.disabled = true; btn.textContent = '조사 중... (최대 1분 정도 걸릴 수 있어요)'; }
+  if (statusEl) statusEl.textContent = '';
 
   const buildingName = data.address.buildingName || data.address.roadAddr;
   const addrTokens = (data.address.jibunAddr || '').trim().split(/\s+/);
   const regionLabel = addrTokens.slice(0, 3).join(' ');
-  const wanted = missingFields.map((f) => RE_FIELD_LABELS[f]).join(', ');
-  const question = `${regionLabel} ${buildingName}의 재건축/재개발 이력 중 ${wanted}을(를) 알려줘. 알고 있다면 뉴스나 나무위키 등 확인 가능한 출처 링크도 같이 알려줘.`;
 
-  // 팝업 차단을 피하려고 새 탭부터 먼저 연 뒤에 복사한다 (클립보드 API는 비동기라,
-  // 순서가 바뀌면 일부 브라우저가 window.open을 "사용자 조작과 무관한 호출"로 보고 막는다).
-  window.open(RE_AI_CHAT_URLS[provider](question), '_blank', 'noopener');
-  copyToClipboard(question);
-  const toastMsg = provider === 'chatgpt'
-    ? 'ChatGPT 새 탭에 질문이 자동 입력됩니다 (안 되면 복사해둔 질문을 붙여넣어 주세요).'
-    : 'Gemini는 자동 입력을 지원하지 않아 질문을 복사했어요 — 새 탭에 붙여넣기 해주세요.';
-  toast(toastMsg);
+  try {
+    const res = await fetch(`${RE_API_BASE}/api/ai-research`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        buildingName,
+        regionLabel,
+        knownCompletionDate: data.building && data.building.useAprDay,
+        missingFields,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok || json.error) throw new Error(json.error || 'Gemini 조사 중 오류가 발생했습니다.');
+
+    if (!json.results || json.results.length === 0) {
+      if (statusEl) statusEl.textContent = 'Gemini가 출처와 함께 확인 가능한 정보를 찾지 못했습니다.';
+      if (btn) { btn.disabled = false; btn.textContent = '다시 시도'; }
+      return;
+    }
+
+    for (const r of json.results) {
+      const merged = { date: r.date, viaAI: true, link: r.sourceUrl, sourceTitle: r.sourceTitle, note: r.note };
+      if (r.field === 'managementDisposalApproval') {
+        if (!ev.managementDisposalApproval) ev.managementDisposalApproval = { initial: null, changes: [] };
+        if (!ev.managementDisposalApproval.initial) ev.managementDisposalApproval.initial = merged;
+      } else if (!ev[r.field]) {
+        ev[r.field] = merged;
+      }
+    }
+    if (lastRealEstateData === data) {
+      renderRealEstateResult(data); // 카드 전체 재렌더 (버튼/상태도 새 상태로 갱신됨)
+      toast('Gemini 조사 결과를 반영했습니다 — 출처를 꼭 확인하세요.');
+    }
+  } catch (err) {
+    if (statusEl) statusEl.textContent = err.message;
+    if (btn) { btn.disabled = false; btn.textContent = '다시 시도'; }
+  }
 }
 
 document.getElementById('re-search-btn').addEventListener('click', runRealEstateSearch);
