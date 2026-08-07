@@ -7,18 +7,28 @@ const axios = require('axios');
 // 네이버 검색 오픈API(뉴스/블로그 카테고리 한정)로는 원천적으로 도달 불가능한 자료(나무위키,
 // 특집기사 등)가 있는데, 실시간 웹검색 도구를 가진 Gemini는 거기까지 닿을 수 있다.
 //
-// Gemini 2.5 Flash 선택 이유(2026-08-06 기준 확인): 최신 모델(3.x)은 무료 티어에서 실시간
-// 웹검색(Google Search grounding) 자체가 아예 제공되지 않는다. 2.5 Flash/Flash-Lite는
-// 하루 500건까지 웹검색 포함 완전 무료(카드 등록 불필요). 단, 2.5 시리즈는 2026-10-16
-// 지원 종료 예정 - 그 시점에 최신 모델로 마이그레이션이 필요하며, 그때 무료 웹검색 정책이
-// 어떻게 바뀔지는 지금 알 수 없다.
+// 모델 선택 이유 + 2026-08-06 이후 발생한 변화:
+// 최신 모델(3.x)은 무료 티어에서 실시간 웹검색(Google Search grounding) 자체가 아예
+// 제공되지 않는다(공식 가격표에 "Not available"로 명시) - 유료 결제를 켜야만(월 5,000건
+// 무료 포함) 검색이 가능하다. 2.5 세대(Flash/Flash-Lite)만 무료 티어에서 하루 500건까지
+// 웹검색 포함 완전 무료다.
+//
+// ⚠️ 2026-08-XX: gemini-2.5-flash가 신규 발급 API 키에서 "no longer available to new
+// users"(404)로 막히기 시작했다 - 공식 지원종료일(2026-10-16)보다 훨씬 이르게, 신규
+// 사용자만 선제 차단하는 방식(구글 개발자 포럼에 다수 보고됨). gemini-2.5-flash-lite로
+// 교체 - 공식 가격표상 아직 신규 사용자 포함 무료 웹검색을 제공하는 걸로 확인되나(하루
+// 500건), 같은 세대라 구글이 언제든 똑같이 막을 수 있다는 점은 감안해야 한다. 이런
+// 이유로 모델명을 하드코딩 대신 환경변수로도 즉시 바꿀 수 있게 해뒀다(코드 배포 없이
+// GEMINI_MODEL 환경변수만 바꾸면 됨).
 //
 // ⚠️ 절대 원칙: AI가 제시하는 날짜에는 반드시 실제 출처 URL이 있어야 한다. 출처 없는 날짜는
 // 화면에 노출하지 않는다(사용자의 명시적 요구사항) - 프롬프트로 지시할 뿐 아니라, 아래
 // validateResult()에서 sourceUrl이 없거나 http(s)로 시작하지 않는 항목은 코드 레벨에서도 버린다.
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+function geminiApiUrl(model) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+}
 
 const FIELD_LABELS = {
   unionEstablishment: '조합설립인가일',
@@ -110,7 +120,7 @@ async function findRedevelopmentDatesViaGemini({ buildingName, regionLabel, know
 
   try {
     const { data } = await axios.post(
-      GEMINI_API_URL,
+      geminiApiUrl(GEMINI_MODEL),
       {
         contents: [{ parts: [{ text: prompt }] }],
         tools: [{ google_search: {} }],
