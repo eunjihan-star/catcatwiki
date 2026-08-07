@@ -27,6 +27,9 @@ function dongRoot(dong) {
   return normalizeText(dong).replace(/(동|읍|면|가)$/, '');
 }
 
+const MAX_PAGES = 50;
+const PER_PAGE = 300;
+
 async function fetchApplyhomeRows() {
   const apiKey = process.env.CHEONGYAK_API_KEY;
   if (!apiKey) {
@@ -38,19 +41,27 @@ async function fetchApplyhomeRows() {
     throw err;
   }
 
-  const rows = [];
-  let page = 1;
-  let totalCount = Infinity;
-  while (rows.length < totalCount && page <= 50) {
-    // eslint-disable-next-line no-await-in-loop
-    const { data } = await axios.get(BASE_URL, { params: { page, perPage: 300, serviceKey: apiKey }, timeout: 8000 });
-    const pageRows = data?.data || [];
-    totalCount = typeof data?.totalCount === 'number' ? data.totalCount : pageRows.length;
-    rows.push(...pageRows);
-    if (pageRows.length === 0) break;
-    page += 1;
-  }
-  return rows;
+  // 전체 약 2,800여건(perPage 300 기준 페이지 10개)을 페이지 1개씩 순서대로 기다리면
+  // 캐시가 비어있는 첫 요청(서버 콜드스타트 직후 등)에서 검색 하나가 몇 초씩 걸리는
+  // 원인이 됐다. 1페이지로 전체 건수(totalCount)를 먼저 알아낸 뒤, 나머지 페이지는
+  // 전부 동시에 요청한다.
+  const first = await axios.get(BASE_URL, { params: { page: 1, perPage: PER_PAGE, serviceKey: apiKey }, timeout: 8000 });
+  const firstRows = first.data?.data || [];
+  const totalCount = typeof first.data?.totalCount === 'number' ? first.data.totalCount : firstRows.length;
+  const totalPages = Math.min(Math.ceil(totalCount / PER_PAGE), MAX_PAGES);
+
+  if (totalPages <= 1 || firstRows.length === 0) return firstRows;
+
+  const remainingPageNumbers = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+  const restPages = await Promise.all(
+    remainingPageNumbers.map((page) =>
+      axios
+        .get(BASE_URL, { params: { page, perPage: PER_PAGE, serviceKey: apiKey }, timeout: 8000 })
+        .then((res) => res.data?.data || [])
+    )
+  );
+
+  return firstRows.concat(...restPages);
 }
 
 // 분기별로 갱신되는 다른 API들과 달리 "실시간"이지만, 검색할 때마다 전체 2,800여건을

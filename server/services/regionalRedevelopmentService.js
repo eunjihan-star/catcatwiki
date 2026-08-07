@@ -36,6 +36,29 @@ function mainLot(bunji) {
   return normalizeText(bunji).split('-')[0];
 }
 
+// odcloud.kr "파일데이터 자동변환 API" 표준 응답(data.data / data.totalCount)을 쓰는
+// 지역(서울/인천)이 공유하는 페이지네이션 fetch. 페이지를 하나씩 순서대로 기다리면
+// 데이터셋이 클 때(또는 캐시가 비어있는 서버 콜드스타트 직후) 검색 하나가 페이지 수만큼
+// 느려진다 - 1페이지로 전체 건수를 먼저 알아낸 뒤 나머지 페이지는 전부 동시에 요청한다.
+async function fetchOdcloudRowsParallel(baseUrl, apiKey, { perPage = 300, maxPages = 30 } = {}) {
+  const first = await axios.get(baseUrl, { params: { page: 1, perPage, serviceKey: apiKey }, timeout: 8000 });
+  const firstRows = first.data?.data || [];
+  const totalCount = typeof first.data?.totalCount === 'number' ? first.data.totalCount : firstRows.length;
+  const totalPages = Math.min(Math.ceil(totalCount / perPage), maxPages);
+
+  if (totalPages <= 1 || firstRows.length === 0) return firstRows;
+
+  const remainingPageNumbers = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+  const restPages = await Promise.all(
+    remainingPageNumbers.map((page) =>
+      axios
+        .get(baseUrl, { params: { page, perPage, serviceKey: apiKey }, timeout: 8000 })
+        .then((res) => res.data?.data || [])
+    )
+  );
+  return firstRows.concat(...restPages);
+}
+
 // =========================================================================
 // 서울특별시 — 공공데이터포털 "서울특별시_서울시 정비사업 데이터" (15097425)
 // https://www.data.go.kr/data/15097425/fileData.do
@@ -61,20 +84,7 @@ async function fetchSeoulRows() {
     throw err;
   }
   const baseUrl = process.env.SEOUL_REDEVELOPMENT_API_URL || SEOUL_DEFAULT_URL;
-
-  const rows = [];
-  let page = 1;
-  let totalCount = Infinity;
-  while (rows.length < totalCount && page <= 30) {
-    // eslint-disable-next-line no-await-in-loop
-    const { data } = await axios.get(baseUrl, { params: { page, perPage: 300, serviceKey: apiKey }, timeout: 8000 });
-    const pageRows = data?.data || [];
-    totalCount = typeof data?.totalCount === 'number' ? data.totalCount : pageRows.length;
-    rows.push(...pageRows);
-    if (pageRows.length === 0) break;
-    page += 1;
-  }
-  return rows;
+  return fetchOdcloudRowsParallel(baseUrl, apiKey);
 }
 
 // 실제 API 응답은 번지를 "번"(본번)과 "지"(부번) 두 개의 숫자 필드로 나눠서 준다
@@ -147,24 +157,29 @@ async function fetchBusanRows() {
     throw err;
   }
 
-  const rows = [];
-  let pageNo = 1;
-  let totalCount = Infinity;
-  while (rows.length < totalCount && pageNo <= 30) {
-    // eslint-disable-next-line no-await-in-loop
+  const numOfRows = 300;
+  const maxPages = 30;
+
+  async function fetchPage(pageNo) {
     const { data } = await axios.get(BUSAN_BASE_URL, {
-      params: { ServiceKey: apiKey, pageNo, numOfRows: 300, resultType: 'json' },
+      params: { ServiceKey: apiKey, pageNo, numOfRows, resultType: 'json' },
       timeout: 8000,
     });
     const body = data?.response?.body;
     const items = body?.items?.item;
     const pageRows = items ? (Array.isArray(items) ? items : [items]) : [];
-    totalCount = Number(body?.totalCount) || pageRows.length;
-    rows.push(...pageRows);
-    if (pageRows.length === 0) break;
-    pageNo += 1;
+    return { pageRows, totalCount: Number(body?.totalCount) || pageRows.length };
   }
-  return rows;
+
+  // 페이지를 하나씩 순서대로 기다리지 않고, 1페이지로 전체 건수를 먼저 알아낸 뒤
+  // 나머지 페이지는 전부 동시에 요청한다 (콜드스타트 직후 첫 검색이 느려지는 원인이었다).
+  const { pageRows: firstRows, totalCount } = await fetchPage(1);
+  const totalPages = Math.min(Math.ceil(totalCount / numOfRows), maxPages);
+  if (totalPages <= 1 || firstRows.length === 0) return firstRows;
+
+  const remainingPageNumbers = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+  const restPages = await Promise.all(remainingPageNumbers.map((pageNo) => fetchPage(pageNo).then((r) => r.pageRows)));
+  return firstRows.concat(...restPages);
 }
 
 function matchBusanRow(row, { dong, bunji }) {
@@ -260,20 +275,7 @@ async function fetchIncheonRows() {
   }
   const path = await resolveIncheonPath(); // 예: "/15055212/v1/uddi:..."
   const baseUrl = `https://api.odcloud.kr/api${path}`;
-
-  const rows = [];
-  let page = 1;
-  let totalCount = Infinity;
-  while (rows.length < totalCount && page <= 30) {
-    // eslint-disable-next-line no-await-in-loop
-    const { data } = await axios.get(baseUrl, { params: { page, perPage: 300, serviceKey: apiKey }, timeout: 8000 });
-    const pageRows = data?.data || [];
-    totalCount = typeof data?.totalCount === 'number' ? data.totalCount : pageRows.length;
-    rows.push(...pageRows);
-    if (pageRows.length === 0) break;
-    page += 1;
-  }
-  return rows;
+  return fetchOdcloudRowsParallel(baseUrl, apiKey);
 }
 
 function matchIncheonRow(row, { dong, bunji }) {
@@ -348,32 +350,36 @@ async function fetchGyeonggiRows() {
     throw err;
   }
 
-  const rows = [];
-  let pIndex = 1;
-  let totalCount = Infinity;
+  const pSize = 100;
+  const maxPages = 30;
   const parser = new xml2js.Parser({ explicitArray: false, trim: true });
-  while (rows.length < totalCount && pIndex <= 30) {
-    // eslint-disable-next-line no-await-in-loop
+
+  async function fetchPage(pIndex) {
     const { data: xml } = await axios.get(GYEONGGI_BASE_URL, {
-      params: { KEY: apiKey, Type: 'xml', pIndex, pSize: 100 },
+      params: { KEY: apiKey, Type: 'xml', pIndex, pSize },
       headers: { 'User-Agent': GYEONGGI_USER_AGENT },
       timeout: 8000,
     });
-    // eslint-disable-next-line no-await-in-loop
     const parsed = await parser.parseStringPromise(xml);
     const root = parsed?.GenrlimprvBizpropls;
     const code = root?.head?.RESULT?.CODE;
     if (code && code !== 'INFO-000') {
       throw new Error(`경기 정비사업 API 오류: ${root?.head?.RESULT?.MESSAGE || code}`);
     }
-    totalCount = Number(root?.head?.list_total_count) || 0;
     const pageRowsRaw = root?.row;
     const pageRows = pageRowsRaw ? (Array.isArray(pageRowsRaw) ? pageRowsRaw : [pageRowsRaw]) : [];
-    rows.push(...pageRows);
-    if (pageRows.length === 0) break;
-    pIndex += 1;
+    return { pageRows, totalCount: Number(root?.head?.list_total_count) || 0 };
   }
-  return rows;
+
+  // 페이지를 하나씩 순서대로 기다리지 않고, 1페이지로 전체 건수를 먼저 알아낸 뒤
+  // 나머지 페이지는 전부 동시에 요청한다 (콜드스타트 직후 첫 검색이 느려지는 원인이었다).
+  const { pageRows: firstRows, totalCount } = await fetchPage(1);
+  const totalPages = Math.min(Math.ceil(totalCount / pSize), maxPages);
+  if (totalPages <= 1 || firstRows.length === 0) return firstRows;
+
+  const remainingPageNumbers = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
+  const restPages = await Promise.all(remainingPageNumbers.map((pIndex) => fetchPage(pIndex).then((r) => r.pageRows)));
+  return firstRows.concat(...restPages);
 }
 
 function matchGyeonggiRow(row, { dong, bunji }) {
