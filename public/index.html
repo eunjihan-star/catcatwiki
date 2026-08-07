@@ -3058,16 +3058,19 @@ function renderRealEstateResult(data) {
     }
     html += '<div class="re-disclaimer">위 날짜는 뉴스/블로그 텍스트에서 키워드 주변 날짜를 자동 추출한 결과입니다. 정확도가 100%가 아니므로 반드시 아래 원문 링크로 교차 확인해주세요.</div>';
 
+    // Gemini 백그라운드 자동 보강(runAutoAiResearch)이 진행 상태를 표시하는 자리 - 검색
+    // 결과가 먼저 빠르게 뜬 뒤, 이 줄에 "확인 중..."이 잠깐 나타났다가 결과가 오면 카드
+    // 전체가 다시 그려지면서 사라진다(비어있으면 그냥 아무것도 안 보임).
+    html += '<div id="re-ai-auto-status" style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;"></div>';
+
     // ChatGPT/Gemini에서 찾기 — API 호출 없이, 각자 로그인된 브라우저 탭을 열어주는
-    // 방식이라 비용이 전혀 없다. 재건축 이력이 없는 평범한 건물에서 안 뜨도록, 최소한의
-    // 신호(공식 정비구역 매칭/같은 법정동 후보/네이버 관련 기사 1건 이상)가 있을 때만 보여준다.
+    // 방식이라 비용이 전혀 없다.
+    // ⚠️ 예전엔 "공식 정비구역 매칭/같은 법정동 후보/네이버 관련 기사 1건 이상" 신호가
+    // 있을 때만 보여줬는데, 완공되고 이름 바뀐 유명 재건축(디에이치자이개포 등)은 이
+    // 세 신호가 전부 0으로 나오는 걸 실제로 확인했다 - 정확히 이 버튼이 필요한 케이스를
+    // 걸러내고 있었다는 뜻이라 그 조건을 없앴다 (버튼은 비용이 없으니 매번 보여줘도 무방).
     const reMissingFields = reComputeMissingFields(ev);
-    const reHasSignal = Boolean(
-      officialRedevelopmentZone ||
-      (officialRedevelopmentCandidates && officialRedevelopmentCandidates.length > 0) ||
-      redevelopment.articleCount > 0
-    );
-    if (address.buildingName && reMissingFields.length > 0 && reHasSignal) {
+    if (address.buildingName && reMissingFields.length > 0) {
       html += '<div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);">';
       html += '<div style="font-size:12px;color:var(--ink-soft);margin-bottom:6px;">위에서 못 찾은 정보는 AI 챗봇에게 직접 물어보세요 (내 계정으로 접속되며, 비용 없음) — ChatGPT는 질문이 자동 입력되고, Gemini는 복사된 질문을 붙여넣기 해주세요.</div>';
       html += '<button type="button" class="btn" onclick="reOpenAiChat(\'chatgpt\')">ChatGPT에서 찾기</button>';
@@ -3187,6 +3190,7 @@ async function runRealEstateSearch() {
     statusEl.className = 're-status';
     statusEl.textContent = '';
     renderRealEstateResult(data);
+    runAutoAiResearch(data); // 백그라운드(비차단) - 검색 응답을 기다리게 하지 않는다
   } catch (err) {
     statusEl.className = 're-status error';
     statusEl.textContent = RE_API_BASE
@@ -3194,6 +3198,63 @@ async function runRealEstateSearch() {
       : '부동산정보 서버(/api/search)에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
   } finally {
     btn.disabled = false;
+  }
+}
+
+// 검색 결과를 먼저 빠르게 보여준 뒤, 백그라운드로(비차단) Gemini에게 남은 항목을 물어보고
+// 도착하면 그 자리에 채워 넣는다. /api/search 를 기다리게 하지 않는 이유는 searchHandler.js
+// 상단 주석 참고 - 이 함수 자체를 await 하지 않고 그냥 호출만 하고 지나가는 게 핵심이다.
+async function runAutoAiResearch(data) {
+  if (!data || !data.redevelopment || !data.redevelopment.events) return;
+  const ev = data.redevelopment.events;
+  const missingFields = reComputeMissingFields(ev);
+  if (missingFields.length === 0 || !data.address.buildingName) return;
+
+  const statusEl = document.getElementById('re-ai-auto-status');
+  if (statusEl) statusEl.textContent = 'AI가 추가 정보를 확인하고 있습니다...';
+
+  const addrTokens = (data.address.jibunAddr || '').trim().split(/\s+/);
+  const regionLabel = addrTokens.slice(0, 3).join(' ');
+
+  try {
+    const res = await fetch(`${RE_API_BASE}/api/ai-research`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        buildingName: data.address.buildingName,
+        regionLabel,
+        knownCompletionDate: data.building && data.building.useAprDay,
+        missingFields,
+      }),
+    });
+    const json = await res.json();
+
+    // 백그라운드 보강이라 실패해도 사용자에게 에러를 띄우지 않는다 - 상태 문구만 조용히 지운다.
+    if (!res.ok || json.error || !json.results || json.results.length === 0) {
+      const el = document.getElementById('re-ai-auto-status');
+      if (el) el.textContent = '';
+      return;
+    }
+
+    for (const r of json.results) {
+      const merged = { date: r.date, viaAI: true, link: r.sourceUrl, sourceTitle: r.sourceTitle, note: r.note };
+      if (r.field === 'managementDisposalApproval') {
+        if (!ev.managementDisposalApproval) ev.managementDisposalApproval = { initial: null, changes: [] };
+        if (!ev.managementDisposalApproval.initial) ev.managementDisposalApproval.initial = merged;
+      } else if (!ev[r.field]) {
+        ev[r.field] = merged;
+      }
+    }
+
+    // 응답이 도착하기 전에 사용자가 다른 건물을 재검색했으면 lastRealEstateData가 이미
+    // 바뀌어 있다 - 그 경우 화면에 안 보이는 옛 결과로 덮어쓰지 않는다.
+    if (lastRealEstateData === data) {
+      renderRealEstateResult(data);
+      toast('AI가 추가 정보를 찾아 반영했습니다 — 출처를 꼭 확인하세요.');
+    }
+  } catch (err) {
+    const el = document.getElementById('re-ai-auto-status');
+    if (el) el.textContent = '';
   }
 }
 
