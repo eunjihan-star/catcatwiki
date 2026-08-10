@@ -3433,6 +3433,22 @@ function renderSajuEasterEgg(info) {
   `;
 }
 
+// 0건 검색어 로깅 - 타이핑 도중의 중간 상태(예: "재건" 입력 중)를 계속 보내지 않도록
+// 입력이 잠깐 멈췄을 때(1.2초) 그 시점에도 여전히 0건이면 한 번만 서버에 기록한다.
+// 태그/제목을 감으로 다시 짓는 대신, 실무자가 실제로 뭐라고 검색했는지 데이터로 쌓아서
+// 나중에 태그 재정리 근거로 쓰기 위함 (검색 자체 동작에는 영향 없음 - 실패해도 무시).
+let zeroResultLogTimer = null;
+function scheduleZeroResultLog(query) {
+  clearTimeout(zeroResultLogTimer);
+  zeroResultLogTimer = setTimeout(() => {
+    fetch(`${RE_API_BASE}/api/search-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    }).catch(() => {});
+  }, 1200);
+}
+
 function renderSearchResults() {
   const q = document.getElementById('search-search').value;
   const container = document.getElementById('search-results');
@@ -3440,6 +3456,7 @@ function renderSearchResults() {
   if (!q.trim()) {
     countEl.textContent = '';
     container.innerHTML = '<div class="empty-state">검색어를 입력하면 업무 매뉴얼·용어사전·주간회의를 한 번에 검색합니다.</div>';
+    clearTimeout(zeroResultLogTimer);
     return;
   }
 
@@ -3462,9 +3479,11 @@ function renderSearchResults() {
   countEl.textContent = `총 ${total}건 (매뉴얼 ${manualList.length} · 용어 ${glossaryList.length} · 회의록 ${meetingList.length}${eggCount ? ' · 🐾 숨겨진 위키 ' + eggCount : ''})`;
 
   if (total === 0) {
+    scheduleZeroResultLog(q.trim());
     container.innerHTML = '<div class="empty-state">검색 결과가 없습니다.</div>';
     return;
   }
+  clearTimeout(zeroResultLogTimer);
 
   const sectionHead = (title, badge, count) =>
     `<div class="search-section-title">${title} <span class="search-type-badge">${badge}</span><span class="search-section-count">${count}건</span></div>`;
@@ -3886,6 +3905,15 @@ function renderAdminPanel() {
     </div>
 
     <div class="admin-section">
+      <h3>0건 검색어 로그
+        <button class="btn" id="sl-refresh" style="margin-left:8px;">새로고침</button>
+        <button class="btn" id="sl-clear" style="margin-left:4px;">전체 지우기</button>
+      </h3>
+      <p class="hint" style="margin-bottom:10px;">통합검색에서 결과가 0건이었던 검색어 목록입니다. 실무자가 실제로 어떤 말로 찾으려 했는지 확인해서 태그·제목을 정리할 때 참고하세요.</p>
+      <div id="sl-list">불러오는 중...</div>
+    </div>
+
+    <div class="admin-section">
       <h3>관리자 비밀번호 변경</h3>
       <div class="admin-form-row">
         <label>새 비밀번호</label>
@@ -3946,8 +3974,51 @@ function renderAdminPanel() {
     adminSearchQuery = e.target.value;
     renderAdminEntryRows();
   });
+  document.getElementById('sl-refresh').addEventListener('click', loadSearchLogPanel);
+  document.getElementById('sl-clear').addEventListener('click', clearSearchLog);
 
   renderAdminEntryRows();
+  loadSearchLogPanel();
+}
+
+async function loadSearchLogPanel() {
+  const list = document.getElementById('sl-list');
+  if (!list) return;
+  list.textContent = '불러오는 중...';
+  try {
+    const res = await fetch(`${RE_API_BASE}/api/search-log`);
+    const data = await res.json();
+    const entries = data.entries || [];
+    if (entries.length === 0) {
+      list.innerHTML = '<div class="empty-state">아직 0건 검색어가 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = `<table class="data-table"><thead><tr><th>검색어</th><th>횟수</th><th>마지막 검색</th></tr></thead><tbody>${
+      entries.map(e => `<tr><td>${escapeHtml(e.sampleRaw || e.query)}</td><td>${e.count}</td><td>${escapeHtml((e.lastSeenAt || '').slice(0, 10))}</td></tr>`).join('')
+    }</tbody></table>`;
+  } catch (err) {
+    list.innerHTML = '<div class="empty-state">불러오기에 실패했습니다 (네트워크 오류).</div>';
+  }
+}
+
+async function clearSearchLog() {
+  if (!confirm('0건 검색어 로그를 전부 지울까요? 되돌릴 수 없습니다.')) return;
+  try {
+    const res = await fetch(`${RE_API_BASE}/api/search-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear', authHash: sessionAuthHash }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast(data.error || '삭제에 실패했습니다.', true);
+      return;
+    }
+    toast('로그를 지웠습니다.');
+    loadSearchLogPanel();
+  } catch (err) {
+    toast('삭제에 실패했습니다 (네트워크 오류).', true);
+  }
 }
 
 // 관리자모드 목록은 기존 검색 로직(matches())을 그대로 재사용해서 필터링한다 - 항목이
