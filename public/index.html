@@ -3032,7 +3032,7 @@ function renderRealEstateResult(data) {
     if (ev.viaDongFallback) {
       html += '<div class="re-disclaimer">⚠️ 단지명으로는 못 찾아서, 이름 없이 동 단위로 넓게 찾은 결과입니다(사용승인일 이전 날짜만 인정하는 안전장치 적용). 재건축 완료 후 단지명·지번이 바뀐 경우 등에 대비한 보완 검색이니, 다른 단지 소식이 섞였을 수 있어 원문에서 이 건물이 맞는지 꼭 확인해주세요.</div>';
     }
-    html += '<div class="re-disclaimer">위 날짜는 뉴스/블로그 텍스트에서 키워드 주변 날짜를 자동 추출한 결과입니다. 정확도가 100%가 아니므로 반드시 아래 원문 링크로 교차 확인해주세요.</div>';
+    html += '<div class="re-disclaimer">위 날짜는 뉴스·블로그·웹문서(나무위키 등) 텍스트에서 키워드 주변 날짜를 자동 추출한 결과입니다. 정확도가 100%가 아니므로 반드시 아래 원문 링크로 교차 확인해주세요.</div>';
 
     // ChatGPT/Gemini 버튼 — API 호출 없이, 각자 로그인된 브라우저 탭을 열어주는 방식이라
     // 비용이 전혀 없다. 항목이 다 채워져 있어도(교차 확인용으로) 검색 결과마다 항상
@@ -3081,7 +3081,8 @@ function renderRealEstateResult(data) {
       html += '<div class="re-source-item">';
       html += `<div class="rs-title"><a href="${reEscapeHtml(a.link)}" target="_blank" rel="noopener">${reEscapeHtml(a.title)}</a></div>`;
       html += `<div class="rs-desc">${reEscapeHtml(a.description)}</div>`;
-      html += `<div class="rs-meta">${a.source === 'news' ? '뉴스' : '블로그'}${a.pubDate ? ' · ' + reEscapeHtml(a.pubDate) : ''}</div>`;
+      const sourceLabel = a.source === 'news' ? '뉴스' : (a.source === 'webkr' ? '웹문서' : '블로그');
+      html += `<div class="rs-meta">${sourceLabel}${a.pubDate ? ' · ' + reEscapeHtml(a.pubDate) : ''}</div>`;
       html += '</div>';
     });
     html += '</div></details>';

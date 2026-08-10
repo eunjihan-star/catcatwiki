@@ -36,6 +36,33 @@ async function searchNaver(type, query, display = 20) {
   }));
 }
 
+// ⚠️ 네이버 검색은 예전에 있던 AND/OR/~ 연산자를 더 이상 지원하지 않는다(2026-08 확인:
+// "네이버에서 예전에 사용하던 검색 연산자 AND, OR, ~ 등은 모두 사라졌다"). 그런데 이
+// 파일 곳곳에 "OR"를 문자 그대로 쿼리에 이어붙이는 코드가 있었다(예: "재건축 OR 재개발
+// OR 관리처분인가 OR 사업시행인가") - 이러면 "OR"이 그냥 검색어 취급을 받아 전혀 무관한
+// 문서가 걸리는 심각한 오탐 원인이 된다. 실제로 디에이치자이개포로 라이브 검증했더니
+// 이 문자열 그대로 보낸 쿼리는 완전히 무관한 결과(자동차 배출가스 시스템 PDF 등)만
+// 나왔는데, 단순히 "디에이치 자이 개포 재건축" 한 쿼리만 보내면 나무위키 문서가 1순위로
+// 정확히 나왔다. OR로 묶으려던 키워드는 각각 별도 쿼리로 나눠 보낸 뒤 결과를 링크 기준
+// 중복 제거해서 합치는 방식으로 대체한다 - "여러 개 중 하나라도 걸리면"이라는 원래
+// 의도는 그대로 살리면서 실제로 동작하게 만든다.
+async function searchNaverMulti(types, queries, display = 20) {
+  const calls = [];
+  for (const type of types) {
+    for (const query of queries) {
+      calls.push(searchNaver(type, query, display).catch(() => []));
+    }
+  }
+  const settled = await Promise.all(calls);
+  const merged = settled.flat();
+  const seen = new Set();
+  return merged.filter((item) => {
+    if (seen.has(item.link)) return false;
+    seen.add(item.link);
+    return true;
+  });
+}
+
 function stripHtml(str) {
   if (!str) return '';
   return str
@@ -369,16 +396,23 @@ async function searchRedevelopmentInfo(keyword, jibunAddr, requiredBunji, maxDat
   // "지역+건물명"만 떼어둔다 - 자동 추출이 실패했을 때, 프론트엔드가 여기에 필드명(조합설립인가
   // 등)만 붙여서 "네이버에서 검색" 링크를 만들 수 있게 하기 위함이다.
   const searchBase = `${queryPrefix}${keyword}`.trim();
-  const query = `${searchBase} 재건축 OR 재개발 OR 관리처분인가 OR 사업시행인가`;
+  // "재건축 OR 재개발 OR ..."로 붙이던 걸 별도 쿼리로 나눔(파일 상단 searchNaverMulti
+  // 주석 참고) - 재건축/재개발은 서로 다른 법적 사업 유형이라 둘 다 따로 검색해야 한다.
+  // 관리처분인가/사업시행인가는 그 자체가 별도 주제가 아니라 재건축/재개발 기사 본문에
+  // 언급되는 키워드라 별도 검색어로 쪼갤 필요 없이 extractRedevelopmentEvents가 본문에서
+  // 알아서 찾는다.
+  const queries = [`${searchBase} 재건축`, `${searchBase} 재개발`];
+  const query = queries.join(' / '); // 응답에 담아 내려주는 참고용 표기
 
-  const [news, blog] = await Promise.all([
-    searchNaver('news', query, 20).catch(() => []),
-    searchNaver('blog', query, 20).catch(() => []),
-  ]);
+  // 'webkr'(웹문서)는 네이버 블로그/뉴스 카테고리에만 있는 게 아니라 나무위키·부동산
+  // 정보사이트 등 일반 웹사이트까지 크롤링한 색인이다 - 실제로 "디에이치자이개포"로
+  // 테스트했을 때 뉴스/블로그에서는 못 찾던 나무위키 문서(옛 단지명 "개포 상록아파트"
+  // 언급 포함)를 웹문서 검색 1번째 결과로 바로 찾아낸 걸 확인했다(2026-08). 완공되고
+  // 이름 바뀐 재건축을 찾는 이 기능의 핵심 시나리오에 정확히 들어맞아서 추가한다.
+  const rawArticles = await searchNaverMulti(['news', 'blog', 'webkr'], queries, 20);
 
   const distinctiveTokens = extractDistinctiveTokens(keyword, region);
-  let articles = [...news, ...blog];
-  articles = articles.filter((a) =>
+  let articles = rawArticles.filter((a) =>
     isRelevantArticle(`${a.title} ${a.description}`, region, distinctiveTokens, requiredBunji)
   );
 
@@ -388,13 +422,10 @@ async function searchRedevelopmentInfo(keyword, jibunAddr, requiredBunji, maxDat
       || ev.subscriptionWin || ev.memberSuccession);
 
   if (!hasAnyEvent(events) && maxDate && region.queryRegion) {
-    const fallbackQuery = `${region.queryRegion} 재건축 OR 재개발 관리처분인가 OR 사업시행인가 OR 조합설립인가`;
-    const [fbNews, fbBlog] = await Promise.all([
-      searchNaver('news', fallbackQuery, 20).catch(() => []),
-      searchNaver('blog', fallbackQuery, 20).catch(() => []),
-    ]);
+    const fallbackQueries = [`${region.queryRegion} 재건축`, `${region.queryRegion} 재개발`];
+    const fbRawArticles = await searchNaverMulti(['news', 'blog', 'webkr'], fallbackQueries, 20);
     // 단지명이 없는 검색이라 distinctiveTokens/requiredBunji 필터는 못 쓰고, 동 일치만 확인한다.
-    const fbArticles = [...fbNews, ...fbBlog]
+    const fbArticles = fbRawArticles
       .filter((a) => isRelevantArticle(`${a.title} ${a.description}`, region, [], undefined))
       .filter((a) => !articles.some((existing) => existing.link === a.link));
     const fbEvents = extractRedevelopmentEvents(fbArticles, maxDate);
@@ -436,16 +467,14 @@ const USE_APPROVAL_DISTRACTORS = ['착공일', '착공', '설계', '분양', '�
 async function searchUseApprovalDate(keyword, jibunAddr, requiredBunji) {
   const region = extractRegionTokens(jibunAddr);
   const queryPrefix = region.queryRegion ? `${region.queryRegion} ` : '';
-  const query = `${queryPrefix}${keyword} 사용승인일 OR 준공일 OR 준공승인`;
+  // "사용승인일 OR 준공일 OR 준공승인"으로 붙이던 걸 별도 쿼리로 나눔(파일 상단
+  // searchNaverMulti 주석 참고). 세 단어가 사실상 같은 개념의 다른 표현이라 대표로 두
+  // 개만 검색어로 쓰고, 나머지 변형(준공승인일/준공인가 등)은 extractEventsFromText가
+  // 어차피 본문 전체에서 다시 찾으므로 검색어까지 다 쪼갤 필요는 없다.
+  const queries = [`${queryPrefix}${keyword} 사용승인일`, `${queryPrefix}${keyword} 준공일`];
 
-  const [news, blog] = await Promise.all([
-    searchNaver('news', query, 20).catch(() => []),
-    searchNaver('blog', query, 20).catch(() => []),
-  ]);
-
-  const distinctiveTokens = extractDistinctiveTokens(keyword, region);
-  const articles = [...news, ...blog].filter((a) =>
-    isRelevantArticle(`${a.title} ${a.description}`, region, distinctiveTokens, requiredBunji)
+  const articles = (await searchNaverMulti(['news', 'blog', 'webkr'], queries, 20)).filter((a) =>
+    isRelevantArticle(`${a.title} ${a.description}`, region, extractDistinctiveTokens(keyword, region), requiredBunji)
   );
 
   // 검색 결과는 관련도순(sort=sim)으로 오므로, 가장 먼저 매칭되는 걸 채택한다
