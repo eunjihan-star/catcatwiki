@@ -2521,14 +2521,46 @@ function tokenizeQuery(query) {
   return (query || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
 }
 
+// 태그 동의어 사전 - 태그 이름(데이터)은 그대로 두고 검색 단계에서만 실무자가 실제
+// 쓸 법한 다른 표현도 같이 잡아준다. 토큰화(위 tokenizeQuery)만으로는 "붙여 쓴 태그를
+// 띄어 검색"하는 경우까지는 이미 해결되지만("업무프로세스" 태그가 "업무 프로세스"
+// 검색에 걸리는 건 부분일치라 자동으로 됨), 아예 다른 단어를 쓰는 경우(예: "컷오프"로
+// "대상아님판단"을 찾는 것, 영문 태그를 한글로 찾는 것)는 토큰화로 해결이 안 돼서
+// 이 사전이 필요하다. 지금은 이미 확인된 케이스와 업계 표준 줄임말/영문 표기 정도만
+// 담았고, 나머지는 관리자 패널의 "0건 검색어 로그"에 쌓이는 대로 계속 추가하면 된다.
+const TAG_SYNONYMS = {
+  '대상아님판단': ['제외 기준', '컷오프', '대상 아님', '업무 제외'],
+  '검증status': ['검증 상태'],
+  '유도status': ['유도 상태'],
+  '오토메이션버튼': ['자동화 버튼'],
+  '장기보유특별공제': ['장특공'],
+  '1세대1주택': ['1가구1주택', '1가구 1주택'],
+  '조정대상지역': ['조정지역'],
+  'risk': ['위험'],
+  'FAQ': ['자주 묻는 질문'],
+  'CASE1': ['케이스1', '사례1'],
+  'CASE2': ['케이스2', '사례2'],
+  'CASE3': ['케이스3', '사례3'],
+  '톡트리거': ['알림톡 트리거', '카카오톡 트리거'],
+};
+
+function expandTagsForSearch(tags) {
+  const list = (tags || []).slice();
+  (tags || []).forEach((t) => {
+    const aliases = TAG_SYNONYMS[t];
+    if (aliases) list.push(...aliases);
+  });
+  return list;
+}
+
 function matches(entry, query, fields) {
   const tokens = tokenizeQuery(query);
   if (tokens.length === 0) return true;
   const haystacks = fields.map(f => (entry[f] || '').toString().toLowerCase());
-  const tagHaystacks = (entry.tags || []).map(t => t.toLowerCase());
-  // AND 매칭: 모든 단어가 각각 어딘가에는(제목/카테고리/본문/태그 중 아무 곳이나, 서로
-  // 다른 필드에 흩어져 있어도) 있어야 매치로 인정한다 — 기존엔 검색어 전체가 한 문자열로
-  // 어딘가에 붙어서 존재해야만 매치였다.
+  const tagHaystacks = expandTagsForSearch(entry.tags).map(t => t.toLowerCase());
+  // AND 매칭: 모든 단어가 각각 어딘가에는(제목/카테고리/본문/태그+동의어 중 아무 곳이나,
+  // 서로 다른 필드에 흩어져 있어도) 있어야 매치로 인정한다 — 기존엔 검색어 전체가 한
+  // 문자열로 어딘가에 붙어서 존재해야만 매치였다.
   return tokens.every((tok) =>
     haystacks.some((h) => h.includes(tok)) || tagHaystacks.some((t) => t.includes(tok))
   );
@@ -2547,7 +2579,7 @@ function scoreEntry(entry, query, titleField, bodyFields) {
   else if (titleVal.startsWith(q)) score += 80;
   else if (titleVal.includes(q)) score += 50;
 
-  const tags = (entry.tags || []).map(t => t.toLowerCase());
+  const tags = expandTagsForSearch(entry.tags).map(t => t.toLowerCase());
   if (tags.some(t => t === q)) score += 30;
   else if (tags.some(t => t.includes(q))) score += 15;
 
