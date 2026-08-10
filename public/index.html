@@ -372,8 +372,8 @@
   <div id="admin-bar-slot"></div>
 
   <div class="tabs" id="main-tabs">
-    <button class="tab-btn" data-tab="realestate">부동산정보</button>
-    <button class="tab-btn active" data-tab="search">통합검색</button>
+    <button class="tab-btn active" data-tab="realestate">부동산정보</button>
+    <button class="tab-btn" data-tab="search">통합검색</button>
     <button class="tab-btn" data-tab="manual">업무 매뉴얼</button>
     <button class="tab-btn" data-tab="glossary">용어사전</button>
     <button class="tab-btn" data-tab="meeting">주간회의</button>
@@ -381,7 +381,7 @@
   </div>
 
   <!-- 통합검색 -->
-  <div class="tab-panel active" id="panel-search">
+  <div class="tab-panel" id="panel-search">
     <div class="search-row">
       <input type="search" id="search-search" placeholder="업무 매뉴얼·용어사전·주간회의를 한 번에 검색 (예: 조정대상지역, 중과배제, 로직2 ...)">
     </div>
@@ -390,9 +390,9 @@
   </div>
 
   <!-- 부동산정보 -->
-  <div class="tab-panel" id="panel-realestate">
+  <div class="tab-panel active" id="panel-realestate">
     <div class="search-row">
-      <input type="text" id="re-address-input" placeholder="예: 서울 강남구 대치동 은마아파트 101동 101호">
+      <input type="text" id="re-address-input" placeholder="예: 서울 강남구 대치동 은마아파트 101동 101호" autofocus>
       <button class="btn btn-primary" id="re-search-btn" type="button">조회</button>
     </div>
     <p class="search-hint">도로명/지번 혼용 입력, 단지명 생략·순서 상이, 동/호 포함 입력 모두 가능합니다. (건축물대장·네이버 검색 연동)</p>
@@ -4215,6 +4215,11 @@ renderGlossaryChips();
 renderGlossaryList();
 renderMeetingList();
 renderSearchResults();
+
+// 첫 화면을 부동산정보 탭으로 바꾸면서, 진입하자마자 바로 주소를 입력할 수 있게
+// 커서도 그 검색창에 놓는다. HTML autofocus 속성만으로는 브라우저별로 안 먹는
+// 경우가 있어 명시적으로 한 번 더 포커스한다.
+document.getElementById('re-address-input').focus();
 
 async function loadPersistedWikiData() {
   try {
