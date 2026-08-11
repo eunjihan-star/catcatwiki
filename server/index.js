@@ -8,6 +8,7 @@ const cors = require('cors');
 const searchRouter = require('./routes/search');
 const wikiDataRouter = require('./routes/wikiData');
 const searchLogRouter = require('./routes/searchLog');
+const linearQueueRouter = require('./routes/linearQueue');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -20,6 +21,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api', searchRouter);
 app.use('/api', wikiDataRouter);
 app.use('/api', searchLogRouter);
+app.use('/api', linearQueueRouter);
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
