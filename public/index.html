@@ -3907,38 +3907,9 @@ function renderAdminPanel() {
   typeSelect.addEventListener('change', syncLabels);
   syncLabels();
 
-  // 본문 편집기(Quill) - 매번 폼을 새로 그리므로 그때마다 새 인스턴스로 초기화한다.
-  window.afBodyQuill = new Quill('#af-body-editor', {
-    theme: 'snow',
-    modules: {
-      toolbar: [
-        ['bold', 'italic', 'underline'],
-        [{ color: [] }, { background: [] }],
-        [{ size: ['small', false, 'large', 'huge'] }],
-        ['clean'],
-      ],
-    },
-  });
-
-  if (editingContext) {
-    const src = editingContext.listName === 'MANUAL' ? MANUAL : GLOSSARY;
-    const entry = src.find(e => e.id === editingContext.id);
-    if (entry) {
-      typeSelect.value = editingContext.listName === 'MANUAL' ? 'manual' : 'glossary';
-      document.getElementById('af-title').value = entry.title || entry.term || '';
-      document.getElementById('af-category').value = entry.category || '';
-      document.getElementById('af-tags').value = (entry.tags || []).join(', ');
-      document.getElementById('af-source').value = entry.source || '';
-      const bodyContent = editingContext.listName === 'MANUAL' ? (entry.body || '') : (entry.def || '');
-      window.afBodyQuill.root.innerHTML = bodyTextToEditorHtml(bodyContent);
-      if (editingContext.listName === 'MANUAL') {
-        document.getElementById('af-snippet').value = entry.snippet || '';
-        document.getElementById('af-table').value = tableToInput(entry.table);
-      }
-      syncLabels();
-    }
-  }
-
+  // 버튼 이벤트는 전부 먼저 연결한다 - 아래 Quill 초기화가 혹시 실패해도(CDN 차단 등)
+  // 저장/취소 같은 나머지 기능은 항상 정상 동작해야 하기 때문에, 실패 가능성이 있는
+  // 코드보다 먼저 배선해둔다.
   document.getElementById('af-save').addEventListener('click', saveEntryFromForm);
   const cancelBtn = document.getElementById('af-cancel');
   if (cancelBtn) cancelBtn.addEventListener('click', () => { editingContext = null; renderAdminPanel(); });
@@ -3952,6 +3923,51 @@ function renderAdminPanel() {
   document.getElementById('sl-refresh').addEventListener('click', loadSearchLogPanel);
   document.getElementById('sl-clear').addEventListener('click', clearSearchLog);
   document.getElementById('lq-refresh').addEventListener('click', loadLinearQueuePanel);
+
+  // 본문 편집기(Quill) - 매번 폼을 새로 그리므로 그때마다 새 인스턴스로 초기화한다.
+  // CDN 로딩 실패 등으로 Quill 자체가 없을 수 있어(사내망 차단 등) try/catch로 감싸고,
+  // 실패하면 예전처럼 그냥 textarea로 되돌아가서 최소한 저장은 항상 되게 한다.
+  window.afBodyQuill = null;
+  try {
+    window.afBodyQuill = new Quill('#af-body-editor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline'],
+          [{ color: [] }, { background: [] }],
+          [{ size: ['small', false, 'large', 'huge'] }],
+          ['clean'],
+        ],
+      },
+    });
+  } catch (err) {
+    console.error('Quill 편집기 초기화 실패 - textarea로 대체:', err);
+    document.getElementById('af-body-editor').outerHTML =
+      '<textarea id="af-body-fallback" rows="8" placeholder="상세 내용을 입력하세요."></textarea>';
+  }
+
+  if (editingContext) {
+    const src = editingContext.listName === 'MANUAL' ? MANUAL : GLOSSARY;
+    const entry = src.find(e => e.id === editingContext.id);
+    if (entry) {
+      typeSelect.value = editingContext.listName === 'MANUAL' ? 'manual' : 'glossary';
+      document.getElementById('af-title').value = entry.title || entry.term || '';
+      document.getElementById('af-category').value = entry.category || '';
+      document.getElementById('af-tags').value = (entry.tags || []).join(', ');
+      document.getElementById('af-source').value = entry.source || '';
+      const bodyContent = editingContext.listName === 'MANUAL' ? (entry.body || '') : (entry.def || '');
+      if (window.afBodyQuill) {
+        window.afBodyQuill.root.innerHTML = bodyTextToEditorHtml(bodyContent);
+      } else {
+        document.getElementById('af-body-fallback').value = bodyContent;
+      }
+      if (editingContext.listName === 'MANUAL') {
+        document.getElementById('af-snippet').value = entry.snippet || '';
+        document.getElementById('af-table').value = tableToInput(entry.table);
+      }
+      syncLabels();
+    }
+  }
 
   renderAdminEntryRows();
   loadSearchLogPanel();
@@ -4140,10 +4156,13 @@ async function saveEntryFromForm() {
   const category = document.getElementById('af-category').value.trim();
   const tags = document.getElementById('af-tags').value.split(',').map(s => s.trim()).filter(Boolean);
   const source = document.getElementById('af-source').value.trim();
-  const body = window.afBodyQuill.root.innerHTML;
+  // Quill이 정상 로드됐으면 그 HTML을, 초기화에 실패해 textarea로 대체된 상태면
+  // 거기서 그대로 읽는다(renderAdminPanel의 try/catch fallback과 짝).
+  const body = window.afBodyQuill ? window.afBodyQuill.root.innerHTML : document.getElementById('af-body-fallback').value;
+  const bodyIsEmpty = window.afBodyQuill ? !window.afBodyQuill.getText().trim() : !body.trim();
 
   if (!title) { alert('제목/용어를 입력해 주세요.'); return; }
-  if (!window.afBodyQuill.getText().trim()) { alert('본문 내용을 입력해 주세요.'); return; }
+  if (bodyIsEmpty) { alert('본문 내용을 입력해 주세요.'); return; }
 
   if (type === 'manual') {
     const snippet = document.getElementById('af-snippet').value.trim() || stripHtmlTags(body).slice(0, 60);
