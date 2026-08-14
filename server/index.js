@@ -9,6 +9,7 @@ const searchRouter = require('./routes/search');
 const wikiDataRouter = require('./routes/wikiData');
 const searchLogRouter = require('./routes/searchLog');
 const linearQueueRouter = require('./routes/linearQueue');
+const diagRouter = require('./routes/diag');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -22,6 +23,7 @@ app.use('/api', searchRouter);
 app.use('/api', wikiDataRouter);
 app.use('/api', searchLogRouter);
 app.use('/api', linearQueueRouter);
+app.use('/api', diagRouter);
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
