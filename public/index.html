@@ -9,6 +9,9 @@
 <head>
 <meta charset="UTF-8">
 <title>WIKI & 부동산정보</title>
+<!-- 관리자 모드 본문 편집기(굵게/색/크기) - 내부용 툴이라 가장 붙이기 쉬운 CDN 방식으로 연결 -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
 <style>
   :root {
     color-scheme: light;
@@ -170,6 +173,13 @@
   .admin-form-row input:focus, .admin-form-row select:focus, .admin-form-row textarea:focus { border-color:var(--teal-500); }
   .admin-form-row textarea { resize:vertical; }
   .admin-form-row .field-hint { font-size:11.5px; color:#8a9490; margin-top:3px; }
+  #af-body-editor { background:#fff; border-radius:0 0 8px 8px; }
+  #af-body-editor .ql-toolbar { border-radius:8px 8px 0 0; border-color:var(--line); }
+  #af-body-editor .ql-container { border-color:var(--line); font-size:13.5px; font-family:inherit; }
+  #af-body-editor .ql-editor { min-height:160px; }
+  /* 저장된 위키 본문(card-body)에 굵게/색/크기가 실제로 반영되도록 - Quill이 만드는 태그 기본 여백 정리 */
+  .card-body p { margin:0 0 0.6em; }
+  .card-body p:last-child { margin-bottom:0; }
   .admin-entry-row {
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     padding:10px 12px; border:1px solid var(--line); border-radius:10px; margin-bottom:8px; background:#fff;
@@ -2401,6 +2411,32 @@ function escapeHtml(str) {
     .replaceAll('"','&quot;');
 }
 
+// 본문 편집기(Quill)가 만드는 값인지 판별한다. 기존 항목은 전부 순수 텍스트(줄바꿈 문자만
+// 있음)라 이 태그들이 있을 수 없다 - 있으면 100% Quill로 저장된 값이라고 봐도 된다.
+function looksLikeRichHtml(str) {
+  return /<(p|br|strong|em|u|span|div|b|i)[ >]/i.test(str || '');
+}
+
+// 목록 카드에 본문을 표시할 때 쓴다. Quill로 저장된 값(HTML)은 그대로 렌더링해서
+// 굵게/색/크기가 실제로 보이게 하고, 그 외(기존 순수 텍스트·CSV 업로드 등)는 지금까지와
+// 동일하게 escapeHtml로 이스케이프한다 - 오래된 항목이 갑자기 깨져 보이는 일이 없게.
+function renderRichBody(str) {
+  return looksLikeRichHtml(str) ? (str || '') : escapeHtml(str);
+}
+
+// 편집기에 기존 값을 채워 넣을 때 쓴다. 이미 Quill이 만든 HTML이면 그대로,
+// 옛날 순수 텍스트면 이스케이프 후 줄바꿈만 <br>로 바꿔서 편집기에 넣는다.
+function bodyTextToEditorHtml(str) {
+  if (looksLikeRichHtml(str)) return str;
+  return escapeHtml(str).replace(/\n/g, '<br>');
+}
+
+// 용어사전 카드의 한 줄 미리보기(card-snippet)용 - def가 Quill로 저장된 HTML이면
+// 태그가 그대로 찍혀 보이지 않도록 태그만 걷어내고 순수 텍스트로 보여준다.
+function stripHtmlTags(str) {
+  return (str || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 // 검색어를 공백 기준으로 토큰화한다. "컨택 우선순위"처럼 실무자가 자연스럽게 띄어 쓴
 // 검색어가, 데이터 안에서 "컨택"과 "우선순위"가 붙어있지 않아도(예: 태그는 "컨택우선순위"로
 // 붙어 있고 제목엔 "컨택 업무 우선순위"처럼 다른 단어가 끼어 있는 경우) 찾아지게 하기 위함.
@@ -2569,7 +2605,7 @@ function renderManualList() {
         <div class="card-cat">${escapeHtml(m.category)}</div>
       </div>
       <div class="card-snippet">${escapeHtml(m.snippet)}</div>
-      <div class="card-body">${renderTableHtml(m.table)}${escapeHtml(m.body)}
+      <div class="card-body">${renderTableHtml(m.table)}${renderRichBody(m.body)}
         <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
         ${m.meetingDate
           ? `<div class="source-note-meeting">🗓 ${escapeHtml(m.meetingDate)} 주간회의록 출처<span class="snm-link">${escapeHtml(m.source||'')}</span></div>`
@@ -2619,8 +2655,8 @@ function renderGlossaryList() {
         <div class="card-title">${escapeHtml(g.term)}</div>
         <div class="card-cat">${escapeHtml(g.category)}</div>
       </div>
-      <div class="card-snippet">${escapeHtml(g.def)}</div>
-      <div class="card-body">${escapeHtml(g.def)}
+      <div class="card-snippet">${escapeHtml(stripHtmlTags(g.def))}</div>
+      <div class="card-body">${renderRichBody(g.def)}
         <div class="card-tags">${(g.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
         <div class="source-note">${escapeHtml(g.source||'')}</div>
       </div>
@@ -2656,7 +2692,7 @@ function renderMeetingList() {
         <div class="card-cat">${escapeHtml(m.date)}</div>
       </div>
       <div class="card-snippet">${escapeHtml(m.snippet)}</div>
-      <div class="card-body">${renderTableHtml(m.table)}${escapeHtml(m.body)}
+      <div class="card-body">${renderTableHtml(m.table)}${renderRichBody(m.body)}
         <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
         <div class="source-note">${escapeHtml(m.source||'')}</div>
       </div>
@@ -3437,7 +3473,7 @@ function renderSearchResults() {
           <div class="card-cat">${escapeHtml(m.category)}</div>
         </div>
         <div class="card-snippet">${escapeHtml(m.snippet)}</div>
-        <div class="card-body">${renderTableHtml(m.table)}${escapeHtml(m.body)}
+        <div class="card-body">${renderTableHtml(m.table)}${renderRichBody(m.body)}
           <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
           ${m.meetingDate
             ? `<div class="source-note-meeting">🗓 ${escapeHtml(m.meetingDate)} 주간회의록 출처<span class="snm-link">${escapeHtml(m.source||'')}</span></div>`
@@ -3454,8 +3490,8 @@ function renderSearchResults() {
           <div class="card-title">${escapeHtml(g.term)}</div>
           <div class="card-cat">${escapeHtml(g.category)}</div>
         </div>
-        <div class="card-snippet">${escapeHtml(g.def)}</div>
-        <div class="card-body">${escapeHtml(g.def)}
+        <div class="card-snippet">${escapeHtml(stripHtmlTags(g.def))}</div>
+        <div class="card-body">${renderRichBody(g.def)}
           <div class="card-tags">${(g.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
           <div class="source-note">${escapeHtml(g.source||'')}</div>
         </div>
@@ -3471,7 +3507,7 @@ function renderSearchResults() {
           <div class="card-cat">${escapeHtml(m.date)}</div>
         </div>
         <div class="card-snippet">${escapeHtml(m.snippet)}</div>
-        <div class="card-body">${renderTableHtml(m.table)}${escapeHtml(m.body)}
+        <div class="card-body">${renderTableHtml(m.table)}${renderRichBody(m.body)}
           <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
           <div class="source-note">${escapeHtml(m.source||'')}</div>
         </div>
@@ -3782,8 +3818,8 @@ function renderAdminPanel() {
         <input type="text" id="af-snippet" placeholder="한 줄 요약">
       </div>
       <div class="admin-form-row" id="af-body-row">
-        <label>본문</label>
-        <textarea id="af-body" rows="8" placeholder="상세 내용을 입력하세요."></textarea>
+        <label>본문 (굵게·색·크기 적용 가능)</label>
+        <div id="af-body-editor"></div>
       </div>
       <div class="admin-form-row" id="af-table-row">
         <label>표 (선택 — 첫 줄은 헤더, 이후 줄은 데이터 행. 열 구분은 | 기호)</label>
@@ -3871,6 +3907,19 @@ function renderAdminPanel() {
   typeSelect.addEventListener('change', syncLabels);
   syncLabels();
 
+  // 본문 편집기(Quill) - 매번 폼을 새로 그리므로 그때마다 새 인스턴스로 초기화한다.
+  window.afBodyQuill = new Quill('#af-body-editor', {
+    theme: 'snow',
+    modules: {
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ color: [] }, { background: [] }],
+        [{ size: ['small', false, 'large', 'huge'] }],
+        ['clean'],
+      ],
+    },
+  });
+
   if (editingContext) {
     const src = editingContext.listName === 'MANUAL' ? MANUAL : GLOSSARY;
     const entry = src.find(e => e.id === editingContext.id);
@@ -3880,12 +3929,11 @@ function renderAdminPanel() {
       document.getElementById('af-category').value = entry.category || '';
       document.getElementById('af-tags').value = (entry.tags || []).join(', ');
       document.getElementById('af-source').value = entry.source || '';
+      const bodyContent = editingContext.listName === 'MANUAL' ? (entry.body || '') : (entry.def || '');
+      window.afBodyQuill.root.innerHTML = bodyTextToEditorHtml(bodyContent);
       if (editingContext.listName === 'MANUAL') {
         document.getElementById('af-snippet').value = entry.snippet || '';
-        document.getElementById('af-body').value = entry.body || '';
         document.getElementById('af-table').value = tableToInput(entry.table);
-      } else {
-        document.getElementById('af-body').value = entry.def || '';
       }
       syncLabels();
     }
@@ -4092,13 +4140,13 @@ async function saveEntryFromForm() {
   const category = document.getElementById('af-category').value.trim();
   const tags = document.getElementById('af-tags').value.split(',').map(s => s.trim()).filter(Boolean);
   const source = document.getElementById('af-source').value.trim();
-  const body = document.getElementById('af-body').value;
+  const body = window.afBodyQuill.root.innerHTML;
 
   if (!title) { alert('제목/용어를 입력해 주세요.'); return; }
-  if (!body.trim()) { alert('본문 내용을 입력해 주세요.'); return; }
+  if (!window.afBodyQuill.getText().trim()) { alert('본문 내용을 입력해 주세요.'); return; }
 
   if (type === 'manual') {
-    const snippet = document.getElementById('af-snippet').value.trim() || body.slice(0, 60);
+    const snippet = document.getElementById('af-snippet').value.trim() || stripHtmlTags(body).slice(0, 60);
     const table = parseTableInput(document.getElementById('af-table').value);
     if (editingContext && editingContext.listName === 'MANUAL') {
       const entry = MANUAL.find(e => e.id === editingContext.id);
