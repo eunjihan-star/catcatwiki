@@ -2828,12 +2828,26 @@ function scoreEntry(entry, query, titleField, bodyFields) {
   return score;
 }
 
+// 제목/용어에 "미완성"·"작성 중"·"확인 필요"처럼 아직 완성되지 않았다는 표시가 있으면,
+// 검색 관련도와 무관하게 항상 결과 맨 아래로 보낸다 - 답변이 필요한 FAQ나 작성 중인
+// 항목이 상단에 잘못 노출돼 정답처럼 보이는 걸 막기 위함. 특정 id를 하드코딩하지 않고
+// 제목 표시로 판별하므로, 앞으로 같은 표시를 단 항목도 자동으로 동일하게 처리된다.
+const DEPRIORITIZE_TITLE_MARKERS = ['미완성', '작성 중', '확인 필요', '확인이 필요'];
+function isDeprioritizedEntry(entry) {
+  const title = (entry.title || entry.term || '').toString();
+  return DEPRIORITIZE_TITLE_MARKERS.some(marker => title.includes(marker));
+}
+
 function sortByRelevance(list, query, titleField, bodyFields) {
   const q = (query || '').trim();
   if (!q) return list;
   return list
-    .map((entry, idx) => ({ entry, idx, score: scoreEntry(entry, q, titleField, bodyFields) }))
-    .sort((a, b) => (b.score - a.score) || (a.idx - b.idx))
+    .map((entry, idx) => ({
+      entry, idx,
+      score: scoreEntry(entry, q, titleField, bodyFields),
+      deprioritized: isDeprioritizedEntry(entry) ? 1 : 0,
+    }))
+    .sort((a, b) => (a.deprioritized - b.deprioritized) || (b.score - a.score) || (a.idx - b.idx))
     .map(x => x.entry);
 }
 
