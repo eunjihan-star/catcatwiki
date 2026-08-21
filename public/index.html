@@ -121,6 +121,20 @@
   }
   .source-note-meeting .snm-link { display:block; margin-top:3px; font-size:11.5px; font-weight:500; color:#8a9490; word-break:break-all; }
 
+  .card.pinned { border-color:var(--teal-500); background:var(--teal-50); }
+  .pin-badge {
+    font-size:11px; padding:2px 8px; border-radius:999px; background:var(--teal-700);
+    color:#fff; white-space:nowrap; font-weight:600; display:inline-flex; align-items:center; gap:3px;
+  }
+  .pin-toggle-row { margin-bottom:10px; }
+  .pin-toggle-btn {
+    font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:8px;
+    border:1px solid var(--line); background:#fff; color:var(--ink-soft); cursor:pointer;
+    display:inline-flex; align-items:center; gap:5px; transition:background .15s, color .15s, border-color .15s;
+  }
+  .pin-toggle-btn:hover { border-color:var(--teal-500); color:var(--teal-800); }
+  .pin-toggle-btn.is-pinned { background:var(--teal-700); border-color:var(--teal-700); color:#fff; }
+
   .empty-state { text-align:center; padding:40px 10px; color:var(--ink-soft); }
 
   .data-table { border-collapse:collapse; width:100%; margin:10px 0 14px; font-size:13px; }
@@ -154,6 +168,7 @@
   .btn-primary { background:var(--teal-700); border-color:var(--teal-700); color:#fff; box-shadow:var(--shadow-sm); }
   .btn-primary:hover { background:var(--teal-800); border-color:var(--teal-800); }
   .btn-danger { background:var(--danger-bg); border-color:#fda29b; color:var(--danger); }
+  .btn.is-pinned { background:var(--teal-700); border-color:var(--teal-700); color:#fff; }
   .modal-error { color:var(--danger); font-size:12.5px; margin:-4px 0 10px; display:none; }
 
   .admin-bar {
@@ -2904,6 +2919,7 @@ function renderManualList() {
     matches(m, q, ['title','category','snippet','body'])
   );
   list = sortByRelevance(list, q, 'title', ['snippet','body']);
+  list = list.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   document.getElementById('manual-count').textContent = `${list.length}건`;
   const container = document.getElementById('manual-list');
   if (list.length === 0) {
@@ -2911,13 +2927,20 @@ function renderManualList() {
     return;
   }
   container.innerHTML = list.map(m => `
-    <div class="card" data-id="${m.id}">
+    <div class="card ${m.pinned ? 'pinned' : ''}" data-id="${m.id}">
       <div class="card-title-row">
         <div class="card-title">${escapeHtml(m.title)}</div>
-        <div class="card-cat">${escapeHtml(m.category)}</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          ${m.pinned ? '<span class="pin-badge">📌 고정</span>' : ''}
+          <div class="card-cat">${escapeHtml(m.category)}</div>
+        </div>
       </div>
       <div class="card-snippet">${escapeHtml(m.snippet)}</div>
-      <div class="card-body">${renderTableHtml(m.table)}${renderRichBody(m.body)}
+      <div class="card-body">
+        <div class="pin-toggle-row">
+          <button type="button" class="pin-toggle-btn ${m.pinned ? 'is-pinned' : ''}" data-pin="${m.id}">${m.pinned ? '📌 고정 해제' : '📌 상단에 고정'}</button>
+        </div>
+        ${renderTableHtml(m.table)}${renderRichBody(m.body)}
         <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
         ${m.meetingDate
           ? `<div class="source-note-meeting">🗓 ${escapeHtml(m.meetingDate)} 주간회의록 출처<span class="snm-link">${escapeHtml(m.source||'')}</span></div>`
@@ -2927,6 +2950,12 @@ function renderManualList() {
   `).join('');
   container.querySelectorAll('.card').forEach(card => {
     card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+  container.querySelectorAll('[data-pin]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      requestTogglePin(MANUAL, 'data-manual', btn.dataset.pin, renderManualList);
+    });
   });
 }
 
@@ -2955,6 +2984,7 @@ function renderGlossaryList() {
     matches(g, q, ['term','category','def'])
   );
   list = sortByRelevance(list, q, 'term', ['def']);
+  list = list.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   document.getElementById('glossary-count').textContent = `${list.length}건`;
   const container = document.getElementById('glossary-list');
   if (list.length === 0) {
@@ -2962,13 +2992,20 @@ function renderGlossaryList() {
     return;
   }
   container.innerHTML = list.map(g => `
-    <div class="card" data-id="${g.id}">
+    <div class="card ${g.pinned ? 'pinned' : ''}" data-id="${g.id}">
       <div class="card-title-row">
         <div class="card-title">${escapeHtml(g.term)}</div>
-        <div class="card-cat">${escapeHtml(g.category)}</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          ${g.pinned ? '<span class="pin-badge">📌 고정</span>' : ''}
+          <div class="card-cat">${escapeHtml(g.category)}</div>
+        </div>
       </div>
       <div class="card-snippet">${escapeHtml(stripHtmlTags(g.def))}</div>
-      <div class="card-body">${renderRichBody(g.def)}
+      <div class="card-body">
+        <div class="pin-toggle-row">
+          <button type="button" class="pin-toggle-btn ${g.pinned ? 'is-pinned' : ''}" data-pin="${g.id}">${g.pinned ? '📌 고정 해제' : '📌 상단에 고정'}</button>
+        </div>
+        ${renderRichBody(g.def)}
         <div class="card-tags">${(g.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
         <div class="source-note">${escapeHtml(g.source||'')}</div>
       </div>
@@ -2976,6 +3013,12 @@ function renderGlossaryList() {
   `).join('');
   container.querySelectorAll('.card').forEach(card => {
     card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+  container.querySelectorAll('[data-pin]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      requestTogglePin(GLOSSARY, 'data-glossary', btn.dataset.pin, renderGlossaryList);
+    });
   });
 }
 
@@ -2991,6 +3034,7 @@ function renderMeetingList() {
   if (!q.trim() && !dateVal) {
     list = list.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }
+  list = list.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   document.getElementById('meeting-count').textContent = `${list.length}건`;
   const container = document.getElementById('meeting-list');
   if (list.length === 0) {
@@ -2998,13 +3042,20 @@ function renderMeetingList() {
     return;
   }
   container.innerHTML = list.map(m => `
-    <div class="card" data-id="${m.id}">
+    <div class="card ${m.pinned ? 'pinned' : ''}" data-id="${m.id}">
       <div class="card-title-row">
         <div class="card-title">${escapeHtml(m.title)}</div>
-        <div class="card-cat">${escapeHtml(m.date)}</div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          ${m.pinned ? '<span class="pin-badge">📌 고정</span>' : ''}
+          <div class="card-cat">${escapeHtml(m.date)}</div>
+        </div>
       </div>
       <div class="card-snippet">${escapeHtml(m.snippet)}</div>
-      <div class="card-body">${renderTableHtml(m.table)}${renderRichBody(m.body)}
+      <div class="card-body">
+        <div class="pin-toggle-row">
+          <button type="button" class="pin-toggle-btn ${m.pinned ? 'is-pinned' : ''}" data-pin="${m.id}">${m.pinned ? '📌 고정 해제' : '📌 상단에 고정'}</button>
+        </div>
+        ${renderTableHtml(m.table)}${renderRichBody(m.body)}
         <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
         <div class="source-note">${escapeHtml(m.source||'')}</div>
       </div>
@@ -3012,6 +3063,12 @@ function renderMeetingList() {
   `).join('');
   container.querySelectorAll('.card').forEach(card => {
     card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+  container.querySelectorAll('[data-pin]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      requestTogglePin(MEETINGS, 'data-meetings', btn.dataset.pin, renderMeetingList);
+    });
   });
 }
 
@@ -3727,15 +3784,20 @@ function renderSearchResults() {
     return;
   }
 
+  const pinFirst = (a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+
   let manualList = MANUAL.filter(m => matches(m, q, ['title','category','snippet','body']));
   manualList = sortByRelevance(manualList, q, 'title', ['snippet','body']);
+  manualList = manualList.slice().sort(pinFirst);
 
   let glossaryList = GLOSSARY.filter(g => matches(g, q, ['term','category','def']));
   glossaryList = sortByRelevance(glossaryList, q, 'term', ['def']);
+  glossaryList = glossaryList.slice().sort(pinFirst);
 
   // 주간회의는 사용자 요청에 따라 제목 우선순위 없이 최신순으로만 정렬한다.
   let meetingList = MEETINGS.filter(m => matches(m, q, ['title','snippet','body']));
   meetingList = meetingList.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  meetingList = meetingList.slice().sort(pinFirst);
 
   const qNorm = q.trim().toLowerCase();
   const eggList = SEARCH_EASTER_EGGS.filter(e => qNorm.includes(e.keyword.toLowerCase()));
@@ -3779,13 +3841,20 @@ function renderSearchResults() {
   if (manualList.length) {
     html += sectionHead('업무 매뉴얼', 'MANUAL', manualList.length);
     html += manualList.map(m => `
-      <div class="card" data-id="${m.id}">
+      <div class="card ${m.pinned ? 'pinned' : ''}" data-id="${m.id}">
         <div class="card-title-row">
           <div class="card-title">${escapeHtml(m.title)}</div>
-          <div class="card-cat">${escapeHtml(m.category)}</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            ${m.pinned ? '<span class="pin-badge">📌 고정</span>' : ''}
+            <div class="card-cat">${escapeHtml(m.category)}</div>
+          </div>
         </div>
         <div class="card-snippet">${escapeHtml(m.snippet)}</div>
-        <div class="card-body">${renderTableHtml(m.table)}${renderRichBody(m.body)}
+        <div class="card-body">
+          <div class="pin-toggle-row">
+            <button type="button" class="pin-toggle-btn ${m.pinned ? 'is-pinned' : ''}" data-pin="${m.id}" data-pin-type="manual">${m.pinned ? '📌 고정 해제' : '📌 상단에 고정'}</button>
+          </div>
+          ${renderTableHtml(m.table)}${renderRichBody(m.body)}
           <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
           ${m.meetingDate
             ? `<div class="source-note-meeting">🗓 ${escapeHtml(m.meetingDate)} 주간회의록 출처<span class="snm-link">${escapeHtml(m.source||'')}</span></div>`
@@ -3797,13 +3866,20 @@ function renderSearchResults() {
   if (glossaryList.length) {
     html += sectionHead('용어사전', 'GLOSSARY', glossaryList.length);
     html += glossaryList.map(g => `
-      <div class="card" data-id="${g.id}">
+      <div class="card ${g.pinned ? 'pinned' : ''}" data-id="${g.id}">
         <div class="card-title-row">
           <div class="card-title">${escapeHtml(g.term)}</div>
-          <div class="card-cat">${escapeHtml(g.category)}</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            ${g.pinned ? '<span class="pin-badge">📌 고정</span>' : ''}
+            <div class="card-cat">${escapeHtml(g.category)}</div>
+          </div>
         </div>
         <div class="card-snippet">${escapeHtml(stripHtmlTags(g.def))}</div>
-        <div class="card-body">${renderRichBody(g.def)}
+        <div class="card-body">
+          <div class="pin-toggle-row">
+            <button type="button" class="pin-toggle-btn ${g.pinned ? 'is-pinned' : ''}" data-pin="${g.id}" data-pin-type="glossary">${g.pinned ? '📌 고정 해제' : '📌 상단에 고정'}</button>
+          </div>
+          ${renderRichBody(g.def)}
           <div class="card-tags">${(g.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
           <div class="source-note">${escapeHtml(g.source||'')}</div>
         </div>
@@ -3813,13 +3889,20 @@ function renderSearchResults() {
   if (meetingList.length) {
     html += sectionHead('주간회의', 'MEETING', meetingList.length);
     html += meetingList.map(m => `
-      <div class="card" data-id="${m.id}">
+      <div class="card ${m.pinned ? 'pinned' : ''}" data-id="${m.id}">
         <div class="card-title-row">
           <div class="card-title">${escapeHtml(m.title)}</div>
-          <div class="card-cat">${escapeHtml(m.date)}</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            ${m.pinned ? '<span class="pin-badge">📌 고정</span>' : ''}
+            <div class="card-cat">${escapeHtml(m.date)}</div>
+          </div>
         </div>
         <div class="card-snippet">${escapeHtml(m.snippet)}</div>
-        <div class="card-body">${renderTableHtml(m.table)}${renderRichBody(m.body)}
+        <div class="card-body">
+          <div class="pin-toggle-row">
+            <button type="button" class="pin-toggle-btn ${m.pinned ? 'is-pinned' : ''}" data-pin="${m.id}" data-pin-type="meeting">${m.pinned ? '📌 고정 해제' : '📌 상단에 고정'}</button>
+          </div>
+          ${renderTableHtml(m.table)}${renderRichBody(m.body)}
           <div class="card-tags">${(m.tags||[]).map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}</div>
           <div class="source-note">${escapeHtml(m.source||'')}</div>
         </div>
@@ -3830,6 +3913,12 @@ function renderSearchResults() {
   container.innerHTML = html;
   container.querySelectorAll('.card').forEach(card => {
     card.addEventListener('click', () => card.classList.toggle('open'));
+  });
+  container.querySelectorAll('[data-pin]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      requestTogglePinByType(btn.dataset.pinType, btn.dataset.pin, renderSearchResults);
+    });
   });
 }
 document.getElementById('search-search').addEventListener('input', renderSearchResults);
@@ -4404,10 +4493,11 @@ function renderAdminEntryRows() {
   manualRows.innerHTML = filteredManual.map(m => `
     <div class="admin-entry-row">
       <div>
-        <div class="aer-title">${escapeHtml(m.title)}</div>
+        <div class="aer-title">${m.pinned ? '📌 ' : ''}${escapeHtml(m.title)}</div>
         <div class="aer-meta">${escapeHtml(m.category)} · ${m.id}</div>
       </div>
       <div class="aer-actions">
+        <button class="btn ${m.pinned ? 'is-pinned' : ''}" data-adminpin="MANUAL:${m.id}">${m.pinned ? '고정 해제' : '📌 고정'}</button>
         <button class="btn" data-edit="MANUAL:${m.id}">수정</button>
         <button class="btn btn-danger" data-del="MANUAL:${m.id}">삭제</button>
       </div>
@@ -4418,16 +4508,27 @@ function renderAdminEntryRows() {
   glossaryRows.innerHTML = filteredGlossary.map(g => `
     <div class="admin-entry-row">
       <div>
-        <div class="aer-title">${escapeHtml(g.term)}</div>
+        <div class="aer-title">${g.pinned ? '📌 ' : ''}${escapeHtml(g.term)}</div>
         <div class="aer-meta">${escapeHtml(g.category)} · ${g.id}</div>
       </div>
       <div class="aer-actions">
+        <button class="btn ${g.pinned ? 'is-pinned' : ''}" data-adminpin="GLOSSARY:${g.id}">${g.pinned ? '고정 해제' : '📌 고정'}</button>
         <button class="btn" data-edit="GLOSSARY:${g.id}">수정</button>
         <button class="btn btn-danger" data-del="GLOSSARY:${g.id}">삭제</button>
       </div>
     </div>
   `).join('') || `<div class="field-hint">${q ? '검색 결과가 없습니다.' : '등록된 항목이 없습니다.'}</div>`;
 
+  document.querySelectorAll('[data-adminpin]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const [listName, id] = btn.dataset.adminpin.split(':');
+      if (listName === 'MANUAL') {
+        togglePin(MANUAL, 'data-manual', id, () => { renderManualList(); renderAdminEntryRows(); });
+      } else {
+        togglePin(GLOSSARY, 'data-glossary', id, () => { renderGlossaryList(); renderAdminEntryRows(); });
+      }
+    });
+  });
   document.querySelectorAll('[data-edit]').forEach(btn => {
     btn.addEventListener('click', () => {
       const [listName, id] = btn.dataset.edit.split(':');
@@ -4523,6 +4624,36 @@ async function changePassword() {
 
 function syncDataIsland(elId, data) {
   document.getElementById(elId).textContent = JSON.stringify(data, null, 2);
+}
+
+// 문서를 목록/검색 결과 맨 위에 고정하는 기능. 고정 여부는 다른 관리자모드 변경사항과
+// 동일하게 즉시 서버(persistWikiData)에 저장되므로 모든 사람에게 동일하게 보인다.
+// 로그인하지 않은 상태에서 누르면 다른 admin 전용 버튼들과 동일하게 먼저 로그인시킨다.
+async function togglePin(list, elId, id, rerender) {
+  const entry = list.find(e => e.id === id);
+  if (!entry) return;
+  entry.pinned = !entry.pinned;
+  syncDataIsland(elId, list);
+  rerender();
+  const ok = await persistWikiData();
+  if (ok) toast(entry.pinned ? '📌 목록 맨 위에 고정했습니다.' : '고정을 해제했습니다.');
+}
+
+function requestTogglePin(list, elId, id, rerender) {
+  const run = () => togglePin(list, elId, id, rerender);
+  if (isAdmin) run(); else openLoginModal(run);
+}
+
+// 통합검색 결과처럼 매뉴얼/용어사전/회의록이 한 화면에 섞여 나오는 곳에서
+// type 문자열만으로 올바른 배열/data-island를 찾아 고정 토글을 실행한다.
+function requestTogglePinByType(type, id, rerender) {
+  const target = {
+    manual: [MANUAL, 'data-manual'],
+    glossary: [GLOSSARY, 'data-glossary'],
+    meeting: [MEETINGS, 'data-meetings'],
+  }[type];
+  if (!target) return;
+  requestTogglePin(target[0], target[1], id, rerender);
 }
 
 // 관리자모드 변경사항(추가/수정/삭제/업로드/비밀번호 변경)을 서버에 실제로 저장한다.
